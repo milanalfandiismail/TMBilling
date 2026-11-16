@@ -126,7 +126,9 @@ def test_polling_interval_included_in_telemetry_response(client, app_context):
         "NicSpeed": "1000 Mbps"
     }
 
-    res = client.post("/api/v1/public/monitor/", json=payload, environ_base={"REMOTE_ADDR": "10.10.10.121"})
+    api_key = app_context.config.get("CLIENT_API_KEY", "")
+    headers = {"X-Client-Key": api_key} if api_key else {}
+    res = client.post("/api/v1/public/monitor/", json=payload, headers=headers, environ_base={"REMOTE_ADDR": "10.10.10.121"})
     assert res.status_code == 200
     data = res.get_json()
     assert data["success"] is True

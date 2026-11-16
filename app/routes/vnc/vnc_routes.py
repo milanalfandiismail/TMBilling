@@ -2,12 +2,13 @@
 from flask import Blueprint, jsonify, session
 from app.services import VNCService
 from app.services.settings.settings_service import SettingsService
-from app.middleware.auth import admin_required
+from app.middleware.auth import admin_required, login_required
 from app.utils.logger import write_log
 
 vnc_api_bp = Blueprint("vnc", __name__)
 
 @vnc_api_bp.route("/status", methods=["GET"])
+@login_required
 @admin_required
 def get_vnc_status():
     """Mengecek status VNC Server dan Websockify daemon."""
@@ -24,6 +25,7 @@ def get_vnc_status():
     })
 
 @vnc_api_bp.route("/start", methods=["POST"])
+@login_required
 @admin_required
 def start_vnc_proxy():
     """Menyalakan proxy Websockify jika VNC Server sudah aktif."""
@@ -50,3 +52,131 @@ def start_vnc_proxy():
         "vnc_password": vnc_password
     })
 
+
+# =========================================================================
+# VNC CLIENT REMOTE CONTROL ORCHESTRATION
+# =========================================================================
+
+def handle_start_vnc_client(pc_id):
+    """Trigger VNC start di client + launch websockify proxy."""
+    try:
+        from app.repositories import PCRepository
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+            
+        from app.services.vnc.vnc_service import VNCClientProxyService
+        from app.services.settings.settings_service import SettingsService
+        from app.services import ClientService
+        
+        # Cek jika proxy sudah aktif
+        active_proxy = VNCClientProxyService.get_proxy(pc.id)
+        vnc_password = SettingsService.get_or_create_vnc_password()
+        
+        if active_proxy:
+            return jsonify({
+                "success": True,
+                "message": "Remote control sudah aktif",
+                "port": active_proxy["port"],
+                "token": active_proxy.get("token"),
+                "vnc_password": vnc_password,
+                "pc_kode": pc.kode
+            }), 200
+            
+        # Reset ready flag
+        VNCClientProxyService.reset_vnc_status(pc.id)
+        
+        # Queue command ke PC; jangan blokir request menunggu agent (bisa 25 detik)
+        cmd_payload = {"type": "vnc_start", "vnc_password": vnc_password}
+        ClientService.queue_fast_command(pc.id, cmd_payload)
+        write_log("VNC_COMMAND_QUEUED", f"Perintah VNC START masuk antrean untuk PC {pc.kode}", detail_json={"pc_id": pc.id})
+
+        return jsonify({
+            "success": True,
+            "pending": True,
+            "message": "Perintah VNC dikirim, menunggu respon PC",
+            "vnc_password": vnc_password,
+            "pc_kode": pc.kode
+        }), 202
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+def handle_stop_vnc_client(pc_id):
+    """Matikan proxy VNC server dan kirim command stop ke PC Client."""
+    try:
+        from app.repositories import PCRepository
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+            
+        from app.services.vnc.vnc_service import VNCClientProxyService
+        
+        VNCClientProxyService.stop_proxy(pc.id)
+        
+        operator = session.get("kasir_username", "admin")
+        write_log("VNC_CLIENT_STOP", f"Proxy VNC client PC {pc.kode} dihentikan", user=operator, detail_json={"pc_kode": pc.kode})
+        
+        return jsonify({"success": True, "message": "Remote control berhasil dihentikan"}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+def handle_status_vnc_client(pc_id):
+    """Status proxy VNC; bila agent baru siap, proxy dinyalakan di sini (non-blocking)."""
+    try:
+        from app.services.vnc.vnc_service import VNCClientProxyService
+        from app.repositories import PCRepository
+
+        proxy = VNCClientProxyService.get_proxy(pc_id)
+        if not proxy:
+            state, error_msg = VNCClientProxyService.poll_vnc_result(pc_id)
+            if state == "error":
+                return jsonify({"success": False, "error": error_msg}), 408
+            if state == "ready":
+                pc = PCRepository.get_by_id(pc_id)
+                if not pc:
+                    return jsonify({"success": False, "error": "PC tidak ditemukan"}), 404
+                from app.services.cache import OnlineStatusStore
+                target_ip = OnlineStatusStore.get_ip(pc.id) or pc.ip_address
+                success, msg, port, token = VNCClientProxyService.start_proxy(pc.id, target_ip)
+                if not success:
+                    return jsonify({"success": False, "error": f"Gagal mengaktifkan proxy server: {msg}"}), 500
+                operator = session.get("kasir_username", "admin")
+                write_log("VNC_CLIENT_START", f"Proxy VNC client PC {pc.kode} dimulai pada port {port}", user=operator, detail_json={"pc_kode": pc.kode, "port": port, "token": token})
+                proxy = VNCClientProxyService.get_proxy(pc_id)
+
+        if proxy:
+            return jsonify({
+                "success": True,
+                "active": True,
+                "port": proxy["port"],
+                "token": proxy.get("token"),
+                "client_ip": proxy["client_ip"]
+            }), 200
+        return jsonify({
+            "success": True,
+            "active": False
+        }), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@vnc_api_bp.route("/client/<int:pc_id>/start", methods=["POST"])
+@login_required
+@admin_required
+def start_vnc_client_route(pc_id):
+    return handle_start_vnc_client(pc_id)
+
+
+@vnc_api_bp.route("/client/<int:pc_id>/stop", methods=["POST"])
+@login_required
+@admin_required
+def stop_vnc_client_route(pc_id):
+    return handle_stop_vnc_client(pc_id)
+
+
+@vnc_api_bp.route("/client/<int:pc_id>/status", methods=["GET"])
+@login_required
+@admin_required
+def status_vnc_client_route(pc_id):
+    return handle_status_vnc_client(pc_id)

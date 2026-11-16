@@ -26,19 +26,25 @@ def login():
     username = data.get("username", "").strip()
     password = data.get("password", "")
 
+    from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+    from app.services.auth import login_throttle
+
+    client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
+    if login_throttle.check(client_ip, username):
+        return jsonify({"error": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}), 429
+
     # Validasi kredensial dulu (tanpa log) untuk dapatkan role
     pre_user = AuthKasirService.validate_credentials_only(username, password)
     if not pre_user:
+        login_throttle.fail(client_ip, username)
         return jsonify({"error": "Username atau password salah"}), 401
 
     # Non-admin harus login dari IP whitelisted (kecuali bypass token)
     if pre_user.role != "admin":
         try:
-            from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
             auth_flag = session.get("ip_wh_authenticated")
             token_ver = session.get("ip_wh_token_version")
             if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_token_valid(auth_flag, token_ver):
-                client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
                 if not IpWhitelistService.is_ip_whitelisted(client_ip):
                     write_log("LOGIN_GAGAL",
                               f"Username:{username} - IP {client_ip} tidak di whitelist",
@@ -50,26 +56,16 @@ def login():
                                    f"Hubungi admin untuk mendaftarkan IP Anda."
                     }), 403
 
-        except Exception:
+        except Exception:  # noqa: silent - gagal evaluasi -> jalur aman (deny / CSRF standar) tetap diambil
             pass
 
     try:
         result = AuthKasirService.login(username, password)
-
-        role = result["user"]["role"]
-
-        # Admin login dari IP baru → auto-add ke whitelist
-        if role == "admin":
-            try:
-                from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
-                client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
-
-                if IpWhitelistService.is_enabled() and not IpWhitelistService.is_ip_whitelisted(client_ip):
-                    IpWhitelistService.add(client_ip, 'Auto (login)')
-            except Exception:
-                pass
+        login_throttle.ok(client_ip, username)
 
         # Inisialisasi Session Flask
+        session.clear()
+        session.permanent = True
         session["kasir_id"] = result["user"]["id"]
         session["kasir_username"] = result["user"]["username"]
         session["kasir_role"] = result["user"]["role"]
@@ -113,19 +109,21 @@ def check_session():
     kasir_id = session.get("kasir_id")
     result = AuthKasirService.check_session(user_id=kasir_id)
 
-    # Jika session valid, cek juga IP whitelist
+    # Jika session valid, pertahankan durasi cookie permanent & cek IP whitelist
     if result.get("logged_in"):
-        try:
-            from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
-            auth_flag = session.get("ip_wh_authenticated")
-            token_ver = session.get("ip_wh_token_version")
-            if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_token_valid(auth_flag, token_ver):
-                client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
-                if not IpWhitelistService.is_ip_whitelisted(client_ip):
-                    result = {"logged_in": False, "reason": "ip_not_whitelisted"}
+        session.permanent = True
+        if result.get("role") != "admin":
+            try:
+                from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+                auth_flag = session.get("ip_wh_authenticated")
+                token_ver = session.get("ip_wh_token_version")
+                if IpWhitelistService.is_enabled() and not IpWhitelistService.is_session_token_valid(auth_flag, token_ver):
+                    client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
+                    if not IpWhitelistService.is_ip_whitelisted(client_ip):
+                        result = {"logged_in": False, "reason": "ip_not_whitelisted"}
 
-        except Exception:
-            pass
+            except Exception:  # noqa: silent - gagal evaluasi -> jalur aman (deny / CSRF standar) tetap diambil
+                pass
 
     if not result.get("logged_in"):
         # Bersihkan session jika tidak valid (DRY)
@@ -138,11 +136,20 @@ def admin_check():
     data = request.get_json() or {}
     username = data.get("username", "").strip()
     password = data.get("password", "")
-    
+
+    from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+    from app.services.auth import login_throttle
+
+    client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
+    if login_throttle.check(client_ip, username):
+        return jsonify({"error": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}), 429
+
     try:
         result = AuthKasirService.validate_admin(username, password)
+        login_throttle.ok(client_ip, username)
         return jsonify(result), 200
     except ValueError as e:
+        login_throttle.fail(client_ip, username)
         status_code = 401
         if "Akses ditolak" in str(e):
             status_code = 403

@@ -38,6 +38,7 @@ const App = {
         Overlay.init();
         Admin.init();
         this.initAfkEvents();
+        this.initConfigLoop();
 
         // Load initial data
         await this.loadInitialData();
@@ -249,6 +250,36 @@ const App = {
         Api.onEvent('show-admin-login', async () => {
             Admin.show();
         });
+    },
+
+    /**
+     * Satu-satunya pengambil konfigurasi warnet: 60 dtk saat sehat, 5 dtk saat gagal.
+     * Event 'tm:refresh-config' memaksa satu refresh saat tab QRIS dibuka.
+     */
+    initConfigLoop() {
+        document.addEventListener('tm:refresh-config', () => this.refreshConfig());
+        this.refreshConfig();
+    },
+
+    async refreshConfig() {
+        if (this._configLoading) return;
+        this._configLoading = true;
+        let ok = false;
+        try {
+            const config = await Api.getWarnetConfig();
+            if (config) {
+                Kiosk.applyConfig(config);
+                Overlay.applyConfig(config);
+                ok = true;
+            }
+        } catch (err) {
+            console.warn("Konfigurasi warnet gagal dimuat:", err);
+        } finally {
+            this._configLoading = false;
+        }
+        if (!ok) Kiosk.showOfflineIfEmpty();
+        clearTimeout(this._configTimer);
+        this._configTimer = setTimeout(() => this.refreshConfig(), ok ? 60000 : 5000);
     },
 
     /**

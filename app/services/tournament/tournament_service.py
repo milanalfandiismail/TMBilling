@@ -286,11 +286,18 @@ class TournamentService:
         from app.utils.validators import validate_string_length, validate_choice, validate_integer_range
         nama = validate_string_length(data.get("nama"), min_len=2, max_len=100, field_name="Nama Turnamen", required=True)
         deskripsi = validate_string_length(data.get("deskripsi"), min_len=0, max_len=500, field_name="Deskripsi Turnamen", required=False) if data.get("deskripsi") else ""
-        tipe_jalur = validate_choice(data.get("tipe_jalur", "playoff"), ["playoff", "swiss"], field_name="Tipe Format Turnamen", case_sensitive=False)
+        tipe_jalur = validate_choice(data.get("tipe_jalur", "playoff"), ["playoff", "swiss", "multi"], field_name="Tipe Format Turnamen", case_sensitive=False)
         teams_input = data.get("teams", [])
         default_bo = validate_integer_range(data.get("bo_format", 1), min_val=1, max_val=9, field_name="Format BO")
 
-        if not isinstance(teams_input, list) or len(teams_input) < 2:
+        team_names = []
+        if isinstance(teams_input, list):
+            for t_name in teams_input:
+                clean_team_name = validate_string_length(str(t_name), min_len=1, max_len=50, field_name="Nama Tim", required=False)
+                if clean_team_name:
+                    team_names.append(clean_team_name)
+
+        if len(team_names) < 2:
             raise ValueError("Minimal harus mendaftarkan 2 tim")
 
         existing = TournamentRepository.get_by_nama(nama)
@@ -303,12 +310,10 @@ class TournamentService:
             TournamentRepository.flush()
 
             db_teams = []
-            for t_name in teams_input:
-                clean_team_name = validate_string_length(str(t_name), min_len=1, max_len=50, field_name="Nama Tim", required=False)
-                if clean_team_name:
-                    tm = TurnamenTim(turnamen_id=t.id, nama_tim=clean_team_name)
-                    TournamentRepository.save(tm)
-                    db_teams.append(tm)
+            for clean_team_name in team_names:
+                tm = TurnamenTim(turnamen_id=t.id, nama_tim=clean_team_name)
+                TournamentRepository.save(tm)
+                db_teams.append(tm)
             TournamentRepository.flush()
 
             if tipe_jalur == "playoff":
@@ -447,6 +452,10 @@ class TournamentService:
         m = TournamentRepository.get_match_by_id(match_id)
         if not m:
             raise ValueError("Match tidak ditemukan")
+        if m.pemenang_id is not None:
+            raise ValueError("Match sudah selesai")
+        if m.tim1_id is None or m.tim2_id is None:
+            raise ValueError("Match belum memiliki kedua tim")
 
         skor1 = validate_integer_range(data.get("skor1", 0), 0, 999, "Skor tim 1")
         skor2 = validate_integer_range(data.get("skor2", 0), 0, 999, "Skor tim 2")
@@ -461,6 +470,9 @@ class TournamentService:
                 pemenang_id = m.tim2_id
             else:
                 raise ValueError("Skor seri. Silakan tentukan tim pemenang secara manual.")
+
+        if pemenang_id not in (m.tim1_id, m.tim2_id):
+            raise ValueError("Pemenang harus salah satu tim di match ini")
 
         try:
             m.skor1 = skor1
@@ -540,20 +552,33 @@ class TournamentService:
         stage = TournamentRepository.get_stage_by_id(stage_id)
         if not stage:
             raise ValueError("Tahap tidak ditemukan")
+        if stage.status == "selesai":
+            raise ValueError("Tahap sudah selesai")
 
         if not selected_team_ids or not isinstance(selected_team_ids, list):
             raise ValueError("Harap pilih tim yang akan diloloskan ke babak berikutnya")
 
         try:
-            stage.status = "selesai"
-            t = stage.turnamen
+            unique_ids = {int(team_id) for team_id in selected_team_ids}
+        except (TypeError, ValueError):
+            raise ValueError("Tim tidak valid untuk turnamen ini")
 
-            next_stage = next((s for s in t.stages if s.urutan == stage.urutan + 1), None)
+        t = stage.turnamen
+        qualified_teams = TournamentRepository.get_teams_by_ids(list(unique_ids), turnamen_id=t.id)
+        if len(qualified_teams) != len(unique_ids):
+            raise ValueError("Tim tidak valid untuk turnamen ini")
+
+        next_stage = next((s for s in t.stages if s.urutan == stage.urutan + 1), None)
+        if next_stage and TournamentRepository.get_matches_by_stage(next_stage.id):
+            raise ValueError("Bracket babak berikutnya sudah dibuat")
+
+        try:
+            stage.status = "selesai"
+
             if next_stage:
                 next_stage.status = "aktif"
                 TournamentRepository.commit()
 
-                qualified_teams = TournamentRepository.get_teams_by_ids(selected_team_ids)
                 prev_match = TournamentRepository.get_matches_by_stage(stage_id)
                 default_bo = prev_match[0].bo_format if prev_match else 1
 

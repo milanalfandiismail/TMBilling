@@ -20,7 +20,8 @@ try {
         $PlainUser = 'TMBilling'
     }
     if ([string]::IsNullOrEmpty($PlainPass)) {
-        $PlainPass = 'TM123qaz!@#'
+        Write-Host "[ERROR] Password admin wajib diisi lewat -PlainPass."
+        exit 1
     }
 
     # Baca URL server dari config.ini untuk info tambahan

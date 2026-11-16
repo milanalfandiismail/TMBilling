@@ -10,6 +10,12 @@ class NoteService:
     @classmethod
     def get_notes_dir(cls) -> str:
         """Mengambil direktori absolut untuk penyimpanan catatan .txt di folder instance."""
+        # Override dipakai sandbox E2E agar tidak menulis ke catatan produksi.
+        override = os.environ.get("TM_NOTES_DIR")
+        if override:
+            abs_override = os.path.realpath(override)
+            os.makedirs(abs_override, exist_ok=True)
+            return abs_override
         try:
             if current_app:
                 base_dir = os.path.join(current_app.instance_path, 'notes')
@@ -76,7 +82,7 @@ class NoteService:
                     return set(data)
                 elif isinstance(data, dict) and 'pinned' in data:
                     return set(data['pinned'])
-        except Exception:
+        except Exception:  # noqa: silent - nilai tidak terurai -> fallback; keputusan tidak berubah
             pass
         return set()
 
@@ -84,11 +90,8 @@ class NoteService:
     def _save_pinned_set(cls, pinned_set: set[str]):
         """Menyimpan daftar nama berkas yang disematkan ke .pinned.json."""
         pinned_path = cls._get_pinned_file_path()
-        try:
-            with open(pinned_path, 'w', encoding='utf-8') as f:
-                json.dump(sorted(list(pinned_set)), f, indent=2)
-        except Exception:
-            pass
+        with open(pinned_path, 'w', encoding='utf-8') as f:
+            json.dump(sorted(list(pinned_set)), f, indent=2)
 
     @classmethod
     def toggle_pin(cls, filename: str) -> dict:
@@ -143,7 +146,7 @@ class NoteService:
                     try:
                         with open(entry.path, 'r', encoding='utf-8', errors='replace') as f:
                             full_content = f.read()
-                    except Exception:
+                    except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
                         pass
 
                     preview = full_content[:160].strip()
@@ -199,21 +202,27 @@ class NoteService:
         }
 
     @classmethod
+    def _unique_path(cls, notes_dir: str, base_name: str):
+        """Pesan nama berkas unik secara atomik."""
+        stem = base_name[:-4] if base_name.lower().endswith('.txt') else base_name
+        candidate = base_name
+        counter = 1
+        while True:
+            path = os.path.join(notes_dir, candidate)
+            try:
+                fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                os.close(fd)
+                return candidate, path
+            except FileExistsError:
+                candidate = f"{stem}_{counter}.txt"
+                counter += 1
+
+    @classmethod
     def create_note(cls, title: str, content: str = "") -> dict:
         """Membuat berkas catatan .txt baru."""
         notes_dir = cls.get_notes_dir()
         base_name = cls.sanitize_filename(title)
-        stem = base_name[:-4] if base_name.lower().endswith('.txt') else base_name
-        
-        target_name = base_name
-        target_path = os.path.join(notes_dir, target_name)
-        counter = 1
-
-        # Hindari overwrite file dengan nama yang sama jika baru membuat
-        while os.path.exists(target_path):
-            target_name = f"{stem}_{counter}.txt"
-            target_path = os.path.join(notes_dir, target_name)
-            counter += 1
+        target_name, target_path = cls._unique_path(notes_dir, base_name)
 
         with open(target_path, 'w', encoding='utf-8') as f:
             f.write(content)
@@ -236,23 +245,16 @@ class NoteService:
             desired_name = cls.sanitize_filename(new_title)
             if desired_name != target_filename:
                 notes_dir = cls.get_notes_dir()
-                candidate_path = os.path.join(notes_dir, desired_name)
-                # Jika nama baru belum ada, ganti nama
-                if not os.path.exists(candidate_path):
-                    os.rename(file_path, candidate_path)
-                    target_path = candidate_path
+                old_name = target_filename
+                target_filename, target_path = cls._unique_path(notes_dir, desired_name)
+                os.replace(file_path, target_path)
 
-                    # Update status pinned ke nama baru jika sebelumnya di-pin
-                    pinned = cls._get_pinned_set()
-                    if target_filename in pinned:
-                        pinned.remove(target_filename)
-                        pinned.add(desired_name)
-                        cls._save_pinned_set(pinned)
-
-                    target_filename = desired_name
-                else:
-                    # Nama target sudah dipakai file lain, pertahankan target path
-                    pass
+                # Update status pinned ke nama baru jika sebelumnya di-pin
+                pinned = cls._get_pinned_set()
+                if old_name in pinned:
+                    pinned.remove(old_name)
+                    pinned.add(target_filename)
+                    cls._save_pinned_set(pinned)
 
         with open(target_path, 'w', encoding='utf-8') as f:
             f.write(content)

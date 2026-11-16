@@ -36,6 +36,17 @@
         <span class="flex-1 text-left leading-tight break-words">Grup PC / Zona</span>
     </button>
 
+    <!-- Data Diarsipkan -->
+    <button onclick="App.switchTab('arsip')" data-tab="arsip" title="Data Diarsipkan"
+        class="tab-btn w-full flex items-start gap-2 px-2.5 py-1.5 rounded text-xs font-semibold text-neutral-400 hover:text-neutral-100 hover:bg-[#121212] transition-all text-left">
+        <svg class="w-3.5 h-3.5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                d="M20 8H4m16 0v11a1 1 0 01-1 1H5a1 1 0 01-1-1V8m16 0l-1.5-3h-13L4 8m5 5h6">
+            </path>
+        </svg>
+        <span class="flex-1 text-left leading-tight break-words">Data Diarsipkan</span>
+    </button>
+
     <!-- Kelola Game -->
     {% if session.get('kasir_role') == 'admin' %}
     <button onclick="App.switchTab('game_management')" data-tab="game_management" title="Kelola Game"

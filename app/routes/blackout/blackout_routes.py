@@ -7,7 +7,7 @@ dan resolusi sesi yang terkena gangguan listrik.
 """
 
 from flask import Blueprint, jsonify, request, session
-from app.middleware.auth import login_required, shift_required
+from app.middleware.auth import login_required, shift_required, admin_required
 from app.services import BlackoutService
 
 blackout_api_bp = Blueprint("blackout", __name__)
@@ -24,14 +24,21 @@ blackout_api_bp = Blueprint("blackout", __name__)
 def deteksi():
     """Deteksi sesi aktif yang macet (last_sync > threshold)."""
     try:
+        from app.utils.validators import validate_integer_range
+
         data = request.get_json(silent=True) or {}
-        threshold = data.get("threshold_menit", None)
+        raw = data.get("threshold_menit")
+        threshold = None if raw in (None, "") else validate_integer_range(
+            raw, 1, 1440, field_name="Threshold blackout"
+        )
         count = BlackoutService.deteksi(threshold)
         return jsonify({
             "success": True,
             "total": count,
             "message": f"{count} sesi terdeteksi blackout" if count > 0 else "Tidak ada sesi terdeteksi"
         }), 200
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
@@ -144,6 +151,7 @@ def resolve_guest_tutup(sesi_id):
 # =========================================================================
 # Fokus: Pembersihan data audit dan penutupan massal saat server mati.
 
+# Kasir ber-shift boleh menutup semua sesi saat mati lampu (temuan audit #4).
 @blackout_api_bp.route("/force-all-and-detect", methods=["POST"])
 @login_required
 @shift_required
@@ -161,6 +169,7 @@ def force_all_and_detect():
 
 @blackout_api_bp.route("/clear", methods=["POST"])
 @login_required
+@admin_required
 @shift_required
 def clear_audit():
     """Hapus history audit blackout yang sudah diselesaikan (Resolved)."""

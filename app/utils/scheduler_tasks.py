@@ -2,10 +2,13 @@
 
 """Wrapper untuk background tasks scheduler (APScheduler)."""
 
+import json
 import os
 import re
 from datetime import datetime, timedelta
+from app.utils.timezone_utils import format_local_now
 from app.services import SesiService
+from app.services.write_lock import with_write_lock
 from app.utils.logger import write_log
 
 UNIT_MULTIPLIER = {
@@ -14,7 +17,59 @@ UNIT_MULTIPLIER = {
     "jam": 3600,
     "hari": 86400,
     "minggu": 604800,
+    "bulan": 2592000,
 }
+
+_SETTINGS_KEY = "scheduler_last_runs"
+_LAST_RUN = {}
+
+
+def get_scheduler_interval(settings_key, settings_unit_key, default_value, default_unit):
+    """Baca interval scheduler (detik) dari tabel settings."""
+    try:
+        from app.services import SettingsService
+        value = int(SettingsService.get(settings_key, default_value))
+        unit = SettingsService.get(settings_unit_key, default_unit)
+        return value * UNIT_MULTIPLIER.get(unit, UNIT_MULTIPLIER[default_unit])
+    except Exception:
+        return default_value * UNIT_MULTIPLIER[default_unit]
+
+
+def apply_scheduler_intervals(scheduler):
+    """Terapkan ulang interval job dinamis pada scheduler yang sedang berjalan."""
+    if not scheduler or not getattr(scheduler, "running", False):
+        return False
+    pairs = (
+        ("database_backup", get_scheduler_interval("auto_backup_value", "auto_backup_unit", 60, "menit")),
+        ("auto_screenshots", get_scheduler_interval("screenshot_auto_value", "screenshot_auto_unit", 60, "detik")),
+    )
+    changed = False
+    for job_id, seconds in pairs:
+        if scheduler.get_job(job_id):
+            scheduler.reschedule_job(job_id, trigger="interval", seconds=seconds)
+            changed = True
+    return changed
+
+
+def record_run(job_id, ok=True, skipped=False):
+    """Catat eksekusi terakhir per job di memori dan simpan ke Settings."""
+    _LAST_RUN[job_id] = {"at": format_local_now("%Y-%m-%dT%H:%M:%S"), "ok": bool(ok), "skipped": bool(skipped)}
+    try:
+        from app.services import SettingsService
+        SettingsService.set(_SETTINGS_KEY, json.dumps(_LAST_RUN))
+    except Exception as e:
+        write_log("SCHEDULER_STATUS_ERROR", f"Gagal menyimpan status job {job_id}: {e}")
+
+
+def get_last_runs():
+    if not _LAST_RUN:
+        try:
+            from app.services import SettingsService
+            data = json.loads(SettingsService.get(_SETTINGS_KEY, "{}") or "{}")
+            _LAST_RUN.update(data)
+        except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
+            pass
+    return dict(_LAST_RUN)
 
 
 def run_cleanup_expired(app):
@@ -25,7 +80,16 @@ def run_cleanup_expired(app):
     background thread.
     """
     with app.app_context():
-        SesiService.cleanup_expired()
+        try:
+            SesiService.cleanup_expired()
+            SesiService.cleanup_inactive_admin_sessions()
+            from app.services.blackout.blackout_service import BlackoutService
+            BlackoutService.deteksi()
+        except Exception as e:
+            write_log("SCHEDULER_ERROR", f"Error cleanup sesi: {e}", user="SYSTEM")
+            record_run("cleanup_expired", False)
+            raise
+        record_run("cleanup_expired", True)
 
 
 def run_database_backup(app):
@@ -35,19 +99,34 @@ def run_database_backup(app):
     ke BackupService secara terpusat dengan batasan maksimal 5 file backup terbaru.
     """
     with app.app_context():
-        db_path = os.path.join(app.instance_path, 'warnet.db') 
-        backup_dir = os.path.abspath(os.path.join(app.instance_path, '..', 'backups'))
-        
+        from app.services import BackupService
+        from app.services.backup.backup_service import default_db_path, default_backup_dir
+        db_path = default_db_path(app)
+        backup_dir = default_backup_dir(app)
+
         try:
-            from app.services import BackupService
             backup_manager = BackupService(db_path=db_path, backup_dir=backup_dir)
             if os.path.exists(db_path):
-                backup_manager.create_backup()
+                report = {}
+                backup_manager.create_backup(report=report)
                 backup_manager.cleanup_old_backups(max_keep=5)
+                failed = report.get("failed") or []
+                if failed:
+                    write_log(
+                        "BACKUP_CLOUD_FAILED",
+                        "Unggahan cloud gagal: " + ", ".join(failed),
+                        user="SYSTEM",
+                    )
+                record_run("database_backup", not failed)
+                return
             else:
                 write_log("BACKUP_ERROR", f"File {db_path} tidak ditemukan!", user="SYSTEM")
+                record_run("database_backup", False)
+                return
         except Exception as e:
             write_log("BACKUP_ERROR", f"Error backup: {str(e)}", user="SYSTEM")
+            record_run("database_backup", False)
+            return
 
 
 def run_cleanup_logs(app):
@@ -57,50 +136,47 @@ def run_cleanup_logs(app):
     periode yang ditentukan di settings.
     """
     with app.app_context():
-        from app.utils.logger import LOG_FILE
+        from app.utils.logger import atomic_filter_logs, write_log
         from app.services import SettingsService
         
         try:
             value = int(SettingsService.get("auto_cleanup_value", 30))
             unit = SettingsService.get("auto_cleanup_unit", "hari")
             seconds = value * UNIT_MULTIPLIER.get(unit, 86400)
-            cutoff = datetime.now() - timedelta(seconds=seconds)
+            cutoff = datetime.strptime(format_local_now(), "%Y-%m-%d %H:%M:%S") - timedelta(seconds=seconds)
             
-            if not os.path.exists(LOG_FILE):
-                return
-            
-            kept_lines = []
-            removed = 0
-            
-            with open(LOG_FILE, "r", encoding="utf-8") as f:
-                for line in f:
-                    line_stripped = line.strip()
-                    if not line_stripped:
-                        continue
-                    # Format: [YYYY-MM-DD HH:MM:SS] [user] AKSI - detail
-                    match = re.match(r'\[(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\]', line_stripped)
-                    if match:
-                        log_time = datetime.strptime(match.group(1), "%Y-%m-%d %H:%M:%S")
-                        if log_time >= cutoff:
-                            kept_lines.append(line)
-                        else:
-                            removed += 1
-                    else:
-                        kept_lines.append(line)
-            
+            def should_keep(data):
+                ts = data.get("timestamp")
+                if ts:
+                    try:
+                        log_time = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+                        return log_time >= cutoff
+                    except Exception:  # noqa: silent - nilai tidak terurai -> fallback; keputusan tidak berubah
+                        pass
+                return True
+
+            removed = atomic_filter_logs(should_keep)
             if removed > 0:
-                with open(LOG_FILE, "w", encoding="utf-8") as f:
-                    f.writelines(kept_lines)
                 write_log("SCHEDULER", f"Cleanup log: {removed} baris lama dihapus (>{value} {unit})", user="SYSTEM")
         except Exception as e:
             write_log("SCHEDULER_ERROR", f"Error cleanup log: {str(e)}", user="SYSTEM")
+            record_run("cleanup_logs", False)
+            return
+        record_run("cleanup_logs", True)
 
 
 def run_auto_screenshots(app):
     """Wrapper untuk auto-screenshot yang dijalankan oleh scheduler."""
     with app.app_context():
         from app.services import SettingsService, ClientService
+        from app.services.health.health_service import HealthService
         from app.repositories import SesiRepository
+
+        screenshot_dir = os.path.join(app.instance_path, "uploads", "screenshots")
+        if not HealthService.has_free_space(screenshot_dir):
+            write_log("SCHEDULER", "Screenshot otomatis dilewati: ruang disk < 512 MB", user="SYSTEM")
+            record_run("auto_screenshots", True, skipped=True)
+            return
         
         try:
             enabled = SettingsService.get("screenshot_auto_enabled", "0")
@@ -113,3 +189,51 @@ def run_auto_screenshots(app):
                         count += 1
         except Exception as e:
             write_log("SCHEDULER_ERROR", f"Error auto-screenshot: {str(e)}", user="SYSTEM")
+            record_run("auto_screenshots", False)
+            return
+        record_run("auto_screenshots", True)
+
+
+@with_write_lock
+def run_flush_uptime(app):
+    """Wrapper untuk batch flush akumulasi uptime PC ke SQLite yang dijalankan setiap 1 menit."""
+    with app.app_context():
+        from app.services.hardware.uptime_service import UptimeService
+        if not UptimeService.flush_uptime_to_db(app=app):
+            record_run("flush_uptime", False)
+            return
+        record_run("flush_uptime", True)
+
+def run_cleanup_vnc_proxies(app):
+    """Wrapper untuk cleanup proxy VNC dan token yang orphaned/stale."""
+    with app.app_context():
+        try:
+            from app.services.vnc.vnc_service import VNCClientProxyService
+            cleaned = VNCClientProxyService.cleanup_stale_proxies()
+            if cleaned > 0:
+                from app.utils.logger import write_log
+                write_log("VNC_CLEANUP", f"Cleanup VNC proxy: {cleaned} proxy/token orphaned dibersihkan", user="SYSTEM")
+        except Exception as e:
+            from app.utils.logger import write_log
+            write_log("SCHEDULER_ERROR", f"Error cleanup VNC proxy: {str(e)}", user="SYSTEM")
+            record_run("cleanup_vnc_proxies", False)
+            return
+        record_run("cleanup_vnc_proxies", True)
+
+
+
+@with_write_lock
+def run_cleanup_uptime_logs(app):
+    """Wrapper harian untuk memangkas log uptime di luar retensi 366 hari."""
+    with app.app_context():
+        try:
+            from app.services.cache.uptime_store import UptimeMemoryStore
+            jumlah = UptimeMemoryStore.prune_old_logs(app=app)
+        except Exception as e:
+            write_log("SCHEDULER_ERROR", f"Error prune uptime: {str(e)}", user="SYSTEM")
+            record_run("cleanup_uptime_logs", False)
+            return
+        if jumlah:
+            write_log("UPTIME_RETENTION", f"{jumlah} baris log uptime lama dihapus.", user="SYSTEM")
+        record_run("cleanup_uptime_logs", True)
+

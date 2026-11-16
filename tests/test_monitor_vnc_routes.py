@@ -1,3 +1,4 @@
+import time
 import pytest
 from app import create_app, db
 from app.models import PC, Grup, User
@@ -43,9 +44,20 @@ def admin_client():
 
 def test_vnc_start_non_admin_forbidden(admin_client):
     client, pc_id = admin_client
+    with client.application.app_context():
+        kasir = User.query.filter_by(username="kasir_vnc").first()
+        if not kasir:
+            kasir = User(username="kasir_vnc", role="kasir", aktif=True)
+            kasir.set_password("kasir123")
+            db.session.add(kasir)
+            db.session.commit()
+        kasir_id = kasir.id
+
     with client.session_transaction() as sess:
-        sess["kasir_role"] = "kasir"  # Non-admin
-        
+        sess["kasir_id"] = kasir_id
+        sess["kasir_username"] = "kasir_vnc"
+        sess["kasir_role"] = "kasir"
+
     res = client.post(f"/api/v1/kasir/monitor/vnc_client/{pc_id}/start")
     assert res.status_code == 403
 
@@ -56,6 +68,41 @@ def test_vnc_status_endpoint(admin_client):
     data = res.get_json()
     assert data["success"] is True
     assert data["active"] is False
+
+def test_stop_queues_single_vnc_stop(admin_client, monkeypatch):
+    from app.services import ClientService
+
+    client, pc_id = admin_client
+    calls = []
+    monkeypatch.setattr(ClientService, "queue_fast_command", lambda pid, cmd: calls.append((pid, cmd)))
+    VNCClientProxyService._active_proxies[pc_id] = {
+        "port": 8081, "client_ip": "192.168.1.102", "token": "tok", "started_at": time.time()
+    }
+
+    res = client.post(f"/api/v1/kasir/monitor/vnc_client/{pc_id}/stop")
+
+    assert res.status_code == 200
+    assert [c for c in calls if c[1] == "vnc_stop"] == [(pc_id, "vnc_stop")]
+    VNCClientProxyService._active_proxies.pop(pc_id, None)
+
+def test_status_uses_last_seen_client_ip(admin_client, monkeypatch):
+    from app.services.cache import OnlineStatusStore
+
+    client, pc_id = admin_client
+    OnlineStatusStore.set_ip(pc_id, "10.0.0.7")
+    seen = {}
+
+    def fake_start(cls, pid, ip):
+        seen["ip"] = ip
+        return True, "ok", 8081, "tok"
+
+    monkeypatch.setattr(VNCClientProxyService, "poll_vnc_result", classmethod(lambda cls, pid: ("ready", None)))
+    monkeypatch.setattr(VNCClientProxyService, "start_proxy", classmethod(fake_start))
+
+    res = client.get(f"/api/v1/kasir/monitor/vnc_client/{pc_id}/status")
+
+    assert res.status_code == 200
+    assert seen["ip"] == "10.0.0.7"
 
 def test_kasir_monitor_all_endpoint(admin_client):
     client, pc_id = admin_client
@@ -83,3 +130,38 @@ def test_kasir_trigger_refresh_processes_endpoint(admin_client):
     assert data["success"] is True
     assert "berhasil dikirim" in data["message"]
 
+
+def test_public_monitor_processes_fallback_ts(admin_client):
+    """Endpoint proses kasir tidak crash saat telemetry RAM kosong."""
+    client, pc_id = admin_client
+    from app.services.cache.telemetry_store import ProcessMemoryStore
+    # Bersihkan memori telemetry PC untuk memicu fallback timestamp database
+    ProcessMemoryStore.remove(pc_id)
+
+    res = client.get(f"/api/v1/kasir/monitor/processes/{pc_id}")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["success"] is True
+    assert isinstance(data["last_updated_ts"], int)
+
+
+
+
+def test_single_pc_hardware_returns_one_row(admin_client):
+    from app.models import db, HardwareMonitor
+    client, pc_id = admin_client
+    db.session.add(HardwareMonitor(pc_id=pc_id, cpu_name="i7", gpu_name="RTX"))
+    db.session.commit()
+
+    res = client.get(f"/api/v1/kasir/monitor/hardware/{pc_id}")
+    assert res.status_code == 200
+    data = res.get_json()["data"]
+    assert data["pc_kode"] == "PC-02"
+    assert data["cpu_name"] == "i7"
+    assert "hardware_baseline" in data
+
+
+def test_single_pc_hardware_404_when_missing(admin_client):
+    client, _ = admin_client
+    res = client.get("/api/v1/kasir/monitor/hardware/999999")
+    assert res.status_code == 404

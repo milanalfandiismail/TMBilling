@@ -1,7 +1,8 @@
 from flask import Blueprint, jsonify
-from app.routes.auth.auth_kasir_routes import login_required
+from app.middleware.auth import login_required, admin_required
 import os
 import subprocess
+from app.utils.helpers import remove_quiet
 
 server_monitor_bp = Blueprint('server_monitor_api', __name__, url_prefix='/api/v1/kasir')
 
@@ -18,6 +19,7 @@ def get_metrics():
 
 @server_monitor_bp.route("/server-monitor/lhm/start", methods=["POST"])
 @login_required
+@admin_required
 def start_lhm_service():
     try:
         exe_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "services", "server_monitor", "TMLHMService.exe"))
@@ -32,17 +34,14 @@ def start_lhm_service():
 
 @server_monitor_bp.route("/server-monitor/lhm/stop", methods=["POST"])
 @login_required
+@admin_required
 def stop_lhm_service():
     try:
         subprocess.run(['taskkill', '/F', '/IM', 'TMLHMService.exe'], capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW)
         
         tmp_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "tmp"))
         json_path = os.path.join(tmp_dir, "lhm_metrics.json")
-        if os.path.exists(json_path):
-            try:
-                os.remove(json_path)
-            except:
-                pass
+        remove_quiet(json_path)
             
         return jsonify({"success": True, "message": "LHM Service dimatikan."})
     except Exception as e:

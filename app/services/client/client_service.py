@@ -1,4 +1,4 @@
-# app/services/client_service.py
+﻿# app/services/client_service.py
 
 """Service untuk komunikasi dengan client C#.
 
@@ -7,81 +7,61 @@ di PC warnet, termasuk identifikasi PC, cek status sesi, dan
 update last activity.
 """
 
-from app.models import db, now_local
+import hmac
+from datetime import timedelta
+
+from app.config import Config
+from app.models import db, now_local, Sesi
 from app.repositories import PCRepository
 from app.repositories import SesiRepository
 from app.services.sesi.sesi_service import SesiService
 from app.services.settings.settings_service import SettingsService
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.utils.logger import write_log
 
 
-class CommandQueueDict(dict):
-    """Dict yang mendukung antrean perintah FIFO per PC dan tetap 100% kompatibel dengan akses dict lama."""
-    def push_cmd(self, pc_id, cmd):
-        q = super().get(pc_id)
-        if q is None:
-            super().__setitem__(pc_id, [cmd])
-        elif isinstance(q, list):
-            q.append(cmd)
-        else:
-            super().__setitem__(pc_id, [q, cmd])
-
-    def pop_cmd(self, pc_id, default=None):
-        q = super().get(pc_id)
-        if q is None:
-            return default
-        if isinstance(q, list):
-            cmd = q.pop(0) if len(q) > 0 else default
-            if not q:
-                super().pop(pc_id, None)
-            return cmd
-        else:
-            return super().pop(pc_id, default)
-
-    def pop(self, pc_id, default=None):
-        return self.pop_cmd(pc_id, default)
-
-    def get(self, pc_id, default=None):
-        q = super().get(pc_id, default)
-        if isinstance(q, list):
-            return q[-1] if len(q) > 0 else default
-        return q
-
-    def __getitem__(self, pc_id):
-        q = super().__getitem__(pc_id)
-        if isinstance(q, list):
-            return q[-1] if len(q) > 0 else None
-        return q
+from app.services.cache.client_state_store import ClientAuditThrottle
+from app.services.cache.command_store import (
+    MAX_COMMAND_QUEUE_PER_PC,
+    CommandQueueStore,
+    CommandQueueDict,
+    PENDING_COMMANDS,
+    PENDING_FAST_COMMANDS,
+    PENDING_VNC_COMMANDS
+)
 
 
-# Antrean instruksi perintah real-time per PC (Key: pc_id, Value: list of command_types)
-PENDING_COMMANDS = CommandQueueDict()
-PENDING_FAST_COMMANDS = CommandQueueDict()
-PENDING_VNC_COMMANDS = PENDING_FAST_COMMANDS
+def _log_repeated(event, key, message):
+    """Catat event polling sekali per (event, key) per TTL agar log tidak dibanjiri polling 1-10 detik."""
+    if ClientAuditThrottle.should_log(event, key or "-"):
+        write_log(event, message)
 
 
 class ClientService:
     """Service untuk endpoint client C# / Rust."""
 
+    # Umur maksimum heartbeat di DB sebelum ditulis ulang (detik)
+    HEARTBEAT_PERSIST_SECONDS = 30
+
     @staticmethod
     def queue_command(pc_id, command_type):
         """Menambahkan perintah ke antrean polling reguler PC (GUI)."""
-        PENDING_COMMANDS.push_cmd(pc_id, command_type)
+        CommandQueueStore.push_command(pc_id, command_type)
 
     @staticmethod
     def queue_fast_command(pc_id, command_type):
         """Menambahkan perintah cepat on-demand ke antrean PC (Monitor Agent / Remote Control)."""
-        PENDING_FAST_COMMANDS.push_cmd(pc_id, command_type)
+        CommandQueueStore.push_fast_command(pc_id, command_type)
 
     @staticmethod
     def pop_command(pc_id):
         """Mengambil perintah reguler FIFO dari antrean."""
-        return PENDING_COMMANDS.pop_cmd(pc_id)
+        return CommandQueueStore.pop_command(pc_id)
 
     @staticmethod
     def pop_fast_command(pc_id):
         """Mengambil perintah cepat FIFO dari antrean."""
-        return PENDING_FAST_COMMANDS.pop_cmd(pc_id)
+        return CommandQueueStore.pop_fast_command(pc_id)
 
     @staticmethod
     def queue_vnc_command(pc_id, command_type):
@@ -102,7 +82,7 @@ class ClientService:
         return ":".join(clean[i:i+2] for i in range(0, 12, 2))
 
     @staticmethod
-    def identify(ip_address, mac_address, role=None):
+    def identify(ip_address, mac_address, role=None):  # lock: heartbeat identitas PC; UPDATE bersyarat idempoten di jalur polling
         """Identifikasi PC pertama kali saat client startup."""
         write_log("IDENTIFY_START", f"PC coba kenalan: IP={ip_address}, MAC={mac_address}")
         
@@ -110,7 +90,7 @@ class ClientService:
         pc = PCRepository.find_by_ip(ip_address)
         
         if not pc:
-            write_log("IDENTIFY_FAIL", f"IP {ip_address} tidak ada di database")
+            _log_repeated("IDENTIFY_FAIL", ip_address, f"IP {ip_address} tidak ada di database")
             raise ValueError(f"IP {ip_address} tidak dikenal server")
 
         norm_client_mac = ClientService._normalize_mac(mac_address)
@@ -126,7 +106,7 @@ class ClientService:
         else:
             norm_db_mac = ClientService._normalize_mac(pc.mac_address)
             if norm_client_mac != norm_db_mac:
-                write_log("IDENTIFY_REJECTED", f"Akses ditolak! IP {ip_address} sudah terikat MAC {norm_db_mac}, tapi client kirim {norm_client_mac}")
+                _log_repeated("IDENTIFY_REJECTED", ip_address, f"Akses ditolak! IP {ip_address} sudah terikat MAC {norm_db_mac}, tapi client kirim {norm_client_mac}")
                 raise ValueError("PC tidak cocok (Security Mismatch)")
 
         write_log("IDENTIFY_SUCCESS", f"PC {pc.kode} berhasil diidentifikasi")
@@ -147,21 +127,23 @@ class ClientService:
             # ❌ IP tidak ditemukan → coba fallback ke MAC (lebih stabil, tidak berubah)
             if not pc:
                 pc = PCRepository.find_by_mac(mac_address)
-
-                if pc:
-                    # ✅ Ketemu via MAC! IP client berubah (DHCP renew).
-                    # ⚠️ IP di DB TETAP — jangan diupdate otomatis. Security dulu.
-                    write_log("CLIENT_STATUS_MAC_FALLBACK",
-                              f"PC {pc.kode} IP={ip_address} via MAC fallback (DB IP={pc.ip_address})")
-                else:
-                    # ❌ MAC juga ga ketemu → PC beneran ga terdaftar
-                    write_log("CLIENT_STATUS_UNKNOWN",
-                              f"PC tidak dikenal: IP={ip_address} MAC={mac_address}")
+                if pc and not pc.aktif:
+                    _log_repeated("CLIENT_STATUS_INACTIVE", pc.kode,
+                                  f"PC {pc.kode} nonaktif/arsip ditolak: IP={ip_address} MAC={mac_address}")
+                    pc = None
+                if not pc:
+                    # ❌ MAC ga ketemu / PC arsip → PC beneran ga terdaftar
+                    _log_repeated("CLIENT_STATUS_UNKNOWN", ip_address,
+                                  f"PC tidak dikenal: IP={ip_address} MAC={mac_address}")
                     return {
                         "status": "kosong",
                         "message": "PC tidak dikenal",
                         "shutdown_timer": 180
                     }
+                # ✅ Ketemu via MAC! IP client berubah (DHCP renew).
+                # ⚠️ IP di DB TETAP — jangan diupdate otomatis. Security dulu.
+                _log_repeated("CLIENT_STATUS_MAC_FALLBACK", pc.kode,
+                              f"PC {pc.kode} IP={ip_address} via MAC fallback (DB IP={pc.ip_address})")
 
             # Kondisi A: MAC di DB masih kosong -> Langsung isi otomatis (Auto-register pasif)
             if not pc.mac_address:
@@ -175,15 +157,23 @@ class ClientService:
                 norm_client_mac = ClientService._normalize_mac(mac_address)
                 norm_db_mac = ClientService._normalize_mac(pc.mac_address)
                 if norm_client_mac != norm_db_mac:
-                    write_log("STATUS_REJECTED", f"Polling ditolak: {ip_address} mismatch MAC. DB:{norm_db_mac} Client:{norm_client_mac}")
+                    _log_repeated("STATUS_REJECTED", ip_address, f"Polling ditolak: {ip_address} mismatch MAC. DB:{norm_db_mac} Client:{norm_client_mac}")
                     raise ValueError("Identitas PC tidak valid (MAC Mismatch)")
 
-            # Update Last Activity
-            pc.last_activity = now_local()
-            db.session.commit()
+            # Update Last Activity in RAM Store (DB pc.last_activity bukan sumber kebenaran)
+            from app.services.cache.memory_store import OnlineStatusStore, UptimeMemoryStore
+            OnlineStatusStore.mark_active(pc.id, dt=now_local())
 
             # B. Cek Sesi Aktif
             sesi = SesiRepository.get_aktif_by_pc(pc.id)
+            if sesi and sesi.last_sync:
+                batas_blackout = now_local() - timedelta(minutes=Config.BLACKOUT_THRESHOLD_MINUTES)
+                if sesi.last_sync < batas_blackout:
+                    # Deteksi sebelum heartbeat: last_sync baru tidak boleh menghapus batas outage.
+                    from app.services.blackout.blackout_service import BlackoutService
+                    BlackoutService.deteksi()
+                    sesi = SesiRepository.get_aktif_by_pc(pc.id)
+            UptimeMemoryStore.set_billing(pc.id, bool(sesi))
             
             # 🔥 STATUS ADMIN & SYSTEM AUTHORITY
             # Jika klien ngaku admin/emergency/system tapi di DB sudah dimatikan (oleh kasir),
@@ -228,35 +218,49 @@ class ClientService:
                     }
 
                 else:
-                    # C. Sesi Ada -> Update Sync & Hitung Sisa Waktu
+                    # C. Sesi Ada -> tandai heartbeat & hitung sisa waktu
                     try:
-                        sesi.last_sync = now_local()
-                        db.session.commit()
-                    except:
-                        write_log("SYNC_ERROR", f"Gagal update last_sync PC {pc.kode}")
-                        pass
+                        now = now_local()
+                        due = (sesi.last_sync is None
+                               or (now - sesi.last_sync).total_seconds()
+                               >= ClientService.HEARTBEAT_PERSIST_SECONDS)
+                        if due:
+                            # Update bersyarat: heartbeat tidak menimpa sesi yang
+                            # sudah ditutup blackout dan tidak menambah SELECT.
+                            with WRITE_LOCK:
+                                session = db.session()
+                                session.expire_on_commit = False
+                                try:
+                                    session.query(Sesi).filter(
+                                        Sesi.id == sesi.id,
+                                        Sesi.status == "aktif",
+                                        db.or_(
+                                            Sesi.last_sync.is_(None),
+                                            Sesi.last_sync <= now - timedelta(
+                                                seconds=ClientService.HEARTBEAT_PERSIST_SECONDS),
+                                        ),
+                                    ).update({"last_sync": now}, synchronize_session=False)
+                                    session.commit()
+                                except Exception:
+                                    session.rollback()
+                                    raise
+                                finally:
+                                    session.expire_on_commit = True
+                    except Exception as beat_err:
+                        db.session.rollback()
+                        write_log("CLIENT_HEARTBEAT_ERROR",
+                                  f"Gagal simpan heartbeat PC {pc.kode}: {beat_err}")
 
                     try:
                         sisa = SesiService.sync_waktu_member(sesi)
                     except Exception as inner_e:
                         write_log("CLIENT_STATUS_ERROR", f"Error sync PC {pc.kode}: {inner_e}")
-                        sisa = 0
+                        raise
 
                     # D. Jika Waktu Habis -> Selesaikan Sesi
                     if sisa <= 0:
-                        sesi.status = "selesai"
-                        sesi.selesai_pada = now_local()
-                        sesi.is_afk = False
-                        sesi.afk_pin = None
-                        sesi.afk_sejak = None
-                        if sesi.tipe == "member" and sesi.member:
-                            sesi.member.waktu_tersimpan = 0
-                            db.session.add(sesi.member)
-                        elif sesi.tipe == "kasir" and sesi.user:
-                            sesi.user.sisa_kuota_menit = 0
-                            db.session.add(sesi.user)
-                        db.session.commit()
-                        
+                        SesiService.tutup_sesi(sesi.id, operator="system")
+
                         timer_str = SettingsService.get("auto_shutdown_timer_seconds", "180")
                         try:
                             shutdown_timer = int(timer_str)
@@ -277,7 +281,7 @@ class ClientService:
                             status_text = "aktif"
 
                         is_member = bool(sesi and sesi.tipe == "member" and sesi.member)
-                        member_data = sesi.member.to_dict() if is_member else None
+                        member_data = sesi.member.to_dict(sesi=sesi) if is_member else None
 
                         res = {
                             "status": status_text,
@@ -302,7 +306,11 @@ class ClientService:
 
 
         except Exception as e:
-            write_log("CLIENT_STATUS_CRASH", f"Error fatal polling {ip_address}: {e}")
+            try:
+                db.session.rollback()
+            except Exception:  # noqa: silent - gagal rollback; error asli sudah dicatat oleh handler luar
+                pass
+            _log_repeated("CLIENT_STATUS_CRASH", ip_address, f"Error fatal polling {ip_address}: {e}")
             return {"status": "error", "message": "Server error"}
 
 
@@ -313,17 +321,25 @@ class ClientService:
     # Emergency login selalu diterima server, dan mengaktifkan is_admin_mode.
 
     @staticmethod
-    def emergency_login(ip_address, mac_address, username="SYSTEM", socket_ip=None):
-        """Login emergency dari PC client (bisa offline/online) dengan Strict Socket IP binding."""
-        # Validasi Strict Socket IP: IP koneksi fisik wajib sama dengan IP target
-        if socket_ip and socket_ip not in ("127.0.0.1", "::1", "localhost"):
-            if socket_ip != ip_address:
-                write_log("SECURITY_ALERT", f"Emergency login ditolak: IP fisik {socket_ip} tidak cocok dengan target {ip_address}")
-                raise PermissionError("Akses emergency login ditolak: IP soket fisik tidak cocok dengan IP PC terdaftar")
+    @with_write_lock
+    def emergency_login(ip_address, mac_address, username="SYSTEM", token=None, request_ip=None):
+        """Login emergency dari PC client.
 
+        Diizinkan bila token server valid ATAU request datang dari IP PC itu sendiri
+        (IP LAN tidak bisa dipalsukan dari PC lain), sehingga admin PC tetap bisa
+        unlock walau token server tidak tersedia di client.
+        """
         pc = PCRepository.get_by_ip(ip_address)
         if not pc:
             raise ValueError("IP PC tidak terdaftar")
+
+        token_ok = bool(token) and hmac.compare_digest(
+            str(token), str(SettingsService.get_or_create_emergency_token())
+        )
+        ip_ok = bool(request_ip) and str(request_ip) == str(pc.ip_address)
+        if not token_ok and not ip_ok:
+            write_log("SECURITY_ALERT", f"Emergency login ditolak: token tidak valid (IP {ip_address})")
+            raise PermissionError("Token emergency login tidak valid")
 
         # Auto-fill MAC jika kosong
         if not pc.mac_address:
@@ -335,29 +351,17 @@ class ClientService:
             if norm_client_mac != norm_db_mac:
                 raise ValueError("Identitas PC tidak valid (MAC Mismatch)")
 
-        # Tutup sesi member/guest yang mungkin sedang aktif
+        # Tutup sesi aktif lewat service agar transaksi tutup tercatat
         existing = SesiRepository.get_aktif_by_pc(pc.id)
         if existing:
-            sisa_final = existing.sisa_menit()
-            if existing.tipe == "member" and existing.member:
-                existing.member.waktu_tersimpan = sisa_final
-                db.session.add(existing.member)
-            elif existing.tipe == "kasir" and existing.user:
-                existing.user.sisa_kuota_menit = sisa_final
-                db.session.add(existing.user)
-            existing.status = "selesai"
-            existing.selesai_pada = now_local()
-            existing.is_afk = False
-            existing.afk_pin = None
-            existing.afk_sejak = None
-            db.session.commit()
+            SesiService.tutup_sesi(existing.id, operator="system")
 
         # Buat sesi khusus emergency admin
         import secrets
-        token = secrets.token_hex(32)
+        session_token = secrets.token_hex(32)
         pc.is_admin_mode = True
         pc.last_activity = now_local()
-        SesiService.buka_admin(pc.id, token, admin_nama="SYSTEM")
+        SesiService.buka_admin(pc.id, session_token, admin_nama="SYSTEM")
         db.session.commit()
 
         # Catat username yang memicu emergency login untuk audit
@@ -372,6 +376,7 @@ class ClientService:
     # Fokus: Menangani login admin langsung dari PC client untuk maintenance.
 
     @staticmethod
+    @with_write_lock
     def admin_login(ip_address, mac_address, username, password):
         """Login admin dari PC client (Force login bypass)."""
         from app.repositories import UserRepository
@@ -397,23 +402,11 @@ class ClientService:
         if not user or not user.check_password(password) or user.role != "admin":
             raise ValueError("Invalid admin credentials")
         
-        # Tutup sesi member/guest yang mungkin sedang aktif
+        # Tutup sesi aktif lewat service agar transaksi tutup tercatat
         existing = SesiRepository.get_aktif_by_pc(pc.id)
         if existing:
-            sisa_final = existing.sisa_menit()
-            if existing.tipe == "member" and existing.member:
-                existing.member.waktu_tersimpan = sisa_final
-                db.session.add(existing.member)
-            elif existing.tipe == "kasir" and existing.user:
-                existing.user.sisa_kuota_menit = sisa_final
-                db.session.add(existing.user)
-            existing.status = "selesai"
-            existing.selesai_pada = now_local()
-            existing.is_afk = False
-            existing.afk_pin = None
-            existing.afk_sejak = None
-            db.session.commit()
-        
+            SesiService.tutup_sesi(existing.id, operator="system")
+
         # Buat sesi khusus admin
         token = secrets.token_hex(32)
         pc.is_admin_mode = True # Aktifkan mode admin di DB
@@ -447,6 +440,7 @@ class ClientService:
     # Fokus: Menutup sesi atas permintaan dari aplikasi client.
 
     @staticmethod
+    @with_write_lock
     def tutup_sesi(ip_address, mac_address):
         """Request penutupan sesi yang dipicu dari tombol 'Logout' di Client."""
         try:
@@ -475,6 +469,10 @@ class ClientService:
 
             return {"success": True, "message": "Sesi ditutup"}
         except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:  # noqa: silent - gagal rollback; error asli sudah dicatat oleh handler luar
+                pass
             write_log("CLIENT_TUTUP_ERROR", f"Error tutup {ip_address}: {e}")
             return {"success": False, "message": "Gagal menutup sesi"}
 
@@ -485,7 +483,7 @@ class ClientService:
     # Fokus: Mengunci layar PC sementara dan membuka kunci dengan PIN/Password.
 
     @staticmethod
-    def afk_lock(ip_address, mac_address, pin=None):
+    def afk_lock(ip_address, mac_address, pin=None):  # lock: flag AFK; UPDATE idempoten di jalur polling
         """Mengunci PC untuk istirahat (AFK)."""
         pc = PCRepository.get_by_ip(ip_address)
         if not pc and mac_address:
@@ -518,7 +516,7 @@ class ClientService:
         return {"success": True, "message": "PC berhasil dikunci untuk AFK"}
 
     @staticmethod
-    def afk_unlock(ip_address, mac_address, credential):
+    def afk_unlock(ip_address, mac_address, credential):  # lock: flag AFK; UPDATE idempoten di jalur polling
         """Membuka kunci PC yang sedang AFK."""
         pc = PCRepository.get_by_ip(ip_address)
         if not pc and mac_address:

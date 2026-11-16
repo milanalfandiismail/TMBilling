@@ -1,4 +1,4 @@
-# app/services/user_service.py
+﻿# app/services/user_service.py
 
 """Service untuk mengelola User (Kasir/Admin).
 
@@ -6,18 +6,20 @@ Menangani business logic untuk pembuatan, update, penonaktifan,
 dan hapus data staff yang mengoperasikan sistem billing.
 """
 
-from app.models import db
+from sqlalchemy.exc import IntegrityError
+from app.models import db, ShiftRecord, Transaksi
 from app.repositories import UserRepository
 from app.utils.logger import write_log
 from app.utils.validators import validate_username, validate_password, validate_string_length
+from app.services.write_lock import with_write_lock
 
 class UserService:
     """Service untuk manajemen data User kasir/admin."""
 
     @staticmethod
-    def get_all_users():
+    def get_all_users(aktif_only=True):
         """Ambil semua data user."""
-        users = UserRepository.get_all()
+        users = UserRepository.get_all(aktif_only=aktif_only)
         return [u.to_dict() for u in users]
 
     @staticmethod
@@ -29,6 +31,7 @@ class UserService:
         return user.to_dict()
 
     @staticmethod
+    @with_write_lock
     def create_user(data, operator="admin"):
         """Buat user / kasir baru."""
         username = validate_username(data.get("username", ""), min_len=3, max_len=30, lowercase_only=False)
@@ -66,7 +69,11 @@ class UserService:
         )
         new_user.set_password(password)
         db.session.add(new_user)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            raise ValueError("Username sudah terdaftar")
         
         detail_user = {
             "username": username,
@@ -80,11 +87,20 @@ class UserService:
         return new_user.to_dict()
 
     @staticmethod
+    @with_write_lock
     def update_user(user_id, data, operator="admin"):
         """Perbarui data user yang ada."""
         user = UserRepository.get_by_id(user_id)
         if not user:
             raise ValueError("User tidak ditemukan")
+
+        new_role = str(data["role"]).strip().lower() if data.get("role") else user.role
+        new_aktif = user.aktif
+        if data.get("aktif") is not None:
+            new_aktif = str(data["aktif"]).lower() == "true"
+        if user.role == "admin" and user.aktif and (new_role != "admin" or not new_aktif):
+            if UserRepository.count_active_admins() <= 1:
+                raise ValueError("Tidak dapat menonaktifkan satu-satunya Admin tersisa!")
 
         if "username" in data and data["username"]:
             username = validate_username(data["username"], min_len=3, max_len=30, lowercase_only=False)
@@ -139,22 +155,71 @@ class UserService:
         return user.to_dict()
 
     @staticmethod
+    @with_write_lock
+    def archive_user(user_id, operator="admin"):
+        """Nonaktifkan user tanpa menghapus riwayat shift/transaksi."""
+        from app.models import db
+
+        user = UserRepository.get_by_id(user_id)
+        if not user:
+            raise ValueError("User tidak ditemukan")
+        if user.role == 'admin' and user.aktif:
+            if UserRepository.count_active_admins() <= 1:
+                raise ValueError("Tidak dapat menonaktifkan satu-satunya Admin tersisa!")
+        if not user.aktif:
+            return {"success": True, "message": "User sudah nonaktif"}
+        user.aktif = False
+        db.session.commit()
+        write_log("ARSIP_USER", f"User:{user.username} dinonaktifkan", user=operator,
+                  detail_json={"username": user.username, "user_id": user_id})
+        return {"success": True, "message": "User berhasil diarsipkan"}
+
+    @staticmethod
+    @with_write_lock
+    def restore_user(user_id, operator="admin"):
+        """Aktifkan kembali user yang diarsipkan."""
+        from app.models import db
+
+        user = UserRepository.get_by_id(user_id)
+        if not user:
+            raise ValueError("User tidak ditemukan")
+        if user.aktif:
+            raise ValueError("User tidak dalam arsip")
+        user.aktif = True
+        db.session.commit()
+        write_log("RESTORE_USER", f"User:{user.username} dipulihkan dari arsip", user=operator,
+                  detail_json={"username": user.username, "user_id": user_id})
+        return {"success": True, "message": "User berhasil dipulihkan"}
+
+    @staticmethod
     def delete_user(user_id, operator="admin"):
-        """Hapus user (atau nonaktifkan jika berisiko)."""
+        """Hapus user permanen; transaksi dilepas, shift tetap menjadi penjaga."""
+        from app.models import Sesi
+        from app.services.write_lock import WRITE_LOCK
+
         user = UserRepository.get_by_id(user_id)
         if not user:
             raise ValueError("User tidak ditemukan")
             
-        if user.role == 'admin':
-            # Pastikan minimal ada 1 admin yang tersisa
+        if user.role == 'admin' and user.aktif:
+            # Pastikan minimal ada 1 admin aktif yang tersisa
             admin_count = UserRepository.count_active_admins()
             if admin_count <= 1:
                 raise ValueError("Tidak dapat menghapus satu-satunya Admin tersisa!")
 
-        # Hard delete. Kalau ada referensi di tabel transaksi (user_id), pastikan di-set NULL.
-        # SQLite ForeignKey ondelete="SET NULL" sudah dipasang di transaksi.py
-        db.session.delete(user)
-        db.session.commit()
+        # ShiftRecord.kasir_id NOT NULL, jadi user ber-shift tidak bisa dilepas referensinya
+        if ShiftRecord.query.filter_by(kasir_id=user.id).first() is not None:
+            raise ValueError("User punya riwayat shift. Nonaktifkan saja.")
+
+        try:
+            with WRITE_LOCK:
+                Transaksi.query.filter_by(user_id=user.id).update({"user_id": None}, synchronize_session=False)
+                Sesi.query.filter_by(user_id=user.id).update({"user_id": None}, synchronize_session=False)
+                db.session.delete(user)
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         write_log("HAPUS_USER", f"User:{user.username} dihapus secara permanen", user=operator, detail_json={"username": user.username})
         return {"success": True, "message": "User berhasil dihapus"}
 

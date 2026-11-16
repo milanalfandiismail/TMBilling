@@ -1,6 +1,6 @@
 {
   "name": "tmbilling",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "description": "<!-- markdownlint-disable MD033 MD041 -->\r <h1 align=\"center\">🖥️ TMBilling</h1>",
   "main": "index.js",
   "directories": {
@@ -9,7 +9,13 @@
   "scripts": {
     "dev:css": "tailwindcss -i ./app/static/css/input.css -o ./app/static/css/tailwind.css --watch",
     "build:css": "tailwindcss -i ./app/static/css/input.css -o ./app/static/css/tailwind.css --minify",
-    "build:ckeditor": "cd tools/ckeditor-builder && npm install && npm run build"
+    "build:ckeditor": "cd tools/ckeditor-builder && npm install && npm run build",
+    "build:vendor": "node tools/sync-vendor.js",
+    "build": "npm run build:vendor && npm run build:css",
+    "postinstall": "npm run build:vendor && npm run build:css",
+    "test:unit": ".venv\\Scripts\\python.exe -m pytest -n auto --dist loadfile",
+    "test:e2e": ".venv\\Scripts\\python.exe tests/e2e/run_all_e2e.py --jobs 4",
+    "test:e2e:sandbox": ".venv\\Scripts\\python.exe tests/e2e/e2e_sandbox_server.py --standalone 7016"
   },
   "repository": {
     "type": "git",
@@ -23,10 +29,13 @@
   },
   "homepage": "https://github.com/milanalfandiismail/TMBilling#readme",
   "devDependencies": {
-    "@tauri-apps/cli": "^2.11.4",
-    "tailwindcss": "^3.4.19"
+    "@tailwindcss/cli": "^4.3.4",
+    "playwright": "^1.64.1",
+    "tailwindcss": "^4.3.4"
   },
   "dependencies": {
-    "chart.js": "^4.5.1"
+    "@fortawesome/fontawesome-free": "^7.3.1",
+    "@novnc/novnc": "^1.4.0",
+    "qrcodejs": "^1.0.0"
   }
 }

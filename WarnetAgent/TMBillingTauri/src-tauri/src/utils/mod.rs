@@ -4,4 +4,5 @@ pub mod api;
 pub mod security;
 pub mod screenshot;
 pub mod audio;
+pub mod qris_memory;
 

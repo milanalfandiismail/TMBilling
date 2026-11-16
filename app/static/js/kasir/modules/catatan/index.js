@@ -59,6 +59,7 @@ const Catatan = {
             if (!isSilent) {
                 console.error('[Catatan] Gagal memuat catatan:', err);
                 if (container) {
+                    // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
                     container.innerHTML = `
                         <div class="p-4 text-center text-xs text-red-400">
                             Gagal memuat catatan: ${err.message || 'Kesalahan jaringan'}
@@ -103,6 +104,7 @@ const Catatan = {
         }
 
         if (filtered.length === 0) {
+            // xss-reviewed: hanya angka dan kelas CSS dari state internal
             container.innerHTML = `
                 <div class="flex flex-col items-center justify-center h-48 text-neutral-500 text-xs text-center p-4 space-y-2">
                     <i class="fa-solid ${filterText ? 'fa-magnifying-glass' : 'fa-note-sticky'} text-neutral-600 text-2xl mb-1"></i>
@@ -545,7 +547,7 @@ const Catatan = {
                 statusBtn.innerHTML = '<i class="fa-solid fa-check text-emerald-400 text-xs"></i><span>Tersimpan</span>';
                 statusBtn.title = 'Semua perubahan tersimpan. Klik untuk menyimpan ulang.';
             } else if (state === 'dirty') {
-                statusBtn.className = 'px-3 py-1.5 lg:max-xl:px-3 lg:max-xl:py-1.5 xl:px-3.5 xl:py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-bold transition-all flex items-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 cursor-pointer animate-pulse shadow-sm';
+                statusBtn.className = 'px-3 py-1.5 lg:max-xl:px-3 lg:max-xl:py-1.5 xl:px-3.5 xl:py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-bold transition-all flex items-center gap-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 cursor-pointer shadow-sm';
                 statusBtn.innerHTML = '<i class="fa-solid fa-circle-dot text-amber-400 text-xs"></i><span>Ada Perubahan</span>';
                 statusBtn.title = 'Ada perubahan belum tersimpan. Klik untuk Simpan (Ctrl+S)';
             } else if (state === 'saving') {
@@ -558,7 +560,7 @@ const Catatan = {
                 statusBtn.title = 'Gagal menyimpan. Klik untuk coba lagi.';
             } else { // ready
                 statusBtn.className = 'px-3 py-1.5 lg:max-xl:px-3 lg:max-xl:py-1.5 xl:px-3.5 xl:py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-sm font-semibold transition-all flex items-center gap-1.5 bg-neutral-900 text-neutral-500 border border-[#262626]';
-                statusBtn.innerHTML = `<i class="fa-regular fa-file text-neutral-500 text-xs"></i><span>${customText || 'Siap'}</span>`;
+                statusBtn.innerHTML = `<i class="fa-regular fa-file text-neutral-500 text-xs"></i><span>${customText || 'Siap'}</span>`;  // xss-reviewed: teks berasal dari konstanta internal, bukan data server
                 statusBtn.title = 'Belum ada berkas yang diedit';
             }
         }
@@ -568,7 +570,7 @@ const Catatan = {
                 saveBtn.className = 'px-3 lg:max-xl:px-3.5 xl:px-4 py-1.5 lg:max-xl:py-2 xl:py-2 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2';
                 saveBtn.innerHTML = '<i class="fa-solid fa-check text-xs"></i> <span>Tersimpan</span>';
             } else if (state === 'dirty') {
-                saveBtn.className = 'px-3 lg:max-xl:px-3.5 xl:px-4 py-1.5 lg:max-xl:py-2 xl:py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2 shadow-lg shadow-amber-500/20 animate-pulse';
+                saveBtn.className = 'px-3 lg:max-xl:px-3.5 xl:px-4 py-1.5 lg:max-xl:py-2 xl:py-2 bg-amber-500 hover:bg-amber-400 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2 shadow-lg shadow-amber-500/20';
                 saveBtn.innerHTML = '<i class="fa-solid fa-floppy-disk text-xs"></i> <span>Simpan Perubahan</span>';
             } else if (state === 'saving') {
                 saveBtn.className = 'px-3 lg:max-xl:px-3.5 xl:px-4 py-1.5 lg:max-xl:py-2 xl:py-2 bg-neutral-800 text-neutral-400 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded flex items-center gap-2 cursor-wait';

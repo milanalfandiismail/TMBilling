@@ -10,6 +10,7 @@ const DashboardProcessMonitor = {
     _activeProcesses: [],
     _lastUpdatedTsMap: {},
     _refreshIntervals: {},
+    _isRefreshing: {},
     _livePollingTimer: null,
 
     showProcesses(currentPcId) {
@@ -36,9 +37,16 @@ const DashboardProcessMonitor = {
             clearInterval(this._refreshIntervals[id]);
             delete this._refreshIntervals[id];
         });
+        this._isRefreshing = {};
         if (this._livePollingTimer) {
             clearInterval(this._livePollingTimer);
             this._livePollingTimer = null;
+        }
+        const refreshBtn = document.getElementById('btn-refresh-processes');
+        if (refreshBtn) {
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            refreshBtn.innerHTML = 'Segarkan';
         }
         document.getElementById('view-action-menu')?.classList.remove('hidden');
         document.getElementById('view-process-list')?.classList.add('hidden');
@@ -49,7 +57,7 @@ const DashboardProcessMonitor = {
         let items = '';
         for (let i = 0; i < count; i++) {
             items += `
-                <div class="flex items-center justify-between p-3 bg-[#141414] border border-[#222] rounded-xl gap-3 animate-pulse select-none">
+                <div class="flex items-center justify-between p-3 bg-[#141414] border border-[#222] rounded-xl gap-3 select-none">
                     <div class="min-w-0 flex-1 space-y-2">
                         <div class="h-3.5 bg-neutral-800 rounded w-7/12"></div>
                         <div class="h-2.5 bg-neutral-800/60 rounded w-9/12"></div>
@@ -68,11 +76,19 @@ const DashboardProcessMonitor = {
 
         countEl.innerText = `${processes.length} PROSES`;
 
+        const refreshBtn = document.getElementById('btn-refresh-processes');
+        if (refreshBtn && refreshBtn.disabled && !this._isRefreshing[pcId]) {
+            refreshBtn.disabled = false;
+            refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            refreshBtn.innerHTML = 'Segarkan';
+        }
+
         if (processes.length === 0) {
             container.innerHTML = '<div class="col-span-full py-12 text-center text-neutral-500 text-xs lg:text-sm font-mono">Tidak ada proses</div>';
             return;
         }
 
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         container.innerHTML = processes.map(p => `
             <div class="flex items-center justify-between p-3 bg-[#141414] hover:bg-[#181818] border border-[#222] hover:border-neutral-500 rounded-xl transition-all gap-3 select-none group">
                 <div class="min-w-0 flex-1 font-mono">
@@ -115,20 +131,26 @@ const DashboardProcessMonitor = {
     async loadProcesses(pcId, isManualRefresh = false, skipTrigger = false, isSilent = false) {
         if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
 
+        // Jika silent background polling berjalan saat proses refresh manual aktif, skip agar tidak terjadi konflik
+        if (isSilent && (this._isRefreshing[pcId] || this._refreshIntervals[pcId])) {
+            return;
+        }
+
         const container = document.getElementById('modal-process-list');
         const countEl = document.getElementById('modal-pc-count');
-        const refreshBtn = document.getElementById('btn-refresh-processes');
 
-        if (this._refreshIntervals[pcId]) {
+        if (isManualRefresh && this._refreshIntervals[pcId]) {
             clearInterval(this._refreshIntervals[pcId]);
             delete this._refreshIntervals[pcId];
         }
 
         const setBtnLoading = (text = 'Menyegarkan...') => {
-            if (refreshBtn) {
-                refreshBtn.disabled = true;
-                refreshBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                refreshBtn.innerHTML = `
+            const btn = document.getElementById('btn-refresh-processes');
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
+                btn.innerHTML = `
                     <span class="inline-flex items-center gap-1.5">
                         <svg class="animate-spin -ml-0.5 h-3.5 w-3.5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -141,11 +163,20 @@ const DashboardProcessMonitor = {
         };
 
         const restoreBtn = () => {
-            if (refreshBtn) {
-                refreshBtn.disabled = false;
-                refreshBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                refreshBtn.innerHTML = 'Segarkan';
+            const btn = document.getElementById('btn-refresh-processes');
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.innerHTML = 'Segarkan';
             }
+        };
+
+        const cleanUpRefresh = () => {
+            if (this._refreshIntervals[pcId]) {
+                clearInterval(this._refreshIntervals[pcId]);
+                delete this._refreshIntervals[pcId];
+            }
+            delete this._isRefreshing[pcId];
         };
 
         if (!isSilent && (!this._activeProcesses || !this._activeProcesses.length)) {
@@ -184,6 +215,12 @@ const DashboardProcessMonitor = {
                         this.renderProcessRows(pcId, this._activeProcesses);
                     }
                     this._setupSearchFilter(pcId);
+
+                    if (this._isRefreshing[pcId] || this._refreshIntervals[pcId]) {
+                        cleanUpRefresh();
+                        restoreBtn();
+                        Toast.success('Daftar proses PC berhasil diperbarui!');
+                    }
                 }
             } catch (err) {
                 if (!isSilent) {
@@ -194,12 +231,15 @@ const DashboardProcessMonitor = {
                     if (countEl) countEl.innerText = '0 PROSES';
                 }
             } finally {
-                if (!isSilent) restoreBtn();
+                if (!isSilent || !this._isRefreshing[pcId]) {
+                    restoreBtn();
+                }
             }
             return;
         }
 
         // Mode B: Tombol "Segarkan" diklik atau Menunggu hasil Kill (On-demand ke Client PC + Polling)
+        this._isRefreshing[pcId] = true;
         if (countEl) countEl.innerText = 'MEMINTA...';
         setBtnLoading('Menyegarkan...');
 
@@ -217,6 +257,7 @@ const DashboardProcessMonitor = {
                 } catch (_) {}
             }
 
+            const triggerTime = Date.now();
             if (!skipTrigger) {
                 // Kirim trigger refresh processes ke PC client
                 const triggerRes = await API.request(`/api/v1/kasir/monitor/processes/${pcId}/trigger`, {
@@ -240,14 +281,16 @@ const DashboardProcessMonitor = {
                     const pollRes = await API.request(`/api/v1/kasir/monitor/processes/${pcId}`);
                     if (pollRes && pollRes.success) {
                         const currentTs = pollRes.last_updated_ts || 0;
+                        const sorted = this._sortProcesses(pollRes.data || []);
                         const isUpdated = initialTs > 0 ? (currentTs > initialTs) : (currentTs > 0);
+                        const isRecent = currentTs >= triggerTime - 1000;
+                        const isDataChanged = JSON.stringify(sorted) !== JSON.stringify(this._activeProcesses);
 
-                        if (isUpdated) {
-                            clearInterval(this._refreshIntervals[pcId]);
-                            delete this._refreshIntervals[pcId];
+                        if (isUpdated || isRecent || isDataChanged || (attempts >= 2 && Array.isArray(pollRes.data) && pollRes.data.length > 0)) {
+                            cleanUpRefresh();
 
-                            this._lastUpdatedTsMap[pcId] = currentTs;
-                            this._activeProcesses = this._sortProcesses(pollRes.data || []);
+                            this._lastUpdatedTsMap[pcId] = currentTs || Date.now();
+                            this._activeProcesses = sorted;
                             this.renderProcessRows(pcId, this._activeProcesses);
                             this._setupSearchFilter(pcId);
 
@@ -261,8 +304,7 @@ const DashboardProcessMonitor = {
                 }
 
                 if (attempts >= maxAttempts) {
-                    clearInterval(this._refreshIntervals[pcId]);
-                    delete this._refreshIntervals[pcId];
+                    cleanUpRefresh();
 
                     try {
                         const fallbackRes = await API.request(`/api/v1/kasir/monitor/processes/${pcId}`);
@@ -281,6 +323,7 @@ const DashboardProcessMonitor = {
         } catch (err) {
             console.error('[DashboardProcessMonitor] Refresh processes trigger error:', err);
             Toast.error(err.message || 'Gagal mengirim permintaan refresh proses');
+            cleanUpRefresh();
             restoreBtn();
             if (countEl) countEl.innerText = '0 PROSES';
             try {
@@ -297,9 +340,10 @@ const DashboardProcessMonitor = {
     async killProcess(pcId, name) {
         if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const overlay = document.createElement('div');
-        overlay.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200';
+        overlay.className = 'fixed inset-0 z-[60] flex items-center justify-center bg-black/90';
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         overlay.innerHTML = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl w-full max-w-sm flex flex-col overflow-hidden shadow-2xl">
                 <div class="p-6 text-center">
                     <div class="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-4 border border-red-500/20">
                         <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

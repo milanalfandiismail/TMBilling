@@ -1,4 +1,4 @@
-# app/services/blackout_service.py
+﻿# app/services/blackout_service.py
 
 """Service untuk penanganan insiden mati lampu (blackout).
 
@@ -16,6 +16,7 @@ from app.repositories import MemberRepository
 from app.repositories import PCRepository
 from app.utils.logger import write_log
 from app.services.transaksi.transaksi_service import TransaksiService
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.config import Config
 from datetime import timedelta
 import secrets
@@ -36,36 +37,46 @@ class BlackoutService:
         threshold = menit_threshold if menit_threshold is not None else Config.BLACKOUT_THRESHOLD_MINUTES
         batas_waktu = now_local() - timedelta(minutes=threshold)
 
-        sesi_list = SesiRepository.get_aktif_belum_suspect_lama_sync(batas_waktu)
-
         count = 0
-        for sesi in sesi_list:
-            # 1. Hitung sisa waktu Dashboard (Real-time jam sekarang)
-            sisa_dashboard = sesi.sisa_menit()
+        log_rows = []
+        with WRITE_LOCK:
+            sesi_list = SesiRepository.get_aktif_belum_suspect_lama_sync(batas_waktu)
+            for sesi in sesi_list:
+                # Baca ulang: heartbeat bisa saja baru menyimpan last_sync setelah query di atas.
+                sesi = SesiRepository.get_by_id(sesi.id)
+                if (not sesi or sesi.status != "aktif" or sesi.is_blackout_suspect
+                        or (sesi.last_sync and sesi.last_sync >= batas_waktu)):
+                    continue
+                # 1. Hitung sisa waktu Dashboard (Real-time jam sekarang)
+                sisa_dashboard = sesi.sisa_menit()
 
-            # 2. Hitung sisa waktu Audit (Snapshot saat PC terakhir lapor/mati)
-            waktu_referensi = sesi.last_sync or sesi.mulai_pada
-            sisa_audit = sesi.hitung_sisa_pada(waktu_referensi)
-            
-            # 3. Proses DB secara atomik (3-Layer Arch)
-            if sesi.tipe == "member" and sesi.member and sisa_dashboard is not None:
-                sesi.member.waktu_tersimpan = max(0, sisa_dashboard)
-                db.session.add(sesi.member)
-            
-            sesi.is_blackout_suspect = True
-            sesi.is_blackout_resolved = False
-            sesi.sisa_menit_saat_mati = max(0, sisa_audit)
-            sesi.status = "selesai"
-            sesi.selesai_pada = now_local()
-            
-            db.session.commit()
+                # 2. Hitung sisa waktu Audit (Snapshot saat PC terakhir lapor/mati)
+                waktu_referensi = sesi.last_sync or sesi.mulai_pada
+                sisa_audit = sesi.hitung_sisa_pada(waktu_referensi)
 
-            label = f"Member:{sesi.member.username}" if sesi.member else f"Guest:{sesi.nama_guest or '?'}"
-            write_log("BLACKOUT_DETECT", f"#{sesi.id} | Dash: {sisa_dashboard}m | Audit: {sisa_audit}m", user="kasir")
-            count += 1
+                # 3. Proses DB secara atomik (3-Layer Arch)
+                if sesi.tipe == "member" and sesi.member:
+                    sesi.member.waktu_tersimpan = max(0, sisa_audit)
+                    db.session.add(sesi.member)
+
+                sesi.is_blackout_suspect = True
+                sesi.is_blackout_resolved = False
+                sesi.sisa_menit_saat_mati = max(0, sisa_audit)
+                sesi.status = "selesai"
+                sesi.selesai_pada = waktu_referensi
+
+                log_rows.append((sesi.id, sisa_dashboard, sisa_audit))
+                count += 1
+
+            if log_rows:
+                db.session.commit()
+
+        for sesi_id, sisa_dashboard, sisa_audit in log_rows:
+            write_log("BLACKOUT_DETECT", f"#{sesi_id} | Dash: {sisa_dashboard}m | Audit: {sisa_audit}m", user="kasir")
 
         write_log("BLACKOUT_DETECT", f"Total terdeteksi: {count} sesi", user="kasir")
         return count
+
 
     @staticmethod
     def get_audit_list(selected_date=None):
@@ -84,6 +95,7 @@ class BlackoutService:
     # Fokus: Mengembalikan saldo waktu ke akun member.
 
     @staticmethod
+    @with_write_lock
     def resolve_member(sesi_id, operator="kasir"):
         """Kembalikan sisa saldo waktu saat mati lampu ke akun member."""
         sesi = SesiRepository.get_by_id(sesi_id)
@@ -91,7 +103,10 @@ class BlackoutService:
             raise ValueError("Sesi tidak valid untuk di-resolve")
 
         member = sesi.member
-        saldo_kembali = sesi.sisa_menit_saat_mati or 0
+        if SesiRepository.get_aktif_by_member(member.id):
+            raise ValueError("Member masih punya sesi aktif; selesaikan sesi itu dulu")
+        expired = member.cek_kadaluarsa()
+        saldo_kembali = 0 if expired else (sesi.sisa_menit_saat_mati or 0)
 
         # Overwrite saldo member sesuai SOP (menimpa, bukan menambah)
         member.waktu_tersimpan = saldo_kembali
@@ -123,6 +138,7 @@ class BlackoutService:
     # Fokus: Melanjutkan sesi guest di PC yang sama, PC lain, atau tutup total.
 
     @staticmethod
+    @with_write_lock
     def resolve_guest_sama(sesi_id, operator="kasir"):
         """Lanjutkan sesi guest di PC yang sama (Tutup lama, Buka baru)."""
         sesi = SesiRepository.get_by_id(sesi_id)
@@ -130,12 +146,15 @@ class BlackoutService:
             raise ValueError("Sesi tidak valid")
 
         pc = sesi.pc
+        if not pc or not pc.aktif:
+            raise ValueError("PC sudah tidak aktif")
         sesi_lain = SesiRepository.get_aktif_by_pc(pc.id)
         if sesi_lain and sesi_lain.id != sesi.id:
             raise ValueError(f"PC {pc.kode} sedang digunakan.")
 
         sisa = sesi.sisa_menit_saat_mati or 0
         sesi.status = "selesai"
+        sesi.selesai_pada = now_local()
         sesi.is_blackout_resolved = True
         sesi.waktu_resolved = now_local()
 
@@ -153,12 +172,19 @@ class BlackoutService:
         return {"pc": pc.kode, "sisa_menit": sisa, "nama_guest": sesi.nama_guest}
 
     @staticmethod
+    @with_write_lock
     def resolve_guest_lanjut(sesi_id, pc_baru_id, operator="kasir"):
         """Pindahkan sesi guest ke PC lain yang satu grup."""
         sesi = SesiRepository.get_by_id(sesi_id)
         pc_baru = PCRepository.get_by_id(pc_baru_id)
         
         if not sesi or not pc_baru: raise ValueError("Data tidak ditemukan")
+        if not pc_baru.aktif:
+            raise ValueError("PC tujuan sudah tidak aktif")
+        if sesi.tipe != "guest":
+            raise ValueError("Sesi guest tidak ditemukan")
+        if not sesi.is_blackout_suspect or sesi.is_blackout_resolved:
+            raise ValueError("Sesi bukan suspect blackout yang valid")
         if sesi.pc and pc_baru.grup_id != sesi.pc.grup_id:
             raise ValueError("Hanya bisa pindah ke PC grup yang sama")
         if SesiRepository.get_aktif_by_pc(pc_baru.id):
@@ -166,6 +192,7 @@ class BlackoutService:
 
         sisa = sesi.sisa_menit_saat_mati or 0
         sesi.status = "selesai"
+        sesi.selesai_pada = now_local()
         sesi.is_blackout_resolved = True
         sesi.waktu_resolved = now_local()
 
@@ -183,11 +210,14 @@ class BlackoutService:
         return {"pc_baru": pc_baru.kode, "sisa_menit": sisa, "nama_guest": sesi.nama_guest}
 
     @staticmethod
+    @with_write_lock
     def resolve_tutup_tanpa_kompensasi(sesi_id, operator="kasir"):
         """Tutup catatan blackout tanpa memberikan kompensasi apa pun (Guest/Member)."""
         sesi = SesiRepository.get_by_id(sesi_id)
         if not sesi: raise ValueError("Sesi tidak ditemukan")
-        
+        if not sesi.is_blackout_suspect or sesi.is_blackout_resolved:
+            raise ValueError("Sesi bukan suspect blackout yang valid")
+
         # Menandai sesi lama sebagai selesai & resolved
         sesi.status = "selesai"
         sesi.selesai_pada = now_local()
@@ -217,7 +247,7 @@ class BlackoutService:
     # Fokus: Membersihkan data lama dan penutupan paksa massal.
 
     @staticmethod
-    def clear_resolved(selected_date, operator="kasir"):
+    def clear_resolved(selected_date, operator="kasir"):  # lock: hapus baris audit yang sudah dipulihkan; idempoten
         """Menghapus record blackout yang sudah di-resolve pada tanggal tertentu."""
         deleted = SesiRepository.delete_resolved_blackout(selected_date)
         db.session.commit()
@@ -226,9 +256,44 @@ class BlackoutService:
 
     @staticmethod
     def force_all_and_detect(operator="kasir"):
-        """Tombol Panik: Deteksi blackout + Tutup semua yang aktif."""
-        count_deteksi = BlackoutService.deteksi()
-        count_tutup = SesiRepository.force_close_all_sesi(now_local())
-        db.session.commit()
+        """Tombol Panik: tandai semua sesi billable sebagai blackout lalu tutup semua."""
+        now = now_local()
+        count_deteksi = 0
+        count_tutup = 0
+        with WRITE_LOCK:
+            for sesi in SesiRepository.get_all_aktif():
+                if sesi.tipe in ("guest", "member"):
+                    # Snapshot di last_sync agar menit saat listrik mati tidak ikut terpakai.
+                    waktu_referensi = sesi.last_sync or sesi.mulai_pada or now
+                    sisa_audit = max(0, sesi.hitung_sisa_pada(waktu_referensi))
+                    if sesi.tipe == "member" and sesi.member:
+                        sesi.member.waktu_tersimpan = sisa_audit
+                    sesi.is_blackout_suspect = True
+                    sesi.is_blackout_resolved = False
+                    sesi.sisa_menit_saat_mati = sisa_audit
+                    sesi.selesai_pada = waktu_referensi
+
+                    label = f"Member:{sesi.member.username}" if sesi.member else f"Guest:{sesi.nama_guest or '?'}"
+                    db.session.add(Transaksi(
+                        sesi_id=sesi.id, member_id=sesi.member_id, jenis="tutup_sesi",
+                        jumlah=0, menit=0,
+                        keterangan=f"Force close blackout: {label}",
+                        user_id=TransaksiService.get_user_id(operator),
+                        operator=operator,
+                    ))
+                    count_deteksi += 1
+
+                sesi.status = "selesai"
+                sesi.selesai_pada = sesi.selesai_pada or now
+                sesi.is_afk = False
+                sesi.afk_pin = None
+                sesi.afk_sejak = None
+                count_tutup += 1
+
+            for pc in PCRepository.get_all_admin_mode():
+                pc.is_admin_mode = False
+                pc.last_activity = now
+            db.session.commit()
+
         write_log("FORCE_CLOSE_ALL", f"Tutup:{count_tutup} | Deteksi:{count_deteksi}", user=operator)
         return {"tutup": count_tutup, "deteksi": count_deteksi}

@@ -8,7 +8,7 @@ Menyimpan data waktu, pembayaran, dan status blackout recovery.
 """
 
 from app.models import db, now_local
-from app.utils.timezone_utils import format_display, display_in_tz
+from app.utils.timezone_utils import format_display, display_in_tz, get_tz_short_name
 
 
 class Sesi(db.Model):
@@ -48,6 +48,16 @@ class Sesi(db.Model):
     """
     
     __tablename__ = "sesi"
+    __table_args__ = (
+        db.Index(
+            "uq_aktif_sesi_pc", "pc_id", unique=True,
+            sqlite_where=db.text("status = 'aktif' AND pc_id IS NOT NULL"),
+        ),
+        db.Index(
+            "uq_aktif_sesi_member", "member_id", unique=True,
+            sqlite_where=db.text("status = 'aktif' AND member_id IS NOT NULL"),
+        ),
+    )
     
     id = db.Column(db.Integer, primary_key=True)
     tipe = db.Column(db.String(10), nullable=False)
@@ -61,7 +71,7 @@ class Sesi(db.Model):
     user = db.relationship("User", backref=db.backref("sesi_kasir_list", lazy="dynamic"))
     
     # Relasi ke PC
-    pc_id = db.Column(db.Integer, db.ForeignKey("pc.id", ondelete="SET NULL"), nullable=True)
+    pc_id = db.Column(db.Integer, db.ForeignKey("pc.id", ondelete="SET NULL"), nullable=True, index=True)
     pc = db.relationship('PC', back_populates='sesi_list')    
     
     # Relasi ke Paket
@@ -78,7 +88,7 @@ class Sesi(db.Model):
     selesai_pada = db.Column(db.DateTime, nullable=True)
     durasi_beli_menit = db.Column(db.Integer, default=0)
     total_bayar = db.Column(db.Integer, default=0)
-    status = db.Column(db.String(10), default="aktif")
+    status = db.Column(db.String(10), default="aktif", index=True)
     
 
     # Data untuk menampilkan admin di dashboard
@@ -241,13 +251,16 @@ class Sesi(db.Model):
         Returns:
             dict: Dictionary ringkas untuk audit blackout.
         """
+        ref_dt = self.last_sync if self.last_sync else self.mulai_pada
+        tz_label = get_tz_short_name()
         return {
             "id": self.id,
-            "pc_kode": self.pc.kode if self.pc else "??",
+            "pc_kode": self.pc.kode if self.pc else "-",
             "username": self.member.username if self.member else self.nama_guest or "Guest",
             "tipe": self.tipe,
             "grup": self.pc.grup.nama if self.pc and self.pc.grup else "reguler",
-            "jam_mati": display_in_tz(self.last_sync).strftime("%H:%M:%S") if self.last_sync else display_in_tz(self.mulai_pada).strftime("%H:%M:%S"),
+            "jam_mati": display_in_tz(ref_dt).strftime("%H:%M:%S") if ref_dt else "-",
+            "timezone": tz_label,
             "sisa_waktu_mati": self.sisa_menit_saat_mati or 0,
             "is_blackout_resolved": self.is_blackout_resolved
         }

@@ -6,6 +6,166 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [1.6.5] - 2026-11-16 - Autonomous Offline Studio
+
+### Rilis Stabil: Audit, Pengerasan, dan Pengujian Menyeluruh (2026-11-16)
+
+- **Audit Kode Menyeluruh (7 putaran, tanpa temuan tersisa)**: seluruh 391 metode service diperiksa pemakainya, 247 rute diverifikasi cakupan otorisasinya, 7 job scheduler diaudit terhadap `WRITE_LOCK`, 18 `setInterval` frontend dipastikan berpagar, dan rantai 26 revisi Alembic dipastikan tanpa `down_revision` yatim.
+- **Pagar Otomatis Anti-Regresi**: lima berkas test baru mengunci aturan secara permanen - `test_write_lock_coverage.py` (setiap `commit()` di service wajib di dalam `WRITE_LOCK` atau ber-marker alasan), `test_exception_silence.py` (larang `except` senyap tanpa alasan tertulis), `test_frontend_xss_guard.py` (setiap interpolasi pada blok `innerHTML` wajib di-escape), `test_version_consistency.py` (versi config, package.json, klien Tauri, badge README, dan jumlah blueprint wajib sama), serta `test_route_authorization.py` (setiap rute wajib berguard atau terdaftar publik beralasan).
+- **Backup Manual Terpisah dari Rotasi**: `cleanup_old_backups()` memangkas dua prefiks terpisah - otomatis (5 berkas) dan manual (10 berkas) - sehingga backup buatan operator tidak lagi terhapus setelah beberapa jam oleh backup terjadwal.
+- **Restore Meminta Konfirmasi Sesi Aktif**: `POST /api/v1/kasir/backup/restore/<filename>` membalas 409 beserta `active_sessions` bila masih ada sesi bermain, kecuali body memuat `confirm_active_sessions: true`; dialog dashboard menampilkan peringatan kedua.
+- **Uptime Tidak Lagi Menulis di Luar Lock**: `run_flush_uptime` dan `run_cleanup_uptime_logs` dibungkus `@with_write_lock`, dan `UptimeService.flush_uptime_to_db()` mengembalikan `bool` sehingga kegagalan flush tercatat sebagai job gagal, bukan sukses palsu.
+- **Tiga Index Baru lewat Migrasi a2b3c4d5e6f7**: `ix_pc_uptime_log_tanggal`, `ix_menu_stock_log_created_at`, dan `ix_menu_stock_log_menu_id`, dipasang dengan `CREATE INDEX IF NOT EXISTS` agar aman pada database baru maupun lama.
+- **Arsip Log Dibatasi**: `archive_logs()` menyisakan 30 arsip terbaru (`_prune_archives`) sehingga folder log tidak tumbuh tanpa akhir.
+- **Kunci Idempotensi Checkout Diperbaiki**: permintaan duplikat tidak lagi melepas kunci milik request pertama (flag `claimed`), sehingga retry ganda tidak menghasilkan dua pesanan.
+- **Checkout FnB Turun dari 13 ke 8 Query**: transaksi diserialisasi sebelum `commit()` (tanpa lazy-load pasca-commit), dan `decrement_stok_if_available()` menerima objek menu sehingga tidak melakukan SELECT ulang per item.
+- **Audit Log Client Di-throttle**: `ClientAuditThrottle` membatasi event berulang (5 menit) agar satu PC salah konfigurasi tidak membanjiri log dengan puluhan ribu baris per hari.
+- **Skrip Batch Diperkuat**: `install.bat` dan `developer_install.bat` memindahkan diri ke folder skrip (`cd /d "%~dp0"`); `stop.bat` dan `updater.bat` hanya mematikan proses venv proyek ini; `update.bat` menyalin dirinya ke `%TEMP%` sebelum menukar berkas, mewarisi `TM_ROOT`, dan ditulis tanpa BOM sehingga exit code serta langkah pembersihan tidak hilang.
+- **Kebersihan Kode**: endpoint `GET /api/v1/kasir/menu/transaksi` yang tak terbatas dan tak dipakai UI dihapus, `SesiRepository.get_selesai_by_tanggal` dihapus, 25 pemakaian `Query.get()` legacy dimigrasikan ke `db.session.get()`, dan `get_distinct_tanggal()` memakai `DATE()` di SQL sehingga tidak lagi menarik seluruh baris ke Python.
+- **Guard XSS dan escapeHtml**: seluruh blok template literal multi-baris diperiksa (bukan hanya satu baris), dan `Utils.escapeHtml()` menerima nilai non-string (angka) sehingga filter riwayat shift tidak lagi gagal serta nilai `0` tidak lagi hilang.
+- **Klien Tauri**: hook keyboard yang gagal dipasang kini mematikan proses (`exit(1)`) agar watchdog memasang ulang, bukan meninggalkan PC terkunci tanpa keyboard; perbandingan hash integritas diuji di build debug.
+- **Bukti Pengujian**: 881 unit test hijau, 54 check E2E lintas suite (`backup_restore`, `fnb_pos`, `route_smoke`), dan verifikasi visual Playwright pada 30 tab dashboard, 10 sub-tab settings, serta 8 portal publik dengan browser sungguhan.
+
+### Perbaikan Migrasi Skema Saat Update (2026-11-12)
+- **Update Gagal pada Instalasi Baru**: `install_scripts/run_migration.py` tidak lagi memutar ulang seluruh migrasi pada database hasil `db.create_all()`; bila skema sudah identik dengan metadata model, revisi langsung di-`stamp` ke `head` sehingga `updater.bat` tidak berhenti di `:fail` karena `duplicate column name: operator`.
+- **Migrasi Idempoten**: migrasi `f3a1b2c4d5e6` (kolom `operator`) dan `b7e2c91a4f01` (kolom peripheral/CCTV) memeriksa kolom yang sudah ada sebelum menambah/menghapus, dan migrasi `8f7e6d5c4b3a` tidak lagi me-recreate tabel `game` hanya untuk melebarkan `kategori` (SQLite tidak menegakkan panjang `VARCHAR`).
+- **Index RC2 pada Database Hasil `db.create_all()`**: safety net `run_migration.py` memasang ulang `uq_aktif_shift`, `uq_aktif_sesi_pc`, `uq_aktif_sesi_member`, `ix_transaksi_menu_tanggal`, `ix_transaksi_member_id`, `ix_transaksi_user_id`, dan `ix_sesi_mulai_pada` secara idempoten, sehingga database v1.6.5-rc1 yang di-`stamp` head tanpa melewati migrasi tetap mendapat proteksi dua shift aktif dan index performa.
+- **Instalasi Baru Langsung Ber-revisi `head`**: `install_scripts/init_db.py` melakukan `stamp` ke `head` setelah `db.create_all()`, sehingga database instalasi baru sudah mencatat revisi Alembic terbaru dan `flask db upgrade` tidak memutar ulang migrasi lama.
+
+### Remediasi Audit Keamanan & Integritas Finansial (2026-11-07)
+- **Refund & Masa Aktif Member**: refund member memanggil `cek_kadaluarsa()` lebih dulu (menolak saldo yang sudah hangus), tanggal kadaluarsa hasil refund di-clamp ke waktu sekarang (tidak lagi menjadi `None`/abadi), dan klaim refund atomik `TransaksiRepository.claim_refund()` mencegah nota refund ganda saat request bersamaan.
+- **Token Darurat Tidak Lagi Bocor ke Client**: `GET /api/v1/kasir/settings/uninstall-token/client` hanya mengembalikan `uninstall_token`; `emergency_token` server tidak pernah dikirim lagi. Emergency login diterima bila token server valid **atau** IP asal request sama dengan `ip_address` PC terdaftar (`hmac.compare_digest`).
+- **Kredensial Darurat Fail-Closed**: Semua fallback `TMBilling` / `TM123qaz!@#` dihapus dari Tauri, MGCTM, mtm, TMonitor, dan Uninstaller serta `config.ini` dikosongkan. Jalur darurat offline hanya aktif bila operator mengisinya; `install.bat` membangkitkan password acak 24 karakter dan mencetaknya ke konsol bila prompt dikosongkan.
+- **Refund Paket Nominal Penuh**: Refund guest dan member mengembalikan nilai penuh transaksi (`-jumlah`) sambil memotong durasi/menit yang tersisa (guest dibatasi `min(durasi, sisa_menit)`, member `max(0, saldo - durasi)`); durasi 0 ditolak.
+- **Satu Sesi Aktif per PC**: Migrasi `uq_aktif_sesi_pc` (unique index parsial `pc_id` WHERE `status='aktif'`) mencegah dua sesi guest pada satu meja; `IntegrityError` dipetakan menjadi `ValueError("PC sedang dipakai")`.
+- **Nomor Nota Anti-Loop**: Generator nota memakai `MAX(CAST(substr(no_nota, ...) AS INTEGER))` (`get_max_nota_seq`) sehingga tidak lagi menjalankan loop query saat nota terakhir terhapus.
+- **Unduhan Database Aman WAL**: `/settings/backup/download` memakai snapshot SQLite Online Backup API + `PRAGMA integrity_check` ke file sementara yang dihapus via `after_this_request`.
+- **Update Server Atomik**: `extract_update.py` mengekstrak ke `instance/staging_update` lalu menukar berkas per entri top-level dengan `os.replace`; kegagalan memicu rollback dari `instance/rollback_<timestamp>`.
+- **XSS Pengumuman Kiosk**: `SafeHTMLParser` memakai allowlist protokol (`http://`, `https://`, `mailto:`, `/`, `#`, `data:image/`) setelah normalisasi karakter kontrol; sanitasi dijalankan saat simpan dan saat `get_warnet_config`.
+- **Login Throttle & Logout Ber-token**: `services/auth/login_throttle.py` membatasi 5 kegagalan per (IP, username) dalam 5 menit (HTTP 429) dan auto-whitelist IP admin dihapus; logout menolak request tanpa token sesi.
+- **VNC Non-Blocking & Terproteksi**: Semua route VNC wajib login + admin, start membalas 202 dengan polling `poll_vnc_result`, token proxy acak `secrets.token_urlsafe(24)`, reaper hanya mematikan proxy PC offline.
+- **Ringkasan Shift Lintas Kasir**: Filter `user_id`/`kasir_id` dihapus dan clamp `max(0, ...)` dihilangkan sehingga selisih negatif (refund berlebih) terlihat; blackout menyimpan `sisa_audit`, bukan jam berjalan.
+- **Job Cloud & Tunnel**: 11 panggilan `urlopen` provider backup memakai `timeout=30`; direktori log `cloudflared` diperbaiki (sebelumnya `TUNNEL_DIR` tidak terdefinisi).
+
+### Pengerasan Putaran 2 (2026-11-07)
+- **Serialisasi Tulis Billing**: modul baru `app/services/write_lock.py` (`WRITE_LOCK`) membungkus `SesiService.tambah_waktu_sesi`, `MemberService.tambah_waktu`, dan `MemberService.refund_paket` sehingga dua request bersamaan tidak saling menimpa durasi/saldo (read-modify-write) pada satu proses Waitress.
+- **Validasi Batch Dua Fase**: `POST /api/v1/kasir/sesi/tambah-waktu-batch` memvalidasi seluruh paket lebih dulu; bila salah satu paket tidak ada, sesi tidak tertagih sebagian.
+- **Index & Migrasi Baru**: model `Sesi` memakai `uq_aktif_sesi_pc` (partial unique index), migrasi `d3e4f5a6b7c8` menambah `ix_transaksi_member_id`, `ix_transaksi_user_id`, dan `ix_sesi_mulai_pada`.
+- **Integritas Blackout**: `sesi.selesai_pada` pada deteksi memakai waktu referensi (`last_sync`/`mulai_pada`), sesi guest yang dipulihkan mengisi `selesai_pada`, dan `resolve_member` menolak member yang masih punya sesi aktif serta tidak menghidupkan saldo yang sudah kadaluarsa.
+- **Hapus Riwayat Menyeluruh**: `LogAuditService.clear_all_transactions`/`clear_transactions_by_date` kini juga menghapus `TransaksiMenu`; nota pembelian paket ditolak dihapus (400) dan harus lewat Refund.
+- **Arsip Pra-Purge Aman**: `DBMaintenanceService` memakai `default_backup_dir()` + snapshot Online Backup API + `PRAGMA integrity_check` (bukan `copy2` berkas WAL).
+- **Throttle Login Diperluas**: `admin-check`, `client/admin-login`, dan `/member/login` memakai `login_throttle`; pesan gagal portal member diseragamkan, dan setiap login sukses memanggil `session.clear()`.
+- **Batas Unggah & Nama Screenshot**: `MAX_CONTENT_LENGTH = 64 MB`; `_screenshot_filename()` membuang pemisah path sebelum `secure_filename` (`PC/01` → `PC01.png`).
+- **Endpoint Khusus Admin**: hapus audit blackout `/clear` dan start/stop TMLHMService memakai `@admin_required`.
+- **Higiene Resource**: unduhan `cloudflared` memakai `timeout=30`; `PCService.delete` memanggil `cleanup_pc_cache()` agar cache RAM PC terhapus ikut bersih.
+- **Analitik Paket Terhapus**: `OwnerAnalyticsService.get_top_paket` mengelompokkan per `paket_id` dan memberi label "Paket dihapus" alih-alih membuang transaksi paket yang sudah dihapus.
+- **Token Klien**: `GET /api/v1/kasir/settings/` tidak lagi mengembalikan default `TM2026QWERTY-api-key`; `/uninstall-token/client` menolak (403) request dari IP yang bukan PC terdaftar; `install.bat` membangkitkan API key acak bila prompt dikosongkan.
+
+### Keamanan & Perbaikan Bug
+- **Redaksi Setting Sensitif**: `GET /api/v1/kasir/settings/` kini hanya mengembalikan `payment_methods` dan `vnc_password` untuk role kasir; kredensial lain (`client_api_key`, `mikrotik_password`, token, kredensial backup) khusus role admin.
+- **Emergency Login Berbasis Token atau IP**: Endpoint emergency login menolak request tanpa `emergency_token` server yang sah **kecuali** berasal dari IP PC terdaftar; bypass loopback dihapus. Client Tauri tidak lagi mengirim token server (diperbarui oleh remediasi 2026-11-07).
+- **Token Klien Tanpa Default Hardcoded**: Token emergency & uninstall kini dibuat acak (`secrets.token_urlsafe(32)`) dan disimpan di database. Nilai lama di database tetap dipakai apa adanya.
+- **Atribusi Transaksi**: Operator tak dikenal tidak lagi dibebankan ke admin pertama; checkout kantin menolak kasir yang tidak valid.
+- **Ringkasan Shift Read-Only**: `GET /summary` tidak lagi menulis ke database; force close menyimpan `uang_fisik`/`selisih` kosong (frontend menampilkan `-` / `(Penutupan Paksa)`) alih-alih menganggap PAS, dan struk handover mencetak `BELUM DIHITUNG`.
+- **Stok Kantin Atomik**: Pengurangan stok memakai satu `UPDATE ... WHERE stok >= jumlah` untuk mencegah oversell saat checkout bersamaan.
+- **Backup Konsisten & Restore Tanpa Restart**: backup kini memakai SQLite Online Backup API + `PRAGMA integrity_check` (data di `-wal` ikut tersalin dan arsip rusak ditolak sebelum tersimpan), path database diturunkan dari engine aktif (bukan hardcode `instance/warnet.db`), dan admin dapat restore langsung dari daftar backup (`POST /api/v1/kasir/backup/restore/<filename>` wajib `{"confirm": true}`; backup pengaman dibuat otomatis sebelum restore).
+- **Bersih-Bersih**: Menghapus CLI `--release` pada `run.py` (rusak: `UnboundLocalError`, ekstraksi ZIP tanpa proteksi path traversal, tidak pernah menyalin payload) dan route ringkasan shift duplikat yang tidak terjangkau.
+- **Health Check & Guard Sumber Daya**: `GET /api/health` publik melaporkan `db`/`disk`/`backup` secara kasar (tanpa angka/path, tetap HTTP 200 saat `degraded`); backup menolak berjalan saat sisa disk < 512 MB; screenshot otomatis dilewati dengan alasan di log; status eksekusi terakhir tiap job scheduler tampil di tab Settings (khusus admin).
+- **Hapus Fitur File Explorer**: Modul, route, service, template, menu sidebar, API frontend, dan test terkait dihapus seluruhnya (tidak ada migrasi database; tidak ada tabel/model khusus).
+
+### UI & Tata Letak
+- **Tab Berat Masuk Area Scroll**: `mikrotik`, `settings`, `plugins`, dan `analytics` tidak lagi dirender di bawah halaman akibat `</div>` prematur di `index.html`; kontennya kini berada di dalam `#main-scroll` dan dibatasi `max-w-7xl`/`max-w-5xl` serta dipusatkan.
+- **Paket Billing**: daftar paket dibatasi 8 baris per halaman pada breakpoint `lg`, `xl`, dan `2xl`; breakpoint lebih kecil tetap 7/5 baris.
+- **Analitik Owner**: panel KPI tidak lagi memakai `max-height`/scroll internal (`setScroll` dihapus), sehingga kartu memanjang natural.
+- **Scrollbar & Log**: scrollbar global mengikuti tema gelap (`color-scheme: dark`, thumb `#333`); badge kategori Log Sistem memakai latar netral dengan aksen teks, bukan latar warna pekat.
+- **Whitelist IP**: tabel daftar IP memakai `table-fixed` + `colgroup` pada `lg`/`xl`/`2xl` agar pas lebar tanpa scroll horizontal; perilaku mobile tetap.
+- Enam check E2E baru di suite `settings_admin_logs` mencakup nesting/centering, batas 8 paket, panel analitik, scrollbar, badge log, dan fit tabel whitelist.
+- **Shell Tab Terpusat**: semua tab kasir non-dashboard memakai `max-width: 80rem` + `margin-inline: auto` pada semua breakpoint; dashboard tetap full-width dan MikroTik tetap `max-w-5xl`. Satu check E2E baru di suite `coverage` memverifikasi pusat konten pada 1024/1280/1536/1920 px.
+- **Hardware Checker Fit**: tabel hardware checker memakai `table-layout: fixed` pada `lg`/`xl`/`2xl` dengan lebar kolom per breakpoint, sehingga tidak ada scroll horizontal; layout lebar `2xl` tetap menampilkan seluruh kolom dan header panjang boleh wrap. Satu check E2E baru memverifikasi 1024/1280/1536/1920 px.
+
+### Performa & Optimasi
+- **Heartbeat Klien**: `sesi.last_sync` kini disimpan tiap 30 detik (`ClientService.HEARTBEAT_PERSIST_SECONDS`) sehingga deteksi blackout berlaku untuk sesi guest; penulisan `pc.last_activity` per poll tanpa commit dihapus (poll turun dari 5 statement menjadi 3 SELECT tanpa UPDATE).
+- **Jalur Panas**: Eager load hardware/PC/grup pada tab monitor, cache stat file screenshot 5 detik, batch sesi portal member publik, katalog `/spesifikasi` bebas N+1, arsip menu satu query `GROUP BY`, prefetch sesi aktif pada daftar PC, dan pagination opsional katalog game publik.
+- **Infrastruktur**: `SettingsCacheStore.update_dict` ditambahkan (mencegah error 500 saat tabel settings kosong) dan warmup dijalankan di luar lock; `ProcessMemoryStore` diberi TTL 300 detik; rebuild `PCNetworkCacheStore` di luar lock; logger tanpa `print` per entri dan membaca ekor file saja; guard anti-tumpuk serta jeda polling saat tab dashboard disembunyikan.
+- **Dashboard**: `Dashboard.updateStats()` tidak lagi memanggil `API.report.harian()` (blok mati karena elemen `stat-*` tidak ada di template); omzet dibaca dari payload dashboard dan jumlah sesi aktif memakai `SesiRepository.count_aktif()` (4,1 ms menjadi 0,2 ms pada 200 sesi).
+- Index `ix_transaksi_menu_tanggal` untuk filter tanggal FnB yang dipanggil tiap detik.
+- Status billing PC di-cache di `UptimeMemoryStore`; telemetri tidak lagi query sesi per tick.
+- Laporan uptime tidak menulis database di jalur GET dan memakai eager load PC/grup.
+- Daftar member eager load grup & sesi (dua query tetap, bukan satu per member).
+- `sync_waktu_member` tidak commit sendiri; ikut commit heartbeat 30 detik.
+- Settings yang tidak ada di-cache negatif (1 query untuk banyak pemanggilan).
+- Payload TV di-cache 5 detik.
+- Tab monitor & screenshot melewati polling silent yang lebih rapat dari 2 detik;
+  polling status Cloudflare Tunnel menjadi 1 detik.
+
+### Dependensi & Build
+- **Backend Python**: pin dinaikkan ke SQLAlchemy 2.1.8, ReportLab 5.1.0, APScheduler 3.11.3, Flask-WTF 1.3.0, Werkzeug 3.1.9, flask-cors 6.0.5, waitress 3.0.2, websockify 0.13.0, greenlet 3.5.6, MarkupSafe 3.0.4, python-dotenv 1.2.4, typing_extensions 4.16.0. Batas bawah Python menjadi **3.11+** (syarat SQLAlchemy 2.1). Custom `TMBillingCSRFProtect.protect()` disesuaikan dengan signature Flask-WTF 1.3 (`apply_exemptions`).
+- **Frontend Build**: TailwindCSS 4.3 (`@tailwindcss/cli`, `@import "tailwindcss" source(none)` + `@source` eksplisit), FontAwesome Free 7.3.1 (seluruh 53 ikon yang dipakai tersedia), dan shim kompatibilitas v3 untuk warna border, cursor tombol, serta placeholder. `@tauri-apps/cli` root yang tidak terpakai dihapus; CSS hasil build kini 194 KB (mekanisme `@property`/OKLCH v4). Prasyarat baru: Node.js 20+ untuk build CSS dan browser dashboard Chrome/Edge 111+.
+- **Jalur Upgrade**: semua metode update (sidebar Migrasi & Update, GitHub 1-klik, `update.bat`) melewati `install_scripts/updater.bat` yang kini: memvalidasi Python 3.11+ **sebelum** menyentuh berkas; menghentikan server lewat proses background maupun pemilik port 7015 dan **membatalkan tanpa mengubah berkas** bila port masih hidup; membatalkan ekstraksi bila backup database gagal; mempertahankan ZIP bila ekstraksi gagal; menyalakan ulang server otomatis saat gagal; serta memasang dependensi **sebelum** migrasi. `stop.bat` juga kini menghentikan proses `run.py`/pemilik port 7015 dan memverifikasi port benar-benar lepas. Backup pra-update memakai SQLite Backup API sehingga transaksi di `-wal` tidak hilang. Tidak ada migrasi skema baru; database dan `.env` tetap dipertahankan.
+- **Paritas Visual**: probe computed-style pada dashboard, POS, settings, dan landing menunjukkan warna setara (OKLCH), border `gray-200` tetap, cursor tombol tetap pointer; perbedaan yang diterima: `shadow-sm` kini setara `shadow` v3 dan `outline-none` menjadi `none/3px` (keduanya tidak terlihat berubah).
+
+### Pengujian E2E
+- **Suite Chromium Nyata**: `npm run test:e2e` kini menjalankan 11 suite Playwright (335 check) terhadap sandbox terisolasi, dengan guard sha256 + jumlah baris `instance/warnet.db`, reseed database per suite, dan exit code yang benar-benar gagal saat ada check merah. Perintah npm memakai `.venv\Scripts\python.exe` agar tidak bergantung pada Python global. Runner lama yang mencetak total hardcoded `382 PASSED` tanpa menjalankan test dihapus.
+- **Cakupan**: 31 tab container kasir, 10 sub-tab settings, 8 portal publik, plus alur billing, POS kantin, member/paket/grup, shift & rekonsiliasi kas, telemetri hardware & anti-maling, turnamen, RBAC/redaksi setting, blackout & emergency login, serta invarian zero-thrash dan reflow responsif (234 sel).
+- **Isolasi**: direktori catatan sandbox dipisah lewat `TM_NOTES_DIR`; proses Waitress sandbox dibungkus Windows Job Object sehingga port 7016 tidak tertinggal.
+- **Suite Backup & Restore**: suite `backup_restore` (8 check) memicu backup nyata, memutasi data, lalu restore tanpa restart di sandbox; folder `backups/` produksi diverifikasi tidak berubah dan guard sha256 database produksi tetap lulus.
+- **Bug Produk Ditemukan & Diperbaiki**: member dengan `kadaluarsa_pada` lampau kini ditolak saat login portal (`403 Masa aktif member sudah kadaluarsa`); dua kelas `animate-in` sisa di modal dashboard dan overlay screenshot dihapus sesuai aturan zero-thrash.
+
+### Ditambahkan
+- **Arsitektur 100% Pure Offline & Local Vendor Management**:
+  - Mengintegrasikan seluruh dependensi frontend pihak ketiga (`@fortawesome/fontawesome-free@6.4.0`, `qrcodejs@1.0.0`, `@novnc/novnc@1.4.0`) ke dalam `package.json`.
+  - Menghadirkan skrip otomatisasi lintas-platform `tools/sync-vendor.js` yang otomatis menyalin aset runtime ke `app/static/vendor/` saat `npm install` via hook `postinstall`.
+  - Menghapus ketergantungan CDN eksternal (Google Fonts, Cloudflare cdnjs, jsDelivr) dengan 0 request outbound saat runtime.
+  - Memutakhirkan font stack utama ke sistem native (`Segoe UI`, `Inter`, `Consolas`) untuk tampilan tipografi yang tajam, presisi, dan konsisten 100% antara kondisi online dan offline.
+- **Redesain Footer Kartu Monitor Screenshot**:
+  - Merombak footer kartu screenshot menjadi layout minimalis 1 baris ramping terkunci di 26px di semua breakpoint tanpa wrap canggung.
+  - Menghapus label kaku `Update:` dan menggantinya dengan icon gambar tangkapan layar SVG di kiri serta timestamp cerdas berbasis zona waktu warnet aktif (`WITA`/`WIB`).
+  - Menghilangkan scrollbar horizontal abu-abu native pada tab grup screenshot di tampilan mobile via utility modern Tailwind.
+- **Penyelarasan Responsif & Zero-Truncate Multi-Tab**:
+  - **Tab Laporan Kantin**: Mengoptimalkan tabel fit-to-screen bebas scrollbar horizontal/vertikal dan menghadirkan modal popover interaktif untuk pratinjau daftar menu panjang (>3 item).
+  - **Tab Pengaturan & Penjadwalan Otomatis**: Skala tipografi adaptif dan eliminasi teks terpotong (*zero-truncate*) di seluruh breakpoint desktop hingga mobile.
+  - **Tab Migrasi & Update**: Desain responsif terpadu tanpa overflow dan scrollbar ganda.
+
+### Diubah
+- Menaikkan versi seluruh ekosistem Server Flask dan Klien WarnetAgent Tauri/Rust ke `v1.6.5`.
+- Memperbarui codename rilis aplikasi di `app/config.py` menjadi `"Autonomous Offline Studio"`.
+- Pembaruan otomatis cache buster asset browser (`v_cache = 165`).
+
+### Dihapus
+- Menghapus dependensi tidak terpakai `chart.js` dari `package.json`.
+- Menghapus dead links stylesheet CDN eksternal `flatpickr` dan `tom-select` dari `base.html`.
+
+---
+
+## [1.6.5-rc3] - 2026-11-13 - Release Candidate 3
+
+### Added
+- **Tab Data Diarsipkan**: tab baru `arsip` (`modules/arsip/index.js`) mengumpulkan seluruh data terarsip — grup, PC, paket, member, user, game, menu — lewat `GET /api/v1/kasir/arsip/`, dengan pills kategori (satu kategori tampil sekaligus) serta tombol Pulihkan dan Hapus Permanen.
+- **Arsip Per Tab**: tab grup, PC, paket, member, user, game, dan menu FnB kini punya pill `Aktif | Diarsipkan`; data yang diarsipkan tetap terlihat di tab asalnya, bukan hilang. Baris arsip memakai renderer bersama `core/arsip_list.js` (Pulihkan / Hapus Permanen).
+- **Arsip Grup Berantai**: mengarsipkan grup kini ikut mengarsipkan PC, paket, dan member miliknya dalam satu transaksi (`WRITE_LOCK`), ditolak bila grup masih punya sesi aktif. Restore grup tidak berantai - PC/paket/member dipulihkan manual dari tab arsipnya.
+- **Arsip Grup**: kolom `grup.aktif` (migrasi `a1b2c3d4e5f6`) plus `POST /api/v1/kasir/grup/<id>/archive` dan `/restore`; daftar grup reguler menyembunyikan grup arsip.
+- **Daftar Bersih dari Arsip**: daftar PC, paket, member, user, dan game kini hanya menampilkan data aktif; `?include_arsip=1` untuk menampilkan semuanya.
+- **Arsip dan Hapus Permanen Terpisah**: PC, Paket, Member, User, dan Game punya aksi arsip (`POST .../<id>/archive`, `aktif = False`, bisa dipulihkan) dan hapus permanen (`DELETE .../<id>`) yang benar-benar menghapus baris utama. Body `{"confirm": "<kode/nama/username>"}` wajib; konfirmasi salah atau kosong dibalas 400.
+- **Riwayat Tidak Ikut Terhapus**: purge melepas referensi (`sesi.pc_id`, `sesi.paket_id`, `sesi.member_id`, `sesi.user_id`, `transaksi.paket_id`, `transaksi.member_id`, `transaksi.user_id`) menjadi NULL di dalam `WRITE_LOCK`, jadi laporan dan struk lama tetap utuh nominalnya.
+- **Pengecualian User Ber-shift**: `DELETE /api/v1/kasir/user/<id>` tetap ditolak bila user punya riwayat shift (`shift_record.kasir_id` NOT NULL) — gunakan arsip.
+
+### Changed
+- **Konfirmasi Centang**: hapus permanen kini memakai satu checkbox "Saya paham data ini dihapus permanen dan tidak bisa dikembalikan" pada `Modal.confirm` (`requireCheck`); tombol setuju nonaktif sampai dicentang, menggantikan konfirmasi ketik nama sebelumnya.
+- **Arsip Mengikuti Kolom Tab Asal**: tampilan arsip kini memakai bentuk dan kolom yang sama dengan data aktifnya (`ArsipList.SCHEMA`) — tabel untuk grup/paket/member/user/game, kartu untuk PC dan katalog FnB — baik lewat pill `Aktif | Diarsipkan` di tab asal maupun lewat pills kategori di tab Data Diarsipkan. Modal menu FnB untuk arsip dan hapus permanen kini memakai `Modal.confirm` (bukan `confirm()` bawaan), dan kartu arsip tidak lagi merender tombol yang tidak berfungsi.
+- **Pill Filter Tetap Aktif di Mode Arsip**: pill grup pada tab PC/paket/member dan filter tipe/kategori pada tab game tetap tampil saat melihat arsip dan benar-benar memfilter daftar arsip (`ArsipList.filter` + `match`). Konfirmasi arsip grup menyebutkan PC, paket, dan member yang ikut diarsipkan.
+- **Filter Grup Arsip Tidak Lagi Kosong**: filter grup memakai `ArsipList.setGrup` sehingga pilihan "Semua" benar-benar mengosongkan filter (sebelumnya `''` menjadi `0` dan menyembunyikan semua baris), dan `Member.to_dict()` ikut mengirim `grup_id` agar pill grup member berfungsi tanpa harus kembali ke "Semua" dulu.
+- **Pill Grup Arsip Lengkap**: tab Data Diarsipkan kini punya pill grup sendiri (grup terarsip tetap muncul dengan label ` · arsip`), dan pill grup di tab PC/paket/member memuat grup terarsip lewat `?include_arsip=1`.
+- **Refresh Real-Time Setelah Pulihkan**: `ArsipList.onChanged` menjalankan ulang daftar arsip **dan** seluruh callback pemanggil (`_refresh` + `_callbacks`), sehingga memulihkan atau menghapus permanen langsung memperbarui daftar, total, dan pill grup tanpa reload.
+- **Total dan Warna Kartu Arsip**: footer `Total N <unit> arsip` mengikuti jumlah baris yang benar-benar tampil setelah filter, dan kartu PC terarsip memakai warna kartu aktif (`border-[#242424]`, tanpa `opacity-60`).
+- **Angka Pill Grup Mengikuti Mode**: hitungan pill grup di tab PC/paket/member diambil dari data mode yang sedang tampil (`ArsipList.counts`) — mode aktif menghitung data aktif, mode arsip menghitung data arsip — dan grup tanpa data pada mode itu tidak ditampilkan; member memakai `grup_counts` dari server agar angka ikut hasil pencarian.
+- **Pill Grup Tab Data Diarsipkan Per Kategori**: pill grup di tab terpusat dihitung hanya dari kategori yang sedang dibuka (mis. kategori Member hanya menampilkan grup yang punya member terarsip, dengan angka `NAMA (n)`), dan baris pill grup disembunyikan untuk kategori tanpa grup (`Grup PC / Zona`, `User Staff`, `Menu FnB`). Label pill kategori kini uppercase.
+- **Versi 1.6.5-rc3**: `Config.VERSION` dan semua cermin versi (package.json, klien Tauri, README, DOCUMENTATION, AGENTS) dinaikkan ke `1.6.5-rc3`.
+
+### Fixed
+- **Pill Grup Member di Mode Aktif**: tab member kini menampilkan pill untuk seluruh grup aktif walau grup tersebut belum punya member; grup kosong tampil tanpa angka dan memilihnya menampilkan state "Member Tidak Ditemukan", sedangkan mode arsip tetap hanya menampilkan grup yang punya member terarsip.
+- **Pill Grup Kembali ke Mode Aktif**: `_loadArsipGroups()` pada tab PC/paket/member menyimpan daftar grup arsip di field terpisah (`_arsipGroups`) dan tidak lagi menimpa daftar grup aktif, sehingga pill grup tidak tertinggal menampilkan grup beserta angka arsip setelah pengguna kembali dari `Diarsipkan` ke `Aktif`; `toggleView(false)` juga langsung merender ulang pill grup.
+- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (686 unit test, 385 check E2E, 34 blueprint, 254 rute).
+
 ## [1.6.4] - 2026-10-14
 
 ### Ditambahkan

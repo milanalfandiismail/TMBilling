@@ -27,7 +27,7 @@ async function fetchPCStatus() {
         const vacant = allPCs.filter(pc => pc.status === 'kosong').length;
 
         counter.className = "px-3 py-2 bg-emerald-950/40 border border-emerald-800/30 text-emerald-400 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5";
-        counter.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ${vacant} / ${total} PC Tersedia`;
+        counter.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> ${vacant} / ${total} PC Tersedia`;  // xss-reviewed: hanya angka hitungan status meja
     } catch (err) {
         console.error(err);
         const container = document.getElementById('pc-container');
@@ -90,6 +90,7 @@ function renderPCs() {
 
         const displayName = gName.toUpperCase();
 
+        // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
         section.innerHTML = `
             <div class="flex items-center gap-3 border-b border-[#1f1f1f] pb-3">
                 <span class="w-3.5 h-3.5 rounded-md block border shrink-0 ${colorClass}"></span>
@@ -130,6 +131,7 @@ function renderPCs() {
 
             const pcCard = document.createElement('div');
             pcCard.className = `p-4 border rounded-xl flex flex-col justify-between h-28 transition-all hover:scale-[1.02] duration-200 ${cardClass}`;
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             pcCard.innerHTML = `
                 <div class="flex items-center justify-between">
                     <span class="font-mono text-xs font-semibold uppercase tracking-wider">${pc.kode}</span>

@@ -8,9 +8,8 @@ dipisahkan ke PdfExportService dan LogAuditService.
 """
 
 from datetime import datetime
-from app.models import now_local
 from app.repositories import TransaksiRepository, SesiRepository, SettingsRepository, MenuRepository, UserRepository
-from app.utils.timezone_utils import format_display
+from app.utils.timezone_utils import format_display, get_today_local_date
 from app.services.report.log_audit_service import LogAuditService
 from app.services.report.pdf_export_service import PdfExportService
 
@@ -23,14 +22,14 @@ class ReportService:
     # =========================================================================
 
     @staticmethod
-    def get_laporan_harian():
+    def get_laporan_harian(kasir_id=None):
         """Ringkasan cepat pendapatan dan sesi hari ini (Dashboard Overview)."""
-        hari_ini = now_local().date()
-        total_billing = TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini)
-        total_menu = MenuRepository.get_total_pemasukan_by_date(hari_ini)
+        hari_ini = get_today_local_date()
+        total_billing = TransaksiRepository.get_total_pendapatan_hari_ini(hari_ini, kasir_id=kasir_id)
+        total_menu = MenuRepository.get_total_pemasukan_by_date(hari_ini, kasir_id=kasir_id)
         total = int(total_billing or 0) + int(total_menu or 0)
         total_sesi = SesiRepository.count_by_date(hari_ini)
-        aktif_sekarang = len(SesiRepository.get_all_aktif())
+        aktif_sekarang = SesiRepository.count_aktif()
 
         return {
             "tanggal": str(hari_ini),
@@ -59,12 +58,6 @@ class ReportService:
             total_pendapatan_menu = MenuRepository.get_total_pemasukan_by_date(tanggal, kasir_id, metode_pembayaran)
             total_pendapatan_gabungan = total_pendapatan_billing + total_pendapatan_menu
 
-            if kasir_id:
-                total_guest = SesiRepository.count_by_tanggal_tipe_kasir(tanggal, kasir_id, 'guest')
-                total_member = SesiRepository.count_by_tanggal_tipe_kasir(tanggal, kasir_id, 'member')
-            else:
-                total_guest = SesiRepository.count_by_tanggal_dan_tipe(tanggal, 'guest')
-                total_member = SesiRepository.count_by_tanggal_dan_tipe(tanggal, 'member')
 
             pagination = TransaksiRepository.get_history_nota_paginated(tanggal, page, per_page, kasir_id, metode_pembayaran, q)
             history_struk = pagination.items
@@ -83,15 +76,15 @@ class ReportService:
                 "total_pendapatan_billing_gross": total_pendapatan_billing_gross,
                 "total_pendapatan_menu": total_pendapatan_menu,
                 "total_refund": total_refund,
-                "total_sesi": total_guest + total_member,
-                "total_guest": total_guest,
-                "total_member": total_member,
+
                 "pendapatan_guest": ReportService.get_pendapatan_kategori(tanggal, 'guest', kasir_id, metode_pembayaran),
                 "pendapatan_member": ReportService.get_pendapatan_kategori(tanggal, 'member', kasir_id, metode_pembayaran),
-                "sesi_aktif": len(SesiRepository.get_all_aktif()),
+                "sesi_aktif": SesiRepository.count_aktif(),
                 "breakdown_metode": breakdown_metode,
                 "history_struk": ReportService._format_history_struk(history_struk)
             }
+        except ValueError:
+            raise
         except Exception as e:
             raise Exception(f"Gagal hitung laporan: {str(e)}")
 
@@ -157,11 +150,22 @@ class ReportService:
                 item_names = [f"{tm.menu.nama} x{tm.jumlah}" if tm.menu else f"Menu Terhapus x{tm.jumlah}" for tm in nota_group]
                 total_qty = sum(tm.jumlah for tm in nota_group)
                 total_harga = sum(tm.total_harga for tm in nota_group)
+                items_detail = [
+                    {
+                        "nama": tm.menu.nama if tm.menu else "Menu Terhapus",
+                        "jumlah": tm.jumlah,
+                        "harga": tm.total_harga,
+                        "harga_satuan": (tm.total_harga // tm.jumlah) if tm.jumlah else 0
+                    }
+                    for tm in nota_group
+                ]
 
                 history_menu.append({
                     "id": first_item.id,
                     "no_nota": first_item.no_nota,
                     "menu_nama": ", ".join(item_names),
+                    "items_detail": items_detail,
+                    "item_count": len(items_detail),
                     "jumlah": total_qty,
                     "total_harga": total_harga,
                     "pc_kode": first_item.pc_kode or "-",
@@ -184,6 +188,8 @@ class ReportService:
                 "breakdown_metode": breakdown_metode,
                 "history_menu": history_menu
             }
+        except ValueError:
+            raise
         except Exception as e:
             raise Exception(f"Gagal hitung laporan kantin: {str(e)}")
 
@@ -243,6 +249,7 @@ class ReportService:
             "total_durasi": t.menit or 0,
             "total_harga": t.jumlah,
             "kasir": nama_kasir,
+            "kasir_id": t.user_id,
             "payment_method": getattr(t, 'metode_pembayaran', 'Tunai') or 'Tunai',
             "warnet_title": warnet_title,
             "warnet_address": warnet_address,
@@ -292,6 +299,7 @@ class ReportService:
             "total_durasi": total_qty,
             "total_harga": total_harga,
             "kasir": nama_kasir,
+            "kasir_id": tm_first.kasir_id,
             "payment_method": tm_first.metode_pembayaran or 'Tunai',
             "tunai": tm_first.tunai,
             "kembalian": tm_first.kembalian,
@@ -316,16 +324,8 @@ class ReportService:
             for op in MenuRepository.get_distinct_remote_operators():
                 if op:
                     remote_ops.add(op)
-            hidden_ops = set()
-            try:
-                from app.services.branch.branch_service import BranchService
-                hidden_ops = BranchService.get_hidden_operators()
-            except Exception:
-                pass
-
             for op in sorted(remote_ops):
-                if op not in hidden_ops:
-                    result.append({"id": f"operator:{op}", "nama": op})
+                result.append({"id": f"operator:{op}", "nama": op})
             return result
         else:
             user = UserRepository.get_by_id(kasir_id)
@@ -334,19 +334,10 @@ class ReportService:
 
     @staticmethod
     def get_pendapatan_kategori(tanggal, kategori, kasir_id=None, metode_pembayaran=None):
-        """Menhitung pendapatan per kategori."""
-        if kategori == 'guest':
-            jenis = ["beli_paket_guest", "tambah_waktu_guest"]
-        else:
-            jenis = ["beli_paket_member", "tambah_waktu_sesi"]
-
-        return TransaksiRepository.get_total_pendapatan_by_tanggal(tanggal, jenis, kasir_id, metode_pembayaran)
-
-    @staticmethod
-    def get_total_menit_harian(tanggal):
-        """Menghitung total menit terpakai."""
-        sesi_list = SesiRepository.get_selesai_by_tanggal(tanggal)
-        return sum(s.menit_terpakai() for s in sesi_list)
+        """Pendapatan bersih per kategori: pembelian dikurangi refund kategori itu."""
+        return TransaksiRepository.get_total_pendapatan_kategori(
+            tanggal, kategori, kasir_id, metode_pembayaran
+        )
 
     @staticmethod
     def _format_history_struk(transaksi_list):
@@ -391,8 +382,8 @@ class ReportService:
         return LogAuditService.get_system_logs(limit, filter_text, kategori)
 
     @staticmethod
-    def clear_system_logs(operator="system"):
-        return LogAuditService.clear_system_logs(operator)
+    def clear_system_logs(operator="system", archive=True):
+        return LogAuditService.clear_system_logs(operator, archive)
 
     @staticmethod
     def clear_all_transactions(operator="system"):

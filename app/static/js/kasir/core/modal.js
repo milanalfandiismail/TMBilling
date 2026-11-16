@@ -31,7 +31,7 @@ const Modal = {
         if (this.activeModal) this.closeModal();
 
         const modalDiv = document.createElement('div');
-        modalDiv.className = 'fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center z-50 p-4';
+        modalDiv.className = 'fixed inset-0 bg-black/85 flex items-center justify-center z-50 p-2.5 sm:p-4 md:p-6 overflow-y-auto overscroll-contain';
         modalDiv.innerHTML = html;
 
         document.body.appendChild(modalDiv);
@@ -67,7 +67,17 @@ const Modal = {
         }
     },
 
-    confirm(message, onConfirm, onCancel) {
+    confirm(message, onConfirm, onCancel, { requireCheck = null } = {}) {
+        const checkedOk = () => {
+            if (!requireCheck) return true;
+            const el = document.getElementById('modal-confirm-check');
+            return !!(el && el.checked);
+        };
+        const checkHtml = requireCheck ? `
+                <div class="mb-4 flex items-start gap-2.5">
+                    <input id="modal-confirm-check" type="checkbox" class="mt-0.5 w-4 h-4 shrink-0 accent-red-500 cursor-pointer">
+                    <label for="modal-confirm-check" class="text-[11px] lg:max-xl:text-xs xl:text-sm text-neutral-300 cursor-pointer select-none">${requireCheck}</label>
+                </div>` : '';
         const content = `
             <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-5 sm:p-6 max-w-md lg:max-w-lg xl:max-w-xl w-[calc(100%-2rem)] mx-auto shadow-2xl flex flex-col max-h-[90vh]">
                 <div class="flex items-center gap-3 mb-4 pb-3 border-b border-[#1c1c1c] shrink-0">
@@ -76,10 +86,10 @@ const Modal = {
                     </div>
                     <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider font-mono">Konfirmasi Aksi</h3>
                 </div>
-                <div class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 mb-5 leading-relaxed flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">${message}</div>
+                <div id="modal-confirm-message" class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-300 mb-5 leading-relaxed flex-1 min-h-0 overflow-y-auto pr-1 scrollbar-thin">${message}</div>${checkHtml}
                 <div class="flex gap-3 justify-end pt-3 border-t border-[#1c1c1c] shrink-0">
                     <button id="modal-cancel-btn" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] border border-[#262626] hover:bg-[#222] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Batal</button>
-                    <button id="modal-confirm-btn" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
+                    <button id="modal-confirm-btn" class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
                         Ya, Lanjutkan <span class="px-1.5 py-0.5 text-[9px] lg:max-xl:text-[10px] xl:text-xs bg-neutral-900 text-neutral-300 rounded font-mono font-black">E</span>
                     </button>
                 </div>
@@ -93,6 +103,10 @@ const Modal = {
 
             if (e.key.toLowerCase() === 'e') {
                 e.preventDefault();
+                if (!checkedOk()) {
+                    document.getElementById('modal-confirm-check')?.focus();
+                    return;
+                }
                 if (onConfirm && typeof onConfirm === 'function') {
                     const res = await onConfirm();
                     if (res === false) return;
@@ -118,7 +132,16 @@ const Modal = {
             const cancelBtn = document.getElementById('modal-cancel-btn');
 
             if (confirmBtn) {
+                const checkBox = document.getElementById('modal-confirm-check');
+                if (checkBox) {
+                    confirmBtn.disabled = !checkBox.checked;
+                    checkBox.onchange = () => { confirmBtn.disabled = !checkBox.checked; };
+                }
                 confirmBtn.onclick = async () => {
+                    if (!checkedOk()) {
+                        document.getElementById('modal-confirm-check')?.focus();
+                        return;
+                    }
                     if (onConfirm && typeof onConfirm === 'function') {
                         const res = await onConfirm();
                         if (res === false) return;

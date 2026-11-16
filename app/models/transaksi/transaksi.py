@@ -37,7 +37,7 @@ class Transaksi(db.Model):
     __tablename__ = "transaksi"
     
     id = db.Column(db.Integer, primary_key=True)
-    sesi_id = db.Column(db.Integer, db.ForeignKey("sesi.id"), nullable=True)
+    sesi_id = db.Column(db.Integer, db.ForeignKey("sesi.id"), nullable=True, index=True)
     member_id = db.Column(db.Integer, db.ForeignKey("member.id", ondelete="SET NULL"), nullable=True)
     paket_id = db.Column(db.Integer, db.ForeignKey("paket.id"), nullable=True)
     
@@ -48,7 +48,7 @@ class Transaksi(db.Model):
     jumlah = db.Column(db.Integer, default=0)
     menit = db.Column(db.Integer, default=0)
     keterangan = db.Column(db.String(200))
-    dibuat_pada = db.Column(db.DateTime, default=now_local)
+    dibuat_pada = db.Column(db.DateTime, default=now_local, index=True)
     no_nota = db.Column(db.String(50), unique=True, index=True, nullable=True)
     
     # Relationships

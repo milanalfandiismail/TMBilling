@@ -11,7 +11,9 @@ from app.models import Transaksi
 from app.models import Sesi
 from app.models import Member
 from app.models import PC
-from sqlalchemy import func, or_
+from app.models import Paket, User
+from sqlalchemy import case, func, or_
+from sqlalchemy.orm import joinedload
 
 
 class TransaksiRepository:
@@ -24,25 +26,20 @@ class TransaksiRepository:
     @staticmethod
     def get_by_id(transaksi_id):
         """Ambil transaksi berdasarkan ID."""
-        return Transaksi.query.get(transaksi_id)
+        return db.session.get(Transaksi, transaksi_id)
+
+    @staticmethod
+    def claim_refund(transaksi_id):
+        """Tandai transaksi sudah direfund secara atomik; True bila request ini yang menang."""
+        rows = Transaksi.query.filter_by(id=transaksi_id, is_refunded=False).update(
+            {"is_refunded": True}, synchronize_session=False
+        )
+        return rows == 1
 
     @staticmethod
     def get_by_no_nota(no_nota):
         """Ambil transaksi berdasarkan nomor nota."""
         return Transaksi.query.filter_by(no_nota=no_nota).first()
-
-    @staticmethod
-    def get_by_sesi_id(sesi_id):
-        """Ambil transaksi berdasarkan ID sesi (terutama untuk fallback format lama)."""
-        return Transaksi.query.filter_by(sesi_id=sesi_id).order_by(Transaksi.dibuat_pada.asc()).first()
-
-    @staticmethod
-    def get_last_paket_member(member_id):
-        """Ambil pembelian paket terakhir member."""
-        return Transaksi.query.filter_by(
-            member_id=member_id,
-            jenis="beli_paket_member"
-        ).order_by(Transaksi.dibuat_pada.desc()).first()
 
     @staticmethod
     def get_riwayat_paket_member(member_id):
@@ -52,6 +49,11 @@ class TransaksiRepository:
             Transaksi.jenis.in_(["beli_paket_member", "tambah_waktu_sesi"]),
             Transaksi.is_refunded == False
         ).order_by(Transaksi.dibuat_pada.desc()).all()
+
+    @staticmethod
+    def has_history_for_member(member_id):
+        """True bila member sudah punya transaksi tercatat."""
+        return Transaksi.query.filter_by(member_id=member_id).first() is not None
 
     @staticmethod
     def get_paginated_by_member(member_id, page=1, per_page=10):
@@ -124,14 +126,14 @@ class TransaksiRepository:
         return query.order_by(Transaksi.dibuat_pada.desc()).all()
 
     @staticmethod
-    def get_history_nota_by_date(tanggal=None, kasir_id=None):
-        """Alias untuk get_all_by_tanggal_with_nota"""
-        return TransaksiRepository.get_all_by_tanggal_with_nota(tanggal, kasir_id)
-
-    @staticmethod
     def get_history_nota_paginated(tanggal=None, page=1, per_page=10, kasir_id=None, metode_pembayaran=None, q=None):
         """Ambil histori nota dengan pagination dan pencarian query."""
-        query = Transaksi.query.filter(Transaksi.no_nota != None)
+        query = Transaksi.query.options(
+            joinedload(Transaksi.member),
+            joinedload(Transaksi.paket),
+            joinedload(Transaksi.user),
+            joinedload(Transaksi.sesi).joinedload(Sesi.pc),
+        ).filter(Transaksi.no_nota != None)
         if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
             from app.utils.timezone_utils import get_local_date_range_utc
             start_utc, end_utc = get_local_date_range_utc(tanggal)
@@ -178,11 +180,6 @@ class TransaksiRepository:
         db.session.add(transaksi)
 
     # Update dipindah ke Service (Explicit commit)
-
-    @staticmethod
-    def update_refund_status(transaksi):
-        """Menandai transaksi sebagai sudah direfund (Tanpa Commit)."""
-        transaksi.is_refunded = True
 
 
     # =========================================================================
@@ -253,6 +250,43 @@ class TransaksiRepository:
         return query.scalar() or 0
 
     @staticmethod
+    def get_total_pendapatan_kategori(tanggal=None, kategori="guest", kasir_id=None, metode_pembayaran=None):
+        """Total bersih billing per kategori: pembelian ditambah refund milik kategori itu."""
+        from sqlalchemy import and_, or_
+        from app.utils.timezone_utils import get_local_date_range_utc
+
+        if kategori == "guest":
+            jenis = ["beli_paket_guest", "tambah_waktu_guest"]
+            filter_refund = and_(
+                Transaksi.jenis == "refund_paket",
+                Transaksi.sesi_id.isnot(None),
+                Transaksi.member_id.is_(None),
+            )
+        else:
+            jenis = ["beli_paket_member", "tambah_waktu_sesi"]
+            filter_refund = and_(
+                Transaksi.jenis == "refund_paket",
+                Transaksi.member_id.isnot(None),
+            )
+
+        query = db.session.query(func.sum(Transaksi.jumlah)).filter(
+            or_(Transaksi.jenis.in_(jenis), filter_refund)
+        )
+        if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
+            start_utc, end_utc = get_local_date_range_utc(tanggal)
+            query = query.filter(Transaksi.dibuat_pada >= start_utc, Transaksi.dibuat_pada < end_utc)
+        query = TransaksiRepository._apply_kasir_filter(query, kasir_id)
+        if metode_pembayaran:
+            if metode_pembayaran == "Tunai":
+                query = query.filter(
+                    (Transaksi.metode_pembayaran.in_(["Tunai", "Cash"]))
+                    | (Transaksi.metode_pembayaran == None)
+                )
+            else:
+                query = query.filter(Transaksi.metode_pembayaran == metode_pembayaran)
+        return query.scalar() or 0
+
+    @staticmethod
     def get_total_pendapatan_by_tanggal(tanggal=None, jenis_list=None, kasir_id=None, metode_pembayaran=None):
         """Total pendapatan berdasarkan tanggal dan jenis transaksi tertentu."""
         query = db.session.query(func.sum(Transaksi.jumlah))
@@ -290,12 +324,15 @@ class TransaksiRepository:
         return query.scalar() or 0
 
     @staticmethod
-    def get_last_nota_today(date_str):
-        """Ambil transaksi terakhir hari ini berdasarkan format nota TM-YYYYMMDD-."""
+    def get_max_nota_seq(date_str):
+        """Ambil nomor urut nota tertinggi hari ini (TM-YYYYMMDD-NNN) dalam satu query."""
         prefix = f"TM-{date_str}-"
-        return Transaksi.query.filter(
-            Transaksi.no_nota.like(f"{prefix}%")
-        ).order_by(Transaksi.no_nota.desc()).first()
+        upper = prefix[:-1] + chr(ord(prefix[-1]) + 1)
+        seq = db.func.cast(db.func.substr(Transaksi.no_nota, len(prefix) + 1), db.Integer)
+        return db.session.query(db.func.max(seq)).filter(
+            Transaksi.no_nota >= prefix,
+            Transaksi.no_nota < upper,
+        ).scalar() or 0
 
     # get_income_by_type dipindah ke ReportService (Logic Mapping)
 
@@ -314,8 +351,11 @@ class TransaksiRepository:
         """Mengambil ringkasan jumlah transaksi dan total per metode pembayaran berdasarkan filter."""
         query = db.session.query(
             Transaksi.metode_pembayaran,
-            func.count(Transaksi.id),
-            func.sum(Transaksi.jumlah)
+            func.sum(case((Transaksi.jenis != "refund_paket", 1), else_=0)),
+            func.sum(Transaksi.jumlah),
+            func.sum(case((Transaksi.jenis == "refund_paket", -Transaksi.jumlah), else_=0)),
+            func.sum(case((Transaksi.jenis != "refund_paket", Transaksi.jumlah), else_=0)),
+            func.sum(case((Transaksi.jenis == "refund_paket", 1), else_=0))
         ).filter(Transaksi.no_nota != None)
 
         if tanggal and str(tanggal).strip().lower() not in ("all", "semua", "none", ""):
@@ -353,12 +393,15 @@ class TransaksiRepository:
         results = query.all()
 
         breakdown = {}
-        for method, count, total in results:
+        for method, count, total, refund, gross, refund_count in results:
             norm_method = "Tunai" if not method or method in ["Tunai", "Cash"] else method
             if norm_method not in breakdown:
-                breakdown[norm_method] = {"count": 0, "total": 0}
+                breakdown[norm_method] = {"count": 0, "total": 0, "refund": 0, "gross": 0, "refund_count": 0}
             breakdown[norm_method]["count"] += count or 0
             breakdown[norm_method]["total"] += int(total or 0)
+            breakdown[norm_method]["refund"] += int(refund or 0)
+            breakdown[norm_method]["gross"] += int(gross or 0)
+            breakdown[norm_method]["refund_count"] += int(refund_count or 0)
         return breakdown
 
 
@@ -375,7 +418,7 @@ class TransaksiRepository:
     @staticmethod
     def delete_by_id(t_id):
         """Menghapus satu transaksi (Tanpa Commit)."""
-        t = Transaksi.query.get(t_id)
+        t = db.session.get(Transaksi, t_id)
         if t:
             db.session.delete(t)
             return True

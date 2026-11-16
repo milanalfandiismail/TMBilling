@@ -8,9 +8,19 @@ system logs, dan manajemen struk/nota.
 
 from flask import Blueprint, request, jsonify, Response, session
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
-from app.services import ReportService
+from app.services import ReportService, maintenance_mode
 
 report_api_bp = Blueprint("report", __name__)
+
+
+def _pagination_args(default_per_page):
+    page = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", default_per_page, type=int)
+    if page is None or page < 1:
+        raise ValueError("Parameter page harus >= 1")
+    if per_page is None or not (1 <= per_page <= 100):
+        raise ValueError("Parameter per_page harus 1..100")
+    return page, per_page
 
 
 # =========================================================================
@@ -26,8 +36,7 @@ def get_laporan():
         tanggal = request.args.get("tanggal")
         kasir_id = request.args.get("kasir_id")
         metode_pembayaran = request.args.get("metode_pembayaran")
-        page = request.args.get("page", 1, type=int)
-        per_page = request.args.get("per_page", 10, type=int)
+        page, per_page = _pagination_args(10)
         q = request.args.get("q", "").strip()
         
         # RULE: Kasir hanya boleh lihat laporan diri sendiri
@@ -36,6 +45,8 @@ def get_laporan():
             
         laporan = ReportService.get_laporan_by_tanggal(tanggal, kasir_id, page, per_page, metode_pembayaran, q)
         return jsonify(laporan), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -47,8 +58,7 @@ def get_laporan_kantin():
         tanggal = request.args.get("tanggal")
         kasir_id = request.args.get("kasir_id")
         metode_pembayaran = request.args.get("metode_pembayaran")
-        page = request.args.get("page", 1, type=int)
-        per_page = request.args.get("per_page", 12, type=int)
+        page, per_page = _pagination_args(12)
         q = request.args.get("q", "").strip()
         
         # RULE: Kasir hanya boleh lihat laporan diri sendiri
@@ -57,6 +67,8 @@ def get_laporan_kantin():
             
         laporan = ReportService.get_laporan_kantin_by_tanggal(tanggal, kasir_id, page, per_page, metode_pembayaran, q)
         return jsonify(laporan), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -65,7 +77,8 @@ def get_laporan_kantin():
 def laporan_harian():
     """Ringkasan cepat pendapatan, total sesi, dan sesi aktif hari ini."""
     try:
-        laporan = ReportService.get_laporan_harian()
+        kasir_id = session.get("kasir_id") if session.get("kasir_role") == "kasir" else None
+        laporan = ReportService.get_laporan_harian(kasir_id=kasir_id)
         return jsonify(laporan), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -128,7 +141,9 @@ def get_struk(identifier):
         
         if not data:
             return jsonify({"error": "Data transaksi tidak ditemukan"}), 404
-            
+        if session.get("kasir_role") != "admin" and data.get("kasir_id") != session.get("kasir_id"):
+            return jsonify({"error": "Struk ini milik kasir lain"}), 403
+
         return jsonify(data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -145,6 +160,8 @@ def get_struk_menu(t_menu_id):
         data = ReportService.get_struk_menu_data(t_menu_id, kasir_name=kasir)
         if not data:
             return jsonify({"error": "Data transaksi menu tidak ditemukan"}), 404
+        if session.get("kasir_role") != "admin" and data.get("kasir_id") != session.get("kasir_id"):
+            return jsonify({"error": "Struk ini milik kasir lain"}), 403
         return jsonify(data), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -212,7 +229,9 @@ def delete_transaction_endpoint(t_id):
         kasir = session.get("kasir_username", "kasir")
         if ReportService.delete_transaction(t_id, operator=kasir):
             return jsonify({"success": True, "message": "Struk berhasil dihapus"}), 200
-        return jsonify({"error": "Gagal menghapus struk"}), 500
+        return jsonify({"error": "Struk tidak ditemukan"}), 404
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -223,9 +242,13 @@ def clear_date_transactions_endpoint(tanggal):
     """Hapus seluruh transaksi pada tanggal tertentu."""
     try:
         kasir = session.get("kasir_username", "kasir")
-        if ReportService.clear_transactions_by_date(tanggal, operator=kasir):
+        with maintenance_mode.restoring():
+            hasil = ReportService.clear_transactions_by_date(tanggal, operator=kasir)
+        if hasil:
             return jsonify({"success": True, "message": f"Transaksi tanggal {tanggal} berhasil dihapus"}), 200
         return jsonify({"error": "Gagal menghapus transaksi"}), 500
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -280,6 +303,8 @@ def export_billing():
             mimetype="application/pdf",
             headers={"Content-Disposition": f"attachment;filename={filename}"}
         )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -303,6 +328,8 @@ def export_kantin():
             mimetype="application/pdf",
             headers={"Content-Disposition": f"attachment;filename={filename}"}
         )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -321,6 +348,8 @@ def export_pnl():
             mimetype="application/pdf",
             headers={"Content-Disposition": f"attachment;filename={filename}"}
         )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

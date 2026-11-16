@@ -9,6 +9,7 @@ riwayat login PC, dan transaksi billing mereka.
 
 from functools import wraps
 from flask import Blueprint, render_template, request, jsonify, session, redirect, url_for
+from app.models import now_local
 from app.repositories import MemberRepository, PCRepository, SesiRepository, TransaksiRepository
 from app.services.member.member_service import MemberService
 
@@ -60,17 +61,30 @@ def login_action():
     if not username or not password:
         return jsonify({"error": "Username dan password wajib diisi"}), 400
 
+    from app.services.auth import login_throttle
+    from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+    client_ip = IpWhitelistService.extract_client_ip(request.headers, request.remote_addr)
+    if login_throttle.check(client_ip, username):
+        return jsonify({"error": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}), 429
+
     try:
         member = MemberRepository.get_by_username(username)
         if not member:
-            return jsonify({"error": "Akun member tidak ditemukan"}), 404
+            login_throttle.fail(client_ip, username)
+            return jsonify({"error": "Username atau password salah"}), 401
 
         if not member.aktif:
             return jsonify({"error": "Akun member Anda dinonaktifkan oleh kasir"}), 403
 
         if not member.check_password(password):
-            return jsonify({"error": "Password yang Anda masukkan salah"}), 401
+            login_throttle.fail(client_ip, username)
+            return jsonify({"error": "Username atau password salah"}), 401
 
+        if member.kadaluarsa_pada and now_local() > member.kadaluarsa_pada:
+            return jsonify({"error": "Masa aktif member sudah kadaluarsa"}), 403
+
+        login_throttle.ok(client_ip, username)
+        session.clear()
         session["member_id"] = member.id
         session["member_username"] = member.username
         session["member_role"] = "member"
@@ -94,10 +108,21 @@ def logout_action():
 def public_pc_status():
     """Mengambil status PC secara publik (untuk peta PC di landing page)."""
     try:
+        from sqlalchemy.orm import joinedload
+        from app.models import Sesi
+
         pcs = PCRepository.get_all()
+        active_sessions = (
+            Sesi.query.options(joinedload(Sesi.member))
+            .filter_by(status="aktif").order_by(Sesi.id.desc()).all()
+        )
+        sesi_map = {}
+        for s in active_sessions:
+            sesi_map.setdefault(s.pc_id, s)
+
         result = []
         for pc in pcs:
-            s = pc.sesi_aktif
+            s = sesi_map.get(pc.id)
             is_occupied = not pc.aktif or s is not None or pc.is_admin_mode
             status_visual = "terpakai" if is_occupied else "kosong"
 
@@ -114,7 +139,7 @@ def public_pc_status():
                 nama_tampil = "Admin / Teknisi"
             elif s:
                 if s.member:
-                    nama_tampil = s.member.username
+                    nama_tampil = "Member"
                 else:
                     nama_tampil = "Guest"
 
@@ -157,7 +182,10 @@ def dashboard_page():
     total_play_minutes = sum(s.menit_terpakai() for s in member.sesi_list)
     total_play_hours = round(total_play_minutes / 60, 1)
 
-    total_spent = sum(t.jumlah for t in member.transaksi_list if not t.is_refunded)
+    total_spent = sum(
+        t.jumlah for t in member.transaksi_list
+        if t.jumlah > 0 and not t.is_refunded
+    )
 
     sesi_history = SesiRepository.get_history_by_member(member.id, limit=10)
 

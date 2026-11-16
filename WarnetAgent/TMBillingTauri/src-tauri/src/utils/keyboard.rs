@@ -14,14 +14,20 @@ pub fn init_keyboard_hook() {
     #[cfg(target_os = "windows")]
     std::thread::spawn(|| {
         unsafe {
-            // Module handle of current process (required for low-level hook)
-            let h_instance = GetModuleHandleW(None).unwrap();
-            let hook = SetWindowsHookExW(
+            // Hook gagal dipasang = PC terkunci tanpa keyboard; matikan proses biar watchdog memasang ulang.
+            let h_instance = match GetModuleHandleW(None) {
+                Ok(h) => h,
+                Err(_) => std::process::exit(1),
+            };
+            let hook = match SetWindowsHookExW(
                 WH_KEYBOARD_LL,
                 Some(keyboard_proc),
                 h_instance,
                 0,
-            ).expect("Failed to set keyboard hook");
+            ) {
+                Ok(h) => h,
+                Err(_) => std::process::exit(1),
+            };
             
             *HHOOK_HANDLE.lock().unwrap() = Some(hook.0);
             

@@ -4,6 +4,7 @@ import socket
 import sys
 import os
 import logging
+import tempfile
 import threading
 import time
 
@@ -32,6 +33,22 @@ class VNCService:
                 logger.info(f"Membuat token file default di: {cls.TOKEN_FILE_PATH}")
 
     @classmethod
+    def _write_targets(cls, targets):
+        """Menulis seluruh token lewat file sementara lalu replace atomik."""
+        dir_name = os.path.dirname(cls.TOKEN_FILE_PATH) or "."
+        os.makedirs(dir_name, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(dir=dir_name, prefix="vnc_tokens_", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                for t, target in targets.items():
+                    f.write(f"{t}: {target}\n")
+            os.replace(tmp_path, cls.TOKEN_FILE_PATH)
+        except Exception:
+            if os.path.exists(tmp_path):
+                os.remove(tmp_path)
+            raise
+
+    @classmethod
     def set_token(cls, token, host, port):
         """Menambahkan atau memperbarui token target secara thread-safe."""
         cls.ensure_default_tokens()
@@ -48,9 +65,7 @@ class VNCService:
 
             targets[token.strip()] = f"{host}:{port}"
 
-            with open(cls.TOKEN_FILE_PATH, "w") as f:
-                for t, target in targets.items():
-                    f.write(f"{t}: {target}\n")
+            cls._write_targets(targets)
             logger.info(f"Token VNC diperbarui: {token} -> {host}:{port}")
 
     @classmethod
@@ -70,9 +85,7 @@ class VNCService:
 
             if token.strip() in targets:
                 targets.pop(token.strip())
-                with open(cls.TOKEN_FILE_PATH, "w") as f:
-                    for t, target in targets.items():
-                        f.write(f"{t}: {target}\n")
+                cls._write_targets(targets)
                 logger.info(f"Token VNC dihapus: {token}")
 
     @classmethod
@@ -113,10 +126,24 @@ class VNCService:
                 f"--token-source={cls.TOKEN_FILE_PATH}",
                 f"0.0.0.0:{cls.LISTEN_PORT}"
             ]
+            # Pastikan folder logs ada & rotasi log jika ukuran > 5MB
+            log_dir = os.path.join(os.path.dirname(cls.TOKEN_FILE_PATH), "logs")
+            os.makedirs(log_dir, exist_ok=True)
+            log_file_path = os.path.join(log_dir, "websockify.log")
+            if os.path.exists(log_file_path) and os.path.getsize(log_file_path) > 5 * 1024 * 1024:
+                try:
+                    old_log = log_file_path + ".old"
+                    if os.path.exists(old_log):
+                        os.remove(old_log)
+                    os.rename(log_file_path, old_log)
+                except Exception as rot_e:
+                    logger.warning(f"Gagal rotasi websockify.log: {rot_e}")
+
+            log_file = open(log_file_path, "a", encoding="utf-8")
             cls._process = subprocess.Popen(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=log_file,
+                stderr=log_file,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
             import time
@@ -124,11 +151,16 @@ class VNCService:
 
             # Cek jika proses langsung mati
             if cls._process.poll() is not None:
-                _, err = cls._process.communicate()
-                err_msg = err.decode('utf-8', errors='ignore').strip()
+                err_msg = ""
+                try:
+                    with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        lines = f.readlines()
+                        err_msg = "".join(lines[-10:]).strip()
+                except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
+                    pass
                 return False, f"Proses websockify gagal berjalan: {err_msg or 'Unknown error'}"
 
-            logger.info(f"Proses Websockify dengan TokenFile berhasil dijalankan pada port {cls.LISTEN_PORT}")
+            logger.info(f"Proses Websockify dengan TokenFile berhasil dijalankan pada port {cls.LISTEN_PORT} (log: {log_file_path})")
             return True, "Websockify berhasil dinyalakan"
         except Exception as e:
             logger.error(f"Gagal menjalankan Websockify: {e}")
@@ -142,15 +174,9 @@ class VNCClientProxyService:
     _active_proxies = {}  # pc_id -> {port, client_ip, token, started_at}
     _proxies_lock = threading.Lock()
     
-    _vnc_events = {}
-    _vnc_events_lock = threading.Lock()
     _vnc_status = {}  # pc_id -> {"ready": bool, "error": str}
+    _vnc_status_lock = threading.Lock()
     
-    @classmethod
-    def allocate_port(cls):
-        # Deprecated: We now route all traffic via Port 8081 using Token Multiplexing
-        return VNCService.LISTEN_PORT
-
     @classmethod
     def start_proxy(cls, pc_id, client_ip):
         success, msg = VNCService.ensure_websockify_running()
@@ -158,7 +184,14 @@ class VNCClientProxyService:
             return False, f"Gagal mengaktifkan daemon websockify terpusat: {msg}", None, None
             
         try:
-            token = f"client_{pc_id}"
+            import secrets
+            token = secrets.token_urlsafe(24)
+            # Cabut token lama agar hanya satu sesi aktif per PC
+            with cls._proxies_lock:
+                old = cls._active_proxies.get(pc_id)
+                old_token = old.get("token") if old else None
+            if old_token:
+                VNCService.remove_token(old_token)
             # Daftarkan token target client_ip:5900
             VNCService.set_token(token, client_ip, 5900)
             
@@ -186,7 +219,7 @@ class VNCClientProxyService:
             try:
                 from app.services import ClientService
                 ClientService.queue_fast_command(pc_id, "vnc_stop")
-            except Exception:
+            except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
                 pass
             return True, "Proxy tidak aktif"
             
@@ -210,51 +243,43 @@ class VNCClientProxyService:
 
     @classmethod
     def reset_vnc_status(cls, pc_id):
-        with cls._vnc_events_lock:
+        with cls._vnc_status_lock:
             cls._vnc_status.pop(pc_id, None)
-            if pc_id in cls._vnc_events:
-                cls._vnc_events[pc_id].clear()
-            else:
-                cls._vnc_events[pc_id] = threading.Event()
 
     @classmethod
     def set_vnc_ready(cls, pc_id, ready=True, error_msg=None):
-        with cls._vnc_events_lock:
+        with cls._vnc_status_lock:
             cls._vnc_status[pc_id] = {"ready": ready, "error": error_msg}
-            if pc_id not in cls._vnc_events:
-                cls._vnc_events[pc_id] = threading.Event()
-            cls._vnc_events[pc_id].set()
 
     @classmethod
-    def wait_vnc_ready(cls, pc_id, timeout=25.0):
-        event = None
-        with cls._vnc_events_lock:
-            if pc_id not in cls._vnc_events:
-                cls._vnc_events[pc_id] = threading.Event()
-            event = cls._vnc_events[pc_id]
-            
-        success = event.wait(timeout)
-        
-        status = None
-        with cls._vnc_events_lock:
-            cls._vnc_events.pop(pc_id, None)
+    def poll_vnc_result(cls, pc_id):
+        """Ambil hasil non-blocking dari agent.
+
+        Returns:
+            tuple: ("none"|"ready"|"error", pesan_error)
+        """
+        with cls._vnc_status_lock:
             status = cls._vnc_status.pop(pc_id, None)
-            
-        if not success:
-            return False, "PC client tidak merespon dalam batas waktu."
-            
-        if status and not status["ready"]:
-            return False, status.get("error") or "Gagal mengaktifkan VNC di client."
-            
-        return True, None
+        if not status:
+            return "none", None
+        if not status.get("ready"):
+            return "error", status.get("error") or "Gagal mengaktifkan VNC di client."
+        return "ready", None
 
     @classmethod
-    def cleanup_stale_proxies(cls, max_idle_seconds=600):
-        now = time.time()
+    def cleanup_stale_proxies(cls):
+        # Proxy hidup mengikuti sesi, bukan umur: hanya PC offline yang dibersihkan.
         stale_pc_ids = []
         with cls._proxies_lock:
             for pc_id, info in cls._active_proxies.items():
-                if now - info["started_at"] > max_idle_seconds:
+                is_pc_offline = False
+                try:
+                    from app.services.cache import OnlineStatusStore
+                    is_pc_offline = not OnlineStatusStore.is_online(pc_id, timeout_seconds=45)
+                except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
+                    pass
+
+                if is_pc_offline:
                     stale_pc_ids.append(pc_id)
                     
         count = 0

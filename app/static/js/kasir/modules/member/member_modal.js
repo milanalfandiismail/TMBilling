@@ -83,7 +83,7 @@ const MemberModal = {
                                 <div class="bg-[#050505] border border-[#1c1c1c] rounded p-4">
                                     <div class="text-[9px] lg:text-base text-neutral-500 uppercase mb-1 font-bold">Status</div>
                                     <div class="flex items-center gap-1.5 ${member.aktif ? 'text-neutral-200' : 'text-neutral-500'} font-bold">
-                                        <span class="w-1.5 h-1.5 rounded-full ${member.aktif ? 'bg-neutral-200 animate-pulse' : 'bg-neutral-600'}"></span>
+                                        <span class="w-1.5 h-1.5 rounded-full ${member.aktif ? 'bg-neutral-200' : 'bg-neutral-600'}"></span>
                                         ${member.aktif ? 'Aktif' : 'Terkunci'}
                                     </div>
                                 </div>

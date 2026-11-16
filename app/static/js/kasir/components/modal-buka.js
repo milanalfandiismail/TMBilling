@@ -78,7 +78,7 @@ const BukaModal = {
         const guestPlaceholder = this.isBatch ? 'Contoh: Squad atau Party' : 'Contoh: Guest1234';
 
         const modalHtml = `
-            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 md:p-6 max-w-md md:max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] w-[calc(100%-2rem)] lg:w-[92vw] xl:w-[88vw] 2xl:w-[84vw] max-h-[92vh] xl:max-h-[88vh] mx-auto flex flex-col my-auto shadow-2xl relative overflow-hidden">
+            <div class="bg-[#111] border border-[#2a2a2a] rounded-xl p-3.5 sm:p-5 md:p-6 max-w-md md:max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] w-full max-h-[90dvh] mx-auto flex flex-col my-auto shadow-2xl relative overflow-hidden">
                 <!-- Header -->
                 <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-[#2a2a2a] shrink-0">
                     <div class="flex items-center gap-3">
@@ -226,7 +226,7 @@ const BukaModal = {
             }
         } catch (err) {
             console.error(err);
-            if (grid) grid.innerHTML = `<div class="text-center py-12 text-red-400 text-xs lg:text-base">Gagal memuat paket: ${err.message}</div>`;
+            if (grid) grid.innerHTML = `<div class="text-center py-12 text-red-400 text-xs lg:text-base">Gagal memuat paket: ${Utils.escapeHtml(err.message)}</div>`;
         }
     },
 
@@ -277,6 +277,7 @@ const BukaModal = {
             const pricePerPc = paket.harga || 0;
             const totalPrice = this.isBatch ? pricePerPc * this.pcList.length : pricePerPc;
 
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             previewEl.innerHTML = `
                 <div class="font-bold text-xs lg:text-sm text-neutral-100 font-mono">${paket.nama}</div>
                 <div class="flex items-center justify-between text-[11px] lg:text-xs font-mono mt-1 pt-1 border-t border-[#222]">
@@ -331,18 +332,22 @@ const BukaModal = {
                 onConfirm: async () => {
                     try {
                         const res = await API.sesi.bukaGuestBatch(pcKodes, parseInt(paketId), namaGuest, metodePembayaran);
-                        if (res.success) {
-                            Toast.success(`🟢 Berhasil membuka ${res.total_success} sesi bersama!`);
-                            Modal.closeModal();
-                            if (window.DashboardSelection) {
-                                window.DashboardSelection.clearSelection();
-                            }
-                            if (typeof Dashboard !== 'undefined') Dashboard.load();
-                        } else {
-                            Toast.error(res.error || 'Gagal membuka sesi');
+                        const gagal = res.errors || [];
+                        if (gagal.length) {
+                            const daftar = gagal.map(e => e.pc_kode + ': ' + e.error).join('; ');
+                            Toast.error('Sebagian sesi gagal dibuka — ' + daftar);
+                            if (res.total_success > 0 && typeof Dashboard !== 'undefined') Dashboard.load();
+                            return false;
                         }
+                        Toast.success('Berhasil membuka ' + res.total_success + ' sesi bersama!');
+                        Modal.closeModal();
+                        if (window.DashboardSelection) {
+                            window.DashboardSelection.clearSelection();
+                        }
+                        if (typeof Dashboard !== 'undefined') Dashboard.load();
                     } catch (err) {
                         Toast.error(err.message);
+                        return false;
                     }
                 }
             });
@@ -371,6 +376,7 @@ const BukaModal = {
                         if (typeof Dashboard !== 'undefined') Dashboard.load();
                     } catch (err) {
                         Toast.error(err.message);
+                        return false;
                     }
                 }
             });

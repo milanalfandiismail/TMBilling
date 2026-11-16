@@ -7,6 +7,8 @@ bagian aplikasi, termasuk validasi dan formatting nominal/durasi.
 """
 
 import re
+import os
+
 
 
 def validate_ip(ip):
@@ -64,21 +66,15 @@ def format_duration(menit):
         return f"{jam} Jam {sisa}M"
 
 
-def format_rupiah(nominal):
-    """Memformat angka nominal ke format Rupiah Indonesia.
-
-    Args:
-        nominal (int): Nominal dalam satuan Rupiah.
-
-    Returns:
-        str: String dengan format 'Rp10.000' (standar EYD/PUEBI tanpa spasi).
-    """
-    if nominal is None:
-        nominal = 0
-    formatted = f"{int(nominal):,}".replace(",", ".")
-    return f"Rp{formatted}"
+def natural_sort_key(value):
+    """Kunci urutan alami: TM-1, TM-2, TM-10."""
+    if not value:
+        return []
+    return [int(text) if text.isdigit() else text.lower()
+            for text in re.split(r'(\d+)', value)]
 
 
+from html import escape
 from html.parser import HTMLParser
 
 
@@ -98,7 +94,8 @@ class SafeHTMLParser(HTMLParser):
         '*': {'class', 'style', 'id', 'align'}
     }
 
-    DISALLOWED_PROTOCOLS = ('javascript:', 'data:text/html', 'vbscript:')
+    # Allowlist protokol: apa pun di luar daftar ini (termasuk javascript: yang disamarkan) dibuang
+    SAFE_PROTOCOLS = ('http://', 'https://', 'mailto:', '/', '#', 'data:image/')
     DANGEROUS_TAGS = {'script', 'style', 'iframe', 'embed', 'object', 'applet', 'form', 'input', 'button', 'select', 'textarea'}
 
     def __init__(self):
@@ -122,8 +119,9 @@ class SafeHTMLParser(HTMLParser):
                 tag_allowed = self.ALLOWED_ATTRS.get(tag_lower, set()) | self.ALLOWED_ATTRS.get('*', set())
                 if attr_name_lower in tag_allowed:
                     if attr_name_lower in ('href', 'src'):
-                        attr_val_clean = (attr_val or '').strip().lower()
-                        if any(attr_val_clean.startswith(proto) for proto in self.DISALLOWED_PROTOCOLS):
+                        # Buang karakter kontrol/spasi agar "java\tscript:" tidak lolos
+                        attr_val_clean = re.sub(r"[\x00-\x20]+", "", (attr_val or '').lower())
+                        if not attr_val_clean.startswith(self.SAFE_PROTOCOLS):
                             continue
                     if attr_name_lower == 'style':
                         style_clean = (attr_val or '').lower()
@@ -131,7 +129,7 @@ class SafeHTMLParser(HTMLParser):
                             continue
                     cleaned_attrs.append((attr_name, attr_val))
 
-            attrs_str = "".join(f' {k}="{v}"' for k, v in cleaned_attrs) if cleaned_attrs else ""
+            attrs_str = "".join(f' {k}="{escape(str(v), quote=True)}"' for k, v in cleaned_attrs) if cleaned_attrs else ""
             if tag_lower in ('br', 'hr', 'img'):
                 self.result.append(f"<{tag_lower}{attrs_str} />")
             else:
@@ -258,3 +256,12 @@ def parse_google_maps_info(gmaps_input, warnet_address=""):
         "is_valid": is_valid
     }
 
+
+def remove_quiet(path):
+    """Hapus berkas tanpa melempar; kegagalan dicatat ke log audit."""
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+    except OSError as e:
+        from app.utils.logger import write_log
+        write_log("FILE_REMOVE_ERROR", f"Gagal menghapus berkas {path}: {e}")

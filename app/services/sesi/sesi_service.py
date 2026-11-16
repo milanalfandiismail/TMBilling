@@ -1,4 +1,4 @@
-# app/services/sesi_service.py
+﻿# app/services/sesi_service.py
 
 """Service untuk manajemen sesi bermain.
 
@@ -8,22 +8,25 @@ pindah PC, tambah waktu, dan sinkronisasi waktu real-time.
 
 import secrets
 from datetime import timedelta
-from app.models import Sesi
-from app.models import Transaksi
-from app.models import db, now_local
-from app.repositories import SesiRepository
-from app.repositories import PCRepository
-from app.repositories import MemberRepository
-from app.repositories import PaketRepository
-from app.repositories import TransaksiRepository
+from sqlalchemy.exc import IntegrityError
+from app.models import Sesi, Transaksi, db, now_local
+from app.repositories import (
+    SesiRepository,
+    PCRepository,
+    MemberRepository,
+    PaketRepository,
+    TransaksiRepository
+)
 from app.services.transaksi.transaksi_service import TransaksiService
+from app.services import idempotency
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.utils.logger import write_log
 from app.utils.validators import (
     validate_string_length,
     validate_integer_range,
-    validate_choice
+    validate_choice,
+    validate_payment_method
 )
-
 from app.config import Config
 
 
@@ -39,13 +42,14 @@ class SesiService:
     @staticmethod
     def buka_guest(pc_kode, paket_id, nama_guest="Guest", operator="system", metode_pembayaran="Tunai"):
         """Buka sesi baru untuk guest dan generate nota pembelian."""
+        # Satu blok dengan hapus riwayat per tanggal agar nota baru tidak terhapus.
+        with WRITE_LOCK:
+            return SesiService._buka_guest_locked(pc_kode, paket_id, nama_guest, operator, metode_pembayaran)
+
+    @staticmethod
+    def _buka_guest_locked(pc_kode, paket_id, nama_guest, operator, metode_pembayaran):
         nama_guest = validate_string_length(nama_guest or "Guest", min_len=1, max_len=50, field_name="Nama Guest", required=True)
-        metode_pembayaran = validate_choice(
-            metode_pembayaran or "Tunai",
-            ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
-            field_name="Metode pembayaran",
-            case_sensitive=False
-        )
+        metode_pembayaran = validate_payment_method(metode_pembayaran)
         pc = PCRepository.get_by_kode(pc_kode)
         if not pc: raise ValueError("PC tidak ditemukan")
         if SesiRepository.get_aktif_by_pc(pc.id): raise ValueError("PC sedang dipakai")
@@ -72,10 +76,16 @@ class SesiService:
         
         # Simpan secara atomik di Service Layer
         db.session.add(sesi)
-        db.session.flush() # Ambil ID sesi untuk transaksi
-        transaksi.sesi_id = sesi.id
-        db.session.add(transaksi)
-        db.session.commit()
+        try:
+            db.session.flush() # Ambil ID sesi untuk transaksi
+            transaksi.sesi_id = sesi.id
+            db.session.add(transaksi)
+            db.session.commit()
+        except IntegrityError as e:
+            db.session.rollback()
+            if "sesi.pc_id" in str(getattr(e, "orig", e)):
+                raise ValueError("PC sedang dipakai")
+            raise
 
         detail_guest = {
             "nominal_pembayaran": paket.harga,
@@ -97,6 +107,11 @@ class SesiService:
     @staticmethod
     def buka_member(pc_kode, username, operator="system"):
         """Buka sesi baru untuk member berdasarkan saldo tersimpan."""
+        with WRITE_LOCK:
+            return SesiService._buka_member_locked(pc_kode, username, operator)
+
+    @staticmethod
+    def _buka_member_locked(pc_kode, username, operator="system"):
         pc = PCRepository.get_by_kode(pc_kode)
         if not pc or SesiRepository.get_aktif_by_pc(pc.id):
             raise ValueError("PC tidak tersedia")
@@ -110,13 +125,24 @@ class SesiService:
         member.cek_kadaluarsa()
         if member.waktu_tersimpan <= 0: raise ValueError("Waktu habis")
 
+        # Cegah race condition / double-click: pastikan member belum memiliki sesi aktif
+        if SesiRepository.get_aktif_by_member(member.id):
+            raise ValueError("Member sudah memiliki sesi aktif")
+
         sesi = Sesi(
             tipe="member", member_id=member.id, pc_id=pc.id, status="aktif",
             token_sesi=secrets.token_hex(32), waktu_mulai_sesi=now_local(),
             waktu_tersimpan_awal=member.waktu_tersimpan
         )
-        db.session.add(sesi)
-        db.session.commit()
+        try:
+            db.session.add(sesi)
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            raise ValueError("Member sudah memiliki sesi aktif")
+        except Exception:
+            db.session.rollback()
+            raise
         
         detail_member = {
             "member_id": member.id,
@@ -128,6 +154,7 @@ class SesiService:
         return sesi
 
     @staticmethod
+    @with_write_lock
     def buka_admin(pc_id, token_sesi, admin_nama="ADMIN"):
         """Membuka sesi khusus admin untuk maintenance PC."""
         sesi_baru = Sesi(
@@ -140,7 +167,11 @@ class SesiService:
             waktu_mulai_sesi=now_local()
         )
         db.session.add(sesi_baru)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            raise ValueError("PC sedang dipakai")
         return sesi_baru
 
 
@@ -151,84 +182,124 @@ class SesiService:
     # Fokus: Menambah durasi sesi dan sinkronisasi saldo waktu member.
 
     @staticmethod
-    def tambah_waktu_sesi(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
+    def tambah_waktu_sesi(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai", client_request_id=None):
         """Tambah durasi pada sesi berjalan (Guest/Member) + Suntik Nota TM."""
+        if not idempotency.claim(client_request_id):
+            raise ValueError("Permintaan ini sudah diproses")
+        with WRITE_LOCK:
+            return SesiService._tambah_waktu_sesi_locked(sesi_id, paket, operator, qty, metode_pembayaran)
+
+    @staticmethod
+    def tambah_waktu_sesi_batch(entries, operator="system", metode_pembayaran="Tunai", client_request_id=None):
+        """Tambah waktu beberapa sesi dalam satu transaksi; rollback semua bila gagal."""
+        if not idempotency.claim(client_request_id):
+            raise ValueError("Permintaan ini sudah diproses")
+        with WRITE_LOCK:
+            hasil = []
+            audit_logs = []
+            try:
+                for sesi_id, paket, qty in entries:
+                    hasil.append(SesiService._tambah_waktu_sesi_locked(
+                        sesi_id, paket, operator, qty, metode_pembayaran,
+                        commit=False, audit_logs=audit_logs,
+                    ))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                raise
+            for message, detail in audit_logs:
+                write_log("TAMBAH_WAKTU", message, user=operator, detail_json=detail)
+            return hasil
+
+    @staticmethod
+    def _tambah_waktu_sesi_locked(sesi_id, paket, operator="system", qty=1, metode_pembayaran="Tunai", commit=True, audit_logs=None):
+        if not paket: raise ValueError("Paket tidak ditemukan")
+        if not paket.aktif: raise ValueError("Paket tidak aktif")
         qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
-        metode_pembayaran = validate_choice(
-            metode_pembayaran or "Tunai",
-            ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
-            field_name="Metode pembayaran",
-            case_sensitive=False
-        )
+        metode_pembayaran = validate_payment_method(metode_pembayaran)
 
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         if not sesi: raise ValueError("Sesi tidak aktif")
+        if sesi.tipe not in ("guest", "member"):
+            raise ValueError("Sesi admin tidak bisa ditambah waktu")
 
         if paket.grup_id != sesi.pc.grup_id:
             raise ValueError(f"Paket zona {paket.grup.nama.upper()} tidak cocok dengan PC!")
         
+        total_menit = paket.durasi_menit * qty
+        total_harga = paket.harga * qty
+        nota = TransaksiService.generate_nota()
+        user_id = TransaksiService.get_user_id(operator)
+
+        detail_tambah = {
+            "tipe_tambahan": "waktu",
+            "nominal_transaksi": total_harga,
+            "metode_pembayaran": metode_pembayaran,
+            "waktu_ditambahkan": total_menit
+        }
+
         if sesi.tipe == "member" and sesi.member:
-            sesi.member.tambah_waktu(paket.durasi_menit * qty, (paket.kadaluarsa_hari or 0) * qty)
-            sesi.waktu_tersimpan_awal += (paket.durasi_menit * qty)
+            sesi.member.tambah_waktu(total_menit, (paket.kadaluarsa_hari or 0) * qty)
+            sesi.waktu_tersimpan_awal += total_menit
             
             transaksi = Transaksi(
                 member_id=sesi.member.id, paket_id=paket.id, sesi_id=sesi.id,
-                jenis="tambah_waktu_sesi", jumlah=paket.harga * qty, menit=paket.durasi_menit * qty,
+                jenis="tambah_waktu_sesi", jumlah=total_harga, menit=total_menit,
                 keterangan=f"Tambah waktu member {sesi.member.username} x{qty}",
-                no_nota=TransaksiService.generate_nota(),
-                user_id=TransaksiService.get_user_id(operator),
+                no_nota=nota,
+                user_id=user_id,
                 metode_pembayaran=metode_pembayaran,
                 operator=operator
             )
             db.session.add(transaksi)
-            db.session.commit()
-            
-            detail_tambah = {
-                "tipe_tambahan": "waktu",
-                "nominal_transaksi": paket.harga * qty,
-                "metode_pembayaran": metode_pembayaran,
-                "waktu_ditambahkan": paket.durasi_menit * qty
-            }
-            write_log("TAMBAH_WAKTU", f"Member:{sesi.member.username} | +{paket.durasi_menit * qty}m", user=operator, detail_json=detail_tambah)
+            if commit:
+                db.session.commit()
+
+            message = f"Member:{sesi.member.username} | +{total_menit}m"
+            if audit_logs is None:
+                write_log("TAMBAH_WAKTU", message, user=operator, detail_json=detail_tambah)
+            else:
+                audit_logs.append((message, detail_tambah))
             return {"tipe": "member", "waktu_tersimpan": sesi.member.waktu_tersimpan}
 
         elif sesi.tipe == "guest":
-            sesi.durasi_beli_menit += paket.durasi_menit * qty
-            sesi.total_bayar += paket.harga * qty
+            sesi.durasi_beli_menit += total_menit
+            sesi.total_bayar += total_harga
             
             transaksi = Transaksi(
                 sesi_id=sesi.id, paket_id=paket.id, jenis="tambah_waktu_guest",
-                jumlah=paket.harga * qty, menit=paket.durasi_menit * qty,
+                jumlah=total_harga, menit=total_menit,
                 keterangan=f"Tambah waktu guest {sesi.nama_guest} x{qty}",
-                no_nota=TransaksiService.generate_nota(),
-                user_id=TransaksiService.get_user_id(operator),
+                no_nota=nota,
+                user_id=user_id,
                 metode_pembayaran=metode_pembayaran,
                 operator=operator
             )
             db.session.add(transaksi)
-            db.session.commit()
-            
-            detail_tambah = {
-                "tipe_tambahan": "waktu",
-                "nominal_transaksi": paket.harga * qty,
-                "metode_pembayaran": metode_pembayaran,
-                "waktu_ditambahkan": paket.durasi_menit * qty
-            }
-            write_log("TAMBAH_WAKTU", f"Guest:{sesi.nama_guest} | +{paket.durasi_menit * qty}m", user=operator, detail_json=detail_tambah)
+            if commit:
+                db.session.commit()
+
+            message = f"Guest:{sesi.nama_guest} | +{total_menit}m"
+            if audit_logs is None:
+                write_log("TAMBAH_WAKTU", message, user=operator, detail_json=detail_tambah)
+            else:
+                audit_logs.append((message, detail_tambah))
             return {"tipe": "guest", "sisa_menit": sesi.sisa_menit()}
 
     @staticmethod
     def sync_waktu_member(sesi):
-        """Sinkronisasi saldo waktu di database Member atau kuota Kasir dengan sisa waktu sesi."""
+        """Sinkronisasi saldo waktu Member/Kasir dengan sisa waktu sesi.
+
+        Tidak melakukan commit: nilai ikut tersimpan oleh commit heartbeat
+        client (tiap 30 detik) atau commit pemanggil berikutnya.
+        """
         sisa = sesi.sisa_menit()
         if sesi.tipe == "member" and sesi.member:
             if sesi.member.waktu_tersimpan != sisa:
                 sesi.member.waktu_tersimpan = sisa
-                db.session.commit()
         elif sesi.tipe == "kasir" and sesi.user:
             if sesi.user.sisa_kuota_menit != sisa:
                 sesi.user.sisa_kuota_menit = sisa
-                db.session.commit()
         return sisa
 
 
@@ -240,6 +311,11 @@ class SesiService:
     @staticmethod
     def tutup_sesi(sesi_id, operator="system"):
         """Tutup sesi bermain dengan proteksi Atomic Transaction (Commit/Rollback)."""
+        with WRITE_LOCK:
+            return SesiService._tutup_sesi_locked(sesi_id, operator)
+
+    @staticmethod
+    def _tutup_sesi_locked(sesi_id, operator="system"):
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         if not sesi: raise ValueError("Sesi tidak ditemukan")
 
@@ -294,6 +370,11 @@ class SesiService:
     @staticmethod
     def pindah_pc(sesi_id, pc_kode_baru, operator="system"):
         """Pindahkan sesi aktif ke PC lain dalam grup yang sama."""
+        with WRITE_LOCK:
+            return SesiService._pindah_pc_locked(sesi_id, pc_kode_baru, operator)
+
+    @staticmethod
+    def _pindah_pc_locked(sesi_id, pc_kode_baru, operator="system"):
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         pc_baru = PCRepository.get_by_kode(pc_kode_baru)
         
@@ -313,27 +394,20 @@ class SesiService:
         
         # Tutup sesi lama secara manual (tanpa repo commit)
         if sesi.member_id:
-            all_sesi = SesiRepository.get_all_aktif_by_member(sesi.member_id)
-            for s in all_sesi:
-                s.status = "selesai"
-                s.selesai_pada = now_local()
-                s.is_afk = False
-                s.afk_pin = None
-                s.afk_sejak = None
+            sesi_list = SesiRepository.get_all_aktif_by_member(sesi.member_id)
         elif sesi.user_id:
-            all_sesi = Sesi.query.filter_by(user_id=sesi.user_id, status="aktif").all()
-            for s in all_sesi:
-                s.status = "selesai"
-                s.selesai_pada = now_local()
-                s.is_afk = False
-                s.afk_pin = None
-                s.afk_sejak = None
+            sesi_list = Sesi.query.filter_by(user_id=sesi.user_id, status="aktif").all()
         else:
-            sesi.status = "selesai"
-            sesi.selesai_pada = now_local()
-            sesi.is_afk = False
-            sesi.afk_pin = None
-            sesi.afk_sejak = None
+            sesi_list = [sesi]
+
+        now = now_local()
+        for s in sesi_list:
+            s.status = "selesai"
+            s.selesai_pada = now
+            s.is_afk = False
+            s.afk_pin = None
+            s.afk_sejak = None
+        db.session.flush()
 
         # Buat sesi baru di unit tujuan
         sesi_baru = Sesi(
@@ -355,7 +429,12 @@ class SesiService:
             operator=operator
         )
         db.session.add(transaksi)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            write_log("PINDAH_PC_ERROR", f"Gagal pindah sesi {sesi_id}: {str(e)}")
+            raise ValueError("Gagal memindahkan sesi") from e
 
         detail_pindah = {
             "pc_lama": pc_lama_kode,
@@ -374,6 +453,11 @@ class SesiService:
     @staticmethod
     def cleanup_expired():
         """Auto-cleanup: Tutup sesi yang waktunya habis (Tanpa proteksi blackout otomatis)."""
+        with WRITE_LOCK:
+            return SesiService._cleanup_expired_locked()
+
+    @staticmethod
+    def _cleanup_expired_locked():
         sesi_aktif = SesiRepository.get_all_aktif()
         count = 0
         now = now_local()
@@ -399,16 +483,13 @@ class SesiService:
                 sesi.afk_pin = None
                 sesi.afk_sejak = None
 
-                try:
-                    transaksi = Transaksi(
-                        sesi_id=sesi.id, member_id=sesi.member_id,
-                        jenis="tutup_sesi", keterangan=f"Sesi {sesi.tipe} habis otomatis (Auto-cleanup)",
-                        user_id=None,
-                        operator="system"
-                    )
-                    db.session.add(transaksi)
-                except Exception:
-                    pass
+                transaksi = Transaksi(
+                    sesi_id=sesi.id, member_id=sesi.member_id,
+                    jenis="tutup_sesi", keterangan=f"Sesi {sesi.tipe} habis otomatis (Auto-cleanup)",
+                    user_id=None,
+                    operator="system"
+                )
+                db.session.add(transaksi)
 
                 count += 1
         if count > 0: db.session.commit()
@@ -416,18 +497,24 @@ class SesiService:
 
 
     @staticmethod
+    @with_write_lock
     def cleanup_inactive_admin_sessions():
         """Reset status is_admin_mode di DB jika PC sudah tidak aktif (Heartbeat mati)."""
+        from app.services.cache.client_state_store import OnlineStatusStore
         now = now_local()
         # Cari semua PC yang sedang dalam mode admin
         admin_pcs = PCRepository.get_all_admin_mode()
         
         count = 0
         for pc in admin_pcs:
-            # Jika last_activity sudah lewat 30 detik (sebelumnya 10), matikan mode adminnya
-            # Dikasih buffer lebih lama biar nggak gampang force-lock kalau ada lag.
-            if not pc.last_activity or (now - pc.last_activity).total_seconds() > 30:
+            # Utamakan cek heartbeat di RAM store (OnlineStatusStore) untuk menghindari false-alarm
+            is_active = OnlineStatusStore.is_online(pc.id, timeout_seconds=30)
+            if not is_active and pc.last_activity and (now - pc.last_activity).total_seconds() <= 30:
+                is_active = True
+                
+            if not is_active:
                 pc.is_admin_mode = False
+                SesiRepository.close_active_admin_sessions_for_pc(pc.id)
                 count += 1
                 
         if count > 0:
@@ -509,6 +596,11 @@ class SesiService:
     @staticmethod
     def refund_paket_guest(sesi_id, transaksi_id, operator="system"):
         """Batalkan pembelian paket & potong durasi beli guest."""
+        with WRITE_LOCK:
+            return SesiService._refund_paket_guest_locked(sesi_id, transaksi_id, operator)
+
+    @staticmethod
+    def _refund_paket_guest_locked(sesi_id, transaksi_id, operator="system"):
         sesi = SesiRepository.get_aktif_by_id(sesi_id)
         if not sesi or sesi.tipe != "guest":
             raise ValueError("Sesi tidak aktif atau bukan tipe guest")
@@ -519,7 +611,9 @@ class SesiService:
             raise ValueError("Transaksi tidak valid atau sudah direfund")
 
         durasi = transaksi.menit or (transaksi.paket.durasi_menit if transaksi.paket else 0)
-        
+        if durasi <= 0:
+            raise ValueError("Durasi paket tidak valid untuk refund")
+
         # Validasi apakah durasi beli guest mencukupi untuk dikurangi
         sisa_menit = sesi.sisa_menit()
         if sisa_menit <= 0:
@@ -532,11 +626,13 @@ class SesiService:
         # Potong durasi beli guest
         sesi.durasi_beli_menit -= durasi_dikurangi
         
-        # Potong juga total bayar
+        # Refund penuh nilai transaksi (nominal bulat, mudah direkonsiliasi kasir)
         refund_jumlah = -(transaksi.jumlah)
         sesi.total_bayar = max(0, sesi.total_bayar + refund_jumlah)
         
-        transaksi.is_refunded = True
+        if not TransaksiRepository.claim_refund(transaksi.id):
+            db.session.rollback()
+            raise ValueError("Transaksi tidak valid atau sudah direfund")
 
         # INJECT NOTA REFUND TM
         transaksi_refund = Transaksi(
@@ -548,7 +644,8 @@ class SesiService:
             keterangan=f"Refund paket guest '{transaksi.paket.nama if transaksi.paket else '?'}'",
             no_nota=TransaksiService.generate_nota(),
             user_id=TransaksiService.get_user_id(operator),
-            operator=operator
+            operator=operator,
+            metode_pembayaran=transaksi.metode_pembayaran or "Tunai"
         )
         db.session.add(transaksi_refund)
         db.session.commit()
@@ -571,4 +668,4 @@ class SesiService:
             "durasi_beli_sebelum": sebelum,
             "durasi_beli_sesudah": sesi.durasi_beli_menit,
             "durasi_dikurangi": durasi_dikurangi
-        }
+        }

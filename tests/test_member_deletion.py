@@ -35,6 +35,11 @@ class TestMemberDeletion(unittest.TestCase):
         db.drop_all()
         self.app_context.pop()
 
+    def test_delete_member_tidak_ada_menghasilkan_value_error(self):
+        with self.assertRaises(ValueError) as ctx:
+            MemberService.delete(999999, operator="admin")
+        self.assertIn("tidak ditemukan", str(ctx.exception))
+
     def test_delete_member_success_no_lazy_load_exception(self):
         # Pastikan member ada di database sebelum dihapus
         self.assertIsNotNone(Member.query.filter_by(username="dummy_member").first())

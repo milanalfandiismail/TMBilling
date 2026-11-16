@@ -39,10 +39,11 @@ def list_pc():
                 grup_id = grup_id_raw
                 
         # Non-paginated flat list response with filters
-        pcs = PCService.get_all(aktif_only=False, grup_id=grup_id, search_query=q)
-        grouped = PCService.group_by_grup(pcs)
+        pcs = PCService.get_all(aktif_only=request.args.get("include_arsip") != "1", grup_id=grup_id, search_query=q)
+        sesi_map = PCService.get_sesi_map()
+        grouped = PCService.group_by_grup(pcs, sesi_map)
         return jsonify({
-            "pc_list": [pc.to_dict() for pc in pcs],
+            "pc_list": [pc.to_dict(sesi=sesi_map.get(pc.id), screenshot_info={}) for pc in pcs],
             "grouped": grouped
         }), 200
     except Exception as e:
@@ -119,10 +120,47 @@ def edit_pc(pc_id):
 @login_required
 @admin_required
 def hapus_pc(pc_id):
-    """Hapus unit PC dari database secara permanen."""
+    """Hapus unit PC permanen (riwayat sesi dilepas, bukan dihapus)."""
     try:
+        from app.models import db, PC
+        pc = db.session.get(PC, pc_id)
+        if not pc:
+            return jsonify({"error": "PC tidak ditemukan"}), 404
+        confirm = str((request.get_json(silent=True) or {}).get("confirm", "")).strip().lower()
+        if confirm != (pc.kode or "").lower():
+            return jsonify({"error": "Ketik kode PC untuk konfirmasi hapus permanen"}), 400
         kasir = session.get("kasir_username", "kasir")
         result = PCService.delete(pc_id, operator=kasir)
+        return jsonify({"success": True, "message": result['message']}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@pc_api_bp.route("/<int:pc_id>/archive", methods=["POST"])
+@login_required
+@admin_required
+def arsipkan_pc(pc_id):
+    """Arsipkan PC tanpa menghapus riwayat."""
+    try:
+        kasir = session.get("kasir_username", "kasir")
+        result = PCService.archive(pc_id, operator=kasir)
+        return jsonify({"success": True, "message": result['message']}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@pc_api_bp.route("/<int:pc_id>/restore", methods=["POST"])
+@login_required
+@admin_required
+def pulihkan_pc(pc_id):
+    """Pulihkan PC dari arsip."""
+    try:
+        kasir = session.get("kasir_username", "kasir")
+        result = PCService.restore(pc_id, operator=kasir)
         return jsonify({"success": True, "message": result['message']}), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 400

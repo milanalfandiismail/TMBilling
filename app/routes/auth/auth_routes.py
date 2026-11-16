@@ -9,6 +9,7 @@ langsung dari aplikasi PC client warnet.
 from flask import Blueprint, request, jsonify
 from app.services import AuthService
 from app.utils.logger import write_log
+from app.routes.client.client_routes import api_key_required
 
 auth_api_bp = Blueprint("auth", __name__)
 
@@ -19,6 +20,7 @@ auth_api_bp = Blueprint("auth", __name__)
 # Fokus: Menangani alur masuk dan keluar member di PC client.
 
 @auth_api_bp.route("/login", methods=["POST"])
+@api_key_required
 def login():
     """Login member dari PC client dengan validasi IP & MAC."""
     data = request.get_json() or {}
@@ -37,6 +39,7 @@ def login():
 
 
 @auth_api_bp.route("/logout", methods=["POST"])
+@api_key_required
 def logout():
     """Logout member dan membersihkan sesi di database."""
     data = request.get_json() or {}
@@ -61,6 +64,7 @@ def logout():
 # Fokus: Memberikan info ke aplikasi client mengenai kondisi PC saat ini.
 
 @auth_api_bp.route("/status", methods=["POST"])
+@api_key_required
 def status():
     """Cek status PC (kosong/terpakai) berdasarkan identitas hardware."""
     data = request.get_json() or {}

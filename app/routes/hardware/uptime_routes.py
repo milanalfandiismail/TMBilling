@@ -64,5 +64,8 @@ def get_range_uptime():
     if start_date > end_date:
         return jsonify({"success": False, "error": "Tanggal mulai tidak boleh melebihi tanggal akhir"}), 400
 
+    if (end_date - start_date).days + 1 > 366:
+        return jsonify({"success": False, "error": "Rentang tanggal maksimal 366 hari"}), 400
+
     res = UptimeService.get_range_report(start_date, end_date)
     return jsonify(res), 200

@@ -1,4 +1,4 @@
-#[cfg(not(debug_assertions))]
+﻿#[cfg(not(debug_assertions))]
 use once_cell::sync::OnceCell;
 #[cfg(not(debug_assertions))]
 use sha2::{Sha256, Digest};
@@ -80,9 +80,34 @@ pub fn verify_file_integrity() -> Result<(), String> {
     let current_hash = format!("{:X}", hasher.finalize());
     
     // Compare hashes (case-insensitive)
-    if expected_hash.eq_ignore_ascii_case(&current_hash) {
+    if hashes_match(&expected_hash, &current_hash) {
         Ok(())
     } else {
         Err("File integrity check failed - executable may have been modified".to_string())
+    }
+}
+
+/// Perbandingan hash case-insensitive, dipisah dari gate cfg agar ikut teruji di build debug.
+pub fn hashes_match(expected: &str, actual: &str) -> bool {
+    expected.eq_ignore_ascii_case(actual)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::hashes_match;
+
+    #[test]
+    fn identical_hash_is_accepted() {
+        assert!(hashes_match("A1B2C3", "A1B2C3"));
+    }
+
+    #[test]
+    fn hash_comparison_ignores_case() {
+        assert!(hashes_match("A1B2C3", "a1b2c3"));
+    }
+
+    #[test]
+    fn different_hash_is_rejected() {
+        assert!(!hashes_match("A1B2C3", "A1B2C4"));
     }
 }

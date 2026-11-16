@@ -186,7 +186,7 @@ const TambahModal = {
             `;
 
             const html = `
-                <div id="modal-tambah-waktu-card" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 max-w-md md:max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] w-[calc(100%-2rem)] lg:w-[92vw] xl:w-[88vw] 2xl:w-[84vw] max-h-[92vh] xl:max-h-[88vh] mx-auto flex flex-col my-auto shadow-2xl relative overflow-hidden">
+                <div id="modal-tambah-waktu-card" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3.5 sm:p-5 md:p-6 max-w-md md:max-w-4xl lg:max-w-5xl xl:max-w-6xl 2xl:max-w-[1500px] w-full max-h-[90dvh] mx-auto flex flex-col my-auto shadow-2xl relative overflow-hidden">
                     <!-- Header -->
                     <div class="flex items-center justify-between mb-4 pb-3 border-b border-[#1c1c1c] shrink-0">
                         <div class="flex items-center gap-3">
@@ -313,6 +313,7 @@ const TambahModal = {
             previewEl.innerHTML = '<span class="text-xs text-neutral-500 italic font-normal">Pilih paket terlebih dahulu</span>';
         } else {
             const totalTagihan = this.isBatch ? totalHargaPerPc * this.pcList.length : totalHargaPerPc;
+            // xss-reviewed: hanya angka dan kelas CSS dari state internal
             previewEl.innerHTML = `
                 <div class="text-emerald-400 font-mono text-sm lg:text-base font-black">+${Utils.formatDurasiFriendly(totalMenit)}</div>
                 <div class="text-xs lg:text-sm font-mono text-neutral-300 font-bold mt-0.5">${Utils.formatRupiah(totalTagihan)}</div>
@@ -380,12 +381,13 @@ const TambahModal = {
                 { label: 'Pembayaran', value: metodePembayaran, highlight: true }
             );
 
+            const requestId = Utils.requestId();
             ModalConfirmTambah.open({
                 title: `Konfirmasi Tambah Waktu ${sesiIds.length} Sesi Bersama`,
                 dataLines: dataLines,
                 onConfirm: async () => {
                     try {
-                        const res = await API.sesi.tambahWaktuBatch(sesiIds, { selections: selections }, 1, metodePembayaran);
+                        const res = await API.sesi.tambahWaktuBatch(sesiIds, { selections: selections }, 1, metodePembayaran, requestId);
                         if (res.success) {
                             Toast.success(`🟢 Berhasil menambah waktu pada ${res.total_success} sesi!`);
                             Modal.closeModal();
@@ -455,12 +457,13 @@ const TambahModal = {
                     { label: 'Pembayaran', value: metodePembayaran, highlight: true }
                 );
 
+                const requestId = Utils.requestId();
                 ModalConfirmTambah.open({
                     title: "Konfirmasi Tambah Waktu Sesi",
                     dataLines: dataLines,
                     onConfirm: async () => {
                         try {
-                            await API.sesi.tambahWaktu(this.sesiId, { selections: selections }, 1, metodePembayaran);
+                            await API.sesi.tambahWaktu(this.sesiId, { selections: selections }, 1, metodePembayaran, requestId);
                             Toast.success('Waktu berhasil ditambahkan');
                             Modal.closeModal();
                             if (typeof Dashboard !== 'undefined') Dashboard.load();

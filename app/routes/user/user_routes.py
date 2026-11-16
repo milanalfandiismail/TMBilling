@@ -7,6 +7,7 @@ Hanya dapat diakses oleh role "admin".
 """
 
 from flask import Blueprint, request, jsonify, session
+from app.models import db
 from app.services import UserService
 from app.routes.auth.auth_kasir_routes import login_required, admin_required
 
@@ -19,7 +20,7 @@ user_api_bp = Blueprint("user", __name__)
 def get_all_users():
     """Ambil daftar semua user kasir/admin."""
     try:
-        users = UserService.get_all_users()
+        users = UserService.get_all_users(aktif_only=request.args.get("include_arsip") != "1")
         return jsonify(users), 200
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -71,13 +72,50 @@ def update_user(user_id):
         return jsonify({"error": f"Internal Error: {str(e)}"}), 500
 
 
+@user_api_bp.route("/<int:user_id>/archive", methods=["POST"])
+@login_required
+@admin_required
+def archive_user(user_id):
+    """Nonaktifkan akun staff tanpa menghapus riwayat."""
+    operator = session.get("kasir_username", "admin")
+    try:
+        result = UserService.archive_user(user_id, operator)
+        return jsonify(result), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Internal Error: {str(e)}"}), 500
+
+
+@user_api_bp.route("/<int:user_id>/restore", methods=["POST"])
+@login_required
+@admin_required
+def restore_user(user_id):
+    """Aktifkan kembali akun staff yang diarsipkan."""
+    operator = session.get("kasir_username", "admin")
+    try:
+        result = UserService.restore_user(user_id, operator)
+        return jsonify(result), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": f"Internal Error: {str(e)}"}), 500
+
+
 @user_api_bp.route("/<int:user_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def delete_user(user_id):
-    """Hapus permanen akun staff."""
+    """Hapus permanen akun staff (transaksi dilepas, shift menolak)."""
     operator = session.get("kasir_username", "admin")
     try:
+        from app.models import User
+        user = db.session.get(User, user_id)
+        if not user:
+            return jsonify({"error": "User tidak ditemukan"}), 404
+        confirm = str((request.get_json(silent=True) or {}).get("confirm", "")).strip().lower()
+        if confirm != (user.username or "").lower():
+            return jsonify({"error": "Ketik username untuk konfirmasi hapus permanen"}), 400
         result = UserService.delete_user(user_id, operator)
         return jsonify(result), 200
     except ValueError as e:

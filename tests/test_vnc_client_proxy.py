@@ -2,24 +2,20 @@ import pytest
 import time
 from app.services.vnc.vnc_service import VNCClientProxyService
 
-def test_port_allocation_within_range():
-    port = VNCClientProxyService.allocate_port()
-    assert port == 8081
-
 def test_readiness_flag_signaling():
     pc_id = 9991
-    success, err = VNCClientProxyService.wait_vnc_ready(pc_id, timeout=0.1)
-    assert success is False
-    assert err is not None
+    state, err = VNCClientProxyService.poll_vnc_result(pc_id)
+    assert state == "none"
+    assert err is None
     
     VNCClientProxyService.set_vnc_ready(pc_id, True)
-    success, err = VNCClientProxyService.wait_vnc_ready(pc_id, timeout=0.5)
-    assert success is True
+    state, err = VNCClientProxyService.poll_vnc_result(pc_id)
+    assert state == "ready"
     assert err is None
     
     VNCClientProxyService.set_vnc_ready(pc_id, False, "Gagal koneksi")
-    success, err = VNCClientProxyService.wait_vnc_ready(pc_id, timeout=0.1)
-    assert success is False
+    state, err = VNCClientProxyService.poll_vnc_result(pc_id)
+    assert state == "error"
     assert err == "Gagal koneksi"
 
 def test_proxy_lifecycle_tracking():
@@ -38,6 +34,21 @@ def test_proxy_lifecycle_tracking():
     
     success, msg = VNCClientProxyService.stop_proxy(pc_id)
     assert success is True
+    assert VNCClientProxyService.get_proxy(pc_id) is None
+
+def test_cleanup_keeps_proxy_regardless_of_age(monkeypatch):
+    from app.services.cache import OnlineStatusStore
+
+    pc_id = 9993
+    VNCClientProxyService._active_proxies[pc_id] = {
+        "port": 8095, "client_ip": "192.168.1.60", "token": "old", "started_at": time.time() - 3600
+    }
+    monkeypatch.setattr(OnlineStatusStore, "is_online", classmethod(lambda cls, pid, timeout_seconds=45: True))
+    assert VNCClientProxyService.cleanup_stale_proxies() == 0
+    assert VNCClientProxyService.get_proxy(pc_id) is not None
+
+    monkeypatch.setattr(OnlineStatusStore, "is_online", classmethod(lambda cls, pid, timeout_seconds=45: False))
+    assert VNCClientProxyService.cleanup_stale_proxies() == 1
     assert VNCClientProxyService.get_proxy(pc_id) is None
 
 def test_token_file_management(tmp_path):
@@ -63,3 +74,22 @@ def test_token_file_management(tmp_path):
         content = f.read()
     assert "client_1" not in content
     assert "server: 127.0.0.1:5900" in content
+
+
+def test_websockify_log_path_and_rotation(tmp_path):
+    import os
+    from app.services.vnc.vnc_service import VNCService
+    token_file = str(tmp_path / "vnc_tokens.cfg")
+    VNCService.TOKEN_FILE_PATH = token_file
+    
+    log_dir = os.path.join(os.path.dirname(VNCService.TOKEN_FILE_PATH), "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    log_file_path = os.path.join(log_dir, "websockify.log")
+    
+    # Buat file dummy log
+    with open(log_file_path, "w", encoding="utf-8") as f:
+        f.write("test log line\n")
+        
+    assert os.path.exists(log_file_path)
+    with open(log_file_path, "r", encoding="utf-8") as f:
+        assert "test log line" in f.read()

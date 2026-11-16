@@ -13,6 +13,29 @@ const Member = {
     _lastFingerprint: null,
     _hasResizeListener: false,
     _allGroups: [],
+    arsipMode: false,
+
+    toggleView(arsip) {
+        this.arsipMode = arsip;
+        document.getElementById('member-table').classList.toggle('hidden', arsip);
+        document.getElementById('member-arsip-list').classList.toggle('hidden', !arsip);
+        document.getElementById('member-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
+        document.getElementById('member-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
+        ArsipList.setGrup(arsip ? (this.currentGrupId || null) : null);
+        if (arsip) {
+            this._loadArsipGroups();
+            ArsipList.onChanged(() => { this._loadArsipGroups(); this.load(true); });
+            ArsipList.mount({
+                res: 'member',
+                container: document.getElementById('member-arsip-list')
+            });
+        } else {
+            ArsipList.onChanged(null);
+            this.currentGrupId = '';
+            this.renderGroupTabs(this.arsipMode ? (this._arsipGroups || []) : (this._allGroups || []));
+            this.load(true);
+        }
+    },
 
     getAdaptivePerPage() {
         const width = window.innerWidth;
@@ -98,6 +121,7 @@ const Member = {
             this.totalPages = memberData.pages || 1;
             this.totalRecords = memberData.total || 0;
             this.currentPage = memberData.current_page || 1;
+            this._grupCounts = memberData.grup_counts || {};
 
             const groups = grupData.grup || grupData.grup_list || grupData || [];
             this._allGroups = groups;
@@ -105,7 +129,7 @@ const Member = {
 
             const addGrupSelect = document.getElementById('inp-mem-grup');
             if (addGrupSelect && !isSilent) {
-                addGrupSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                addGrupSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
 
             this.render(this.allMembers, memberData);
@@ -114,6 +138,21 @@ const Member = {
                 Toast.error('Gagal memuat member');
             }
         }
+    },
+
+    async _loadArsipGroups() {
+        if (!this.arsipMode) return;
+        try {
+            const grupData = await API.grup.list({ include_arsip: true });
+            this._arsipGroups = grupData.grup || grupData.grup_list || grupData || [];
+            this._arsipCounts = ArsipList.counts(await ArsipList.fetch('member'));
+            if (this.currentGrupId && !this._arsipCounts[String(this.currentGrupId)]) {
+                this.currentGrupId = '';
+                ArsipList.setGrup(null);
+                ArsipList.mount({ res: 'member', container: document.getElementById('member-arsip-list') });
+            }
+            this.renderGroupTabs(this.arsipMode ? this._arsipGroups : (this._allGroups || []));
+        } catch (e) { /* daftar grup arsip opsional */ }
     },
 
     renderGroupTabs(groups) {
@@ -130,11 +169,15 @@ const Member = {
             <button type="button" onclick="Member.selectGroup('')"
                 class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${isAllActive ? 'bg-[#161616] text-white border border-neutral-400 shadow-sm' : 'bg-[#0a0a0a] text-neutral-400 border border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200'}">
                 <span class="w-1.5 h-1.5 rounded-full ${isAllActive ? 'bg-neutral-200' : 'bg-neutral-600'}"></span>
-                <span class="tracking-wide">SEMUA</span>
+                <span class="tracking-wide uppercase">SEMUA</span>
             </button>
         `;
 
         tabsHtml += groups.map(g => {
+            const counts = this.arsipMode ? (this._arsipCounts || {}) : (this._grupCounts || {});
+            const count = counts[String(g.id)] || 0;
+            if (this.arsipMode && count === 0) return '';
+            const countLabel = count > 0 ? ` (${count})` : '';
             const isActive = String(this.currentGrupId) === String(g.id);
             const gColor = g.warna || '#3B82F6';
 
@@ -144,7 +187,7 @@ const Member = {
                         class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 bg-[#161616] text-white border shadow-sm"
                         style="border-color: ${gColor};">
                         <span class="w-2 h-2 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="tracking-wide uppercase">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}${countLabel}</span>
                     </button>
                 `;
             } else {
@@ -152,7 +195,7 @@ const Member = {
                     <button type="button" onclick="Member.selectGroup(${g.id})"
                         class="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded text-xs font-medium transition-all flex items-center gap-1.5 shrink-0 bg-[#0a0a0a] text-neutral-400 border border-[#1f1f1f] hover:border-[#333] hover:text-neutral-200">
                         <span class="w-1.5 h-1.5 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="tracking-wide uppercase">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}${countLabel}</span>
                     </button>
                 `;
             }
@@ -164,7 +207,12 @@ const Member = {
     selectGroup(grupId) {
         this.currentGrupId = (grupId !== undefined && grupId !== null && grupId !== '') ? String(grupId) : '';
         this.currentPage = 1;
-        this.renderGroupTabs(this._allGroups || []);
+        this.renderGroupTabs(this.arsipMode ? (this._arsipGroups || []) : (this._allGroups || []));
+        if (this.arsipMode) {
+            ArsipList.setGrup(this.currentGrupId);
+            ArsipList.mount({ res: 'member', container: document.getElementById('member-arsip-list') });
+            return;
+        }
         this.load();
     },
 
@@ -359,13 +407,27 @@ const Member = {
         }
     },
 
-    async delete(id) {
+    async delete(id, username) {
         if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
-        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold">Hapus member ini? Semua data dan sisa waktu akan <span class="text-red-400">dihapus permanen</span>.</p></div>`;
+        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold">Hapus permanen member <span class="font-mono text-neutral-100">${Utils.escapeHtml(username || '')}</span>? Riwayat sesi & transaksi tetap ada tanpa nama member.</p></div>`;
         Modal.confirm(message, async () => {
             try {
-                await API.member.delete(id);
+                await API.member.delete(id, username);
                 Toast.success('Member berhasil dihapus');
+                this.load();
+            } catch (err) {
+                Toast.error(err.message);
+            }
+        }, null, { requireCheck: 'Saya paham data ini dihapus permanen dan tidak bisa dikembalikan.' });
+    },
+
+    async archive(id) {
+        if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
+        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-400 font-bold">Arsipkan member ini? Member dinonaktifkan, saldo & riwayat tetap utuh.</p></div>';
+        Modal.confirm(message, async () => {
+            try {
+                await API.member.archive(id);
+                Toast.success('Member diarsipkan');
                 this.load();
             } catch (err) {
                 Toast.error(err.message);
@@ -428,6 +490,9 @@ const Member = {
 
         if (selections.length === 0) return Toast.error('Pilih minimal satu paket terlebih dahulu');
 
+        // ID tetap per niat top-up: retry di modal yang sama tidak menambah saldo dua kali.
+        const clientRequestId = Utils.requestId();
+
         try {
             const memberInfo = await API.member.get(memberId);
             const member = memberInfo.member || memberInfo;
@@ -468,7 +533,7 @@ const Member = {
                 dataLines: dataLines,
                 onConfirm: async () => {
                     try {
-                        await API.member.tambahWaktu(memberId, { member_id: memberId, selections: selections }, 1, metodePembayaran);
+                        await API.member.tambahWaktu(memberId, { member_id: memberId, selections: selections }, 1, metodePembayaran, clientRequestId);
                         Toast.success('Saldo ditambahkan');
                         Modal.closeModal();
                         if (typeof Member !== 'undefined' && typeof Member.load === 'function' && (typeof App === 'undefined' || App.currentTab === 'member')) {
@@ -479,6 +544,7 @@ const Member = {
                         }
                     } catch (err) {
                         Toast.error(err.message);
+                        return false;
                     }
                 }
             });
@@ -530,8 +596,9 @@ const Member = {
             try {
                 const res = await API.member.refundPaket(memberId, transaksiId);
                 Toast.success(res.message || 'Refund berhasil');
-                Modal.closeModal();
                 this.load();
+                // Kembali ke detail member setelah modal konfirmasi ditutup (closeModal berjalan setelah onConfirm selesai)
+                setTimeout(() => this.showDetail(memberId), 0);
             } catch (err) {
                 Toast.error(err.message || 'Gagal refund');
             }

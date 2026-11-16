@@ -5,9 +5,21 @@ tutup shift dengan hitung buta, dan cetak struk handover.
 """
 
 import json
+from functools import wraps
+from sqlalchemy.exc import IntegrityError
 from app.models import db, now_local
 from app.models import ShiftRecord, Transaksi, TransaksiMenu, User
-from app.utils.timezone_utils import format_display
+from app.services.write_lock import WRITE_LOCK, with_write_lock
+from app.utils.timezone_utils import format_display, get_local_date_range_utc
+
+
+def _serialized(fn):
+    """Serialkan tutup shift agar dua request tidak sama-sama menang."""
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        with WRITE_LOCK:
+            return fn(*args, **kwargs)
+    return wrapper
 
 
 class ShiftService:
@@ -44,24 +56,31 @@ class ShiftService:
         kasir = User.query.filter_by(username=kasir_username).first()
         if not kasir:
             raise ValueError("Kasir tidak ditemukan")
+        if not kasir.aktif:
+            raise ValueError("Kasir tidak aktif")
 
-        # Cek apakah masih ada shift aktif di sistem (single active shift system-wide)
-        aktif = ShiftRecord.query.filter_by(status="AKTIF").first()
-        if aktif:
-            kasir_aktif_nama = aktif.kasir.nama_lengkap or aktif.kasir.username if aktif.kasir else "Kasir Lain"
-            raise ValueError(
-                f"Tidak dapat membuka shift baru: Masih ada shift aktif oleh '{kasir_aktif_nama}' "
-                f"sejak {format_display(aktif.waktu_mulai)} (ID #{aktif.id}). "
-                "Selesaikan shift tersebut terlebih dahulu."
+        with WRITE_LOCK:
+            # Cek apakah masih ada shift aktif di sistem (single active shift system-wide)
+            aktif = ShiftRecord.query.filter_by(status="AKTIF").first()
+            if aktif:
+                kasir_aktif_nama = aktif.kasir.nama_lengkap or aktif.kasir.username if aktif.kasir else "Kasir Lain"
+                raise ValueError(
+                    f"Tidak dapat membuka shift baru: Masih ada shift aktif oleh '{kasir_aktif_nama}' "
+                    f"sejak {format_display(aktif.waktu_mulai)} (ID #{aktif.id}). "
+                    "Selesaikan shift tersebut terlebih dahulu."
+                )
+
+            shift = ShiftRecord(
+                kasir_id=kasir.id,
+                modal_awal=modal_awal,
+                status="AKTIF",
             )
-
-        shift = ShiftRecord(
-            kasir_id=kasir.id,
-            modal_awal=modal_awal,
-            status="AKTIF",
-        )
-        db.session.add(shift)
-        db.session.commit()
+            db.session.add(shift)
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                raise ValueError("Tidak dapat membuka shift baru: masih ada shift aktif")
 
         from app.utils.logger import write_log
         
@@ -91,6 +110,11 @@ class ShiftService:
         ).first()
 
     @staticmethod
+    def get_shift(shift_id):
+        """Ambil shift berdasarkan ID tanpa commit (untuk otorisasi baca)."""
+        return db.session.get(ShiftRecord, shift_id)
+
+    @staticmethod
     def get_shift_summary(shift_id):
         """Hitung ringkasan pendapatan shift tanpa menyembunyikan angka.
 
@@ -103,33 +127,43 @@ class ShiftService:
         Returns:
             dict: Ringkasan pendapatan shift.
         """
-        shift = ShiftRecord.query.get(shift_id)
+        shift = db.session.get(ShiftRecord, shift_id)
         if not shift:
             raise ValueError("Shift tidak ditemukan")
 
         waktu_akhir = shift.waktu_selesai or now_local()
 
-        # Hitung billing PC dalam rentang shift (dibatasi hingga waktu_akhir)
-        total_billing = db.session.query(
+        # Hitung billing PC gross dalam rentang shift
+        total_billing_gross = db.session.query(
             db.func.coalesce(db.func.sum(Transaksi.jumlah), 0)
         ).filter(
             Transaksi.dibuat_pada >= shift.waktu_mulai,
             Transaksi.dibuat_pada <= waktu_akhir,
-            Transaksi.user_id == shift.kasir_id,
-            Transaksi.is_refunded == False,
+            Transaksi.jumlah > 0,
             Transaksi.jenis.notin_(["tutup_sesi", "pindah_pc", "refund_paket"]),
         ).scalar() or 0
 
-        # Hitung refund dalam rentang shift (pastikan selalu bernilai positif/magnitude)
-        total_refund_raw = db.session.query(
-            db.func.coalesce(db.func.sum(Transaksi.jumlah), 0)
+        # Hitung refund dalam rentang shift per metode pembayaran
+        refund_by_method = db.session.query(
+            Transaksi.metode_pembayaran.label("method"),
+            db.func.sum(Transaksi.jumlah).label("total")
         ).filter(
             Transaksi.dibuat_pada >= shift.waktu_mulai,
             Transaksi.dibuat_pada <= waktu_akhir,
-            Transaksi.user_id == shift.kasir_id,
             Transaksi.jenis == "refund_paket",
-        ).scalar() or 0
-        total_refund = abs(int(total_refund_raw))
+        ).group_by(Transaksi.metode_pembayaran).all()
+
+        refund_map = {}
+        total_refund = 0
+        for row in refund_by_method:
+            m = row.method
+            if m in ["Cash", "Tunai", "None", None, ""]:
+                m = "Tunai"
+            val = abs(int(row.total or 0))
+            refund_map[m] = refund_map.get(m, 0) + val
+            total_refund += val
+
+        total_billing = total_billing_gross - total_refund
 
         # Hitung kantin dalam rentang shift
         total_kantin = db.session.query(
@@ -137,7 +171,6 @@ class ShiftService:
         ).filter(
             TransaksiMenu.tanggal >= shift.waktu_mulai,
             TransaksiMenu.tanggal <= waktu_akhir,
-            TransaksiMenu.kasir_id == shift.kasir_id,
         ).scalar() or 0
 
         # Ambil konfigurasi metode pembayaran
@@ -149,15 +182,14 @@ class ShiftService:
         elif isinstance(raw_methods, list):
             configured_methods = [str(m).strip() for m in raw_methods if str(m).strip()]
 
-        # Hitung breakdown berdasarkan metode pembayaran dari database
+        # Hitung breakdown berdasarkan metode pembayaran dari database (gross)
         billing_by_method = db.session.query(
             Transaksi.metode_pembayaran.label("method"),
             db.func.sum(Transaksi.jumlah).label("total")
         ).filter(
             Transaksi.dibuat_pada >= shift.waktu_mulai,
             Transaksi.dibuat_pada <= waktu_akhir,
-            Transaksi.user_id == shift.kasir_id,
-            Transaksi.is_refunded == False,
+            Transaksi.jumlah > 0,
             Transaksi.jenis.notin_(["tutup_sesi", "pindah_pc", "refund_paket"]),
         ).group_by(Transaksi.metode_pembayaran).all()
 
@@ -167,7 +199,6 @@ class ShiftService:
         ).filter(
             TransaksiMenu.tanggal >= shift.waktu_mulai,
             TransaksiMenu.tanggal <= waktu_akhir,
-            TransaksiMenu.kasir_id == shift.kasir_id,
         ).group_by(TransaksiMenu.metode_pembayaran).all()
 
         billing_map = {}
@@ -184,9 +215,12 @@ class ShiftService:
                 m = "Tunai"
             kantin_map[m] = kantin_map.get(m, 0) + (row.total or 0)
 
-        billing_tunai = billing_map.get("Tunai", 0)
+        # Kurangi billing_map dengan refund_map per metode masing-masing
+        refund_tunai = refund_map.get("Tunai", 0)
+        billing_tunai_gross = billing_map.get("Tunai", 0)
+        billing_tunai_net = billing_tunai_gross - refund_tunai
         kantin_tunai = kantin_map.get("Tunai", 0)
-        total_tunai_bersih = billing_tunai + kantin_tunai - total_refund
+        total_tunai_bersih = billing_tunai_net + kantin_tunai
 
         # Kumpulkan semua metode non-tunai unik (dari konfigurasi dan transaksi aktual)
         all_methods = set()
@@ -197,6 +231,9 @@ class ShiftService:
             if m != "Tunai":
                 all_methods.add(m)
         for m in kantin_map:
+            if m != "Tunai":
+                all_methods.add(m)
+        for m in refund_map:
             if m != "Tunai":
                 all_methods.add(m)
 
@@ -214,13 +251,16 @@ class ShiftService:
         breakdown = {"Tunai": total_tunai_bersih}
 
         for m in ordered_non_tunai_keys:
-            b_val = billing_map.get(m, 0)
+            b_gross = billing_map.get(m, 0)
+            r_val = refund_map.get(m, 0)
+            b_net = b_gross - r_val
             k_val = kantin_map.get(m, 0)
-            t_val = b_val + k_val
+            t_val = b_net + k_val
             non_tunai_list.append({
                 "method": m,
-                "billing": b_val,
+                "billing": b_net,
                 "kantin": k_val,
+                "refund": r_val,
                 "total": t_val
             })
             total_non_tunai += t_val
@@ -228,22 +268,14 @@ class ShiftService:
 
         rincian_pembayaran = {
             "tunai": {
-                "billing": billing_tunai,
+                "billing": billing_tunai_net,
                 "kantin": kantin_tunai,
-                "refund": total_refund,
+                "refund": refund_tunai,
                 "total": total_tunai_bersih
             },
             "non_tunai": non_tunai_list,
             "total_non_tunai": total_non_tunai
         }
-
-        # Update field di shift (disimpan untuk audit)
-        shift.total_billing = total_billing - total_refund
-        shift.total_kantin = total_kantin
-        shift.total_qris = breakdown.get("QRIS", 0)
-        shift.total_refund = total_refund
-        shift.detail_metode_json = json.dumps(rincian_pembayaran)
-        db.session.commit()
 
         total_seharusnya = shift.modal_awal + total_tunai_bersih
 
@@ -253,10 +285,10 @@ class ShiftService:
             "waktu_mulai": format_display(shift.waktu_mulai),
             "waktu_selesai": format_display(shift.waktu_selesai) if shift.waktu_selesai else None,
             "modal_awal": shift.modal_awal,
-            "total_billing": shift.total_billing,
+            "total_billing": total_billing,
             "total_refund": total_refund,
-            "total_kantin": shift.total_kantin,
-            "total_pendapatan": shift.total_billing + shift.total_kantin,
+            "total_kantin": total_kantin,
+            "total_pendapatan": total_billing + total_kantin,
             "total_seharusnya": total_seharusnya,
             "uang_fisik": shift.uang_fisik,
             "selisih": shift.selisih,
@@ -268,6 +300,8 @@ class ShiftService:
         }
 
     @staticmethod
+    @_serialized
+    @with_write_lock
     def end_shift(shift_id, uang_fisik, catatan=None, operator="system"):
         """Tutup shift dengan hitung buta dan serah terima.
 
@@ -291,15 +325,14 @@ class ShiftService:
         if catatan:
             catatan = validate_string_length(catatan, min_len=0, max_len=255, field_name="Catatan Shift", required=False)
 
-        shift = ShiftRecord.query.get(shift_id)
+        shift = db.session.get(ShiftRecord, shift_id)
         if not shift:
             raise ValueError("Shift tidak ditemukan")
         if shift.status != "AKTIF":
             raise ValueError("Shift sudah ditutup sebelumnya")
 
-        # Set waktu selesai sekarang
+        # Set waktu selesai sekarang; commit sekali di akhir agar gagal ringkasan tidak setengah tersimpan
         shift.waktu_selesai = now_local()
-        db.session.commit()
 
         # Hitung pendapatan dan selisih
         summary = ShiftService.get_shift_summary(shift_id)
@@ -307,6 +340,8 @@ class ShiftService:
         selisih = uang_fisik - total_seharusnya
 
         # Update shift record
+        shift.total_billing = summary.get("total_billing", 0)
+        shift.total_kantin = summary.get("total_kantin", 0)
         shift.uang_fisik = uang_fisik
         shift.selisih = selisih
         shift.catatan = (catatan or "").strip()
@@ -365,6 +400,8 @@ class ShiftService:
         }
 
     @staticmethod
+    @_serialized
+    @with_write_lock
     def force_close_shift(shift_id, admin_username, alasan=""):
         """Emergency force-close shift aktif oleh admin.
 
@@ -382,16 +419,15 @@ class ShiftService:
         if len(alasan_clean) > 255:
             raise ValueError("Alasan force-close shift maksimal 255 karakter")
 
-        shift = ShiftRecord.query.get(shift_id)
+        shift = db.session.get(ShiftRecord, shift_id)
         if not shift:
             raise ValueError("Shift tidak ditemukan")
         if shift.status != "AKTIF":
             raise ValueError("Shift sudah ditutup sebelumnya")
 
-        shift.waktu_selesai = now_local()
-        db.session.commit()
-
         summary = ShiftService.get_shift_summary(shift_id)
+
+        shift.waktu_selesai = now_local()
 
         if alasan_clean:
             catatan_lengkap = f"[FORCE CLOSE oleh {admin_username}] {alasan_clean}"
@@ -402,11 +438,14 @@ class ShiftService:
 
         shift.status = "SELESAI"
         shift.catatan = catatan_lengkap
+        shift.total_billing = summary.get("total_billing", 0)
+        shift.total_kantin = summary.get("total_kantin", 0)
         shift.total_qris = summary["breakdown"].get("QRIS", 0)
         shift.total_refund = summary.get("total_refund", 0)
         shift.detail_metode_json = json.dumps(summary["rincian_pembayaran"])
-        shift.uang_fisik = summary["total_seharusnya"]
-        shift.selisih = 0
+        # Tidak ada hitung fisik pada force close: biarkan kosong, jangan pura-pura PAS.
+        shift.uang_fisik = None
+        shift.selisih = None
         db.session.commit()
 
         from app.utils.logger import write_log
@@ -462,15 +501,12 @@ class ShiftService:
         if kasir_id:
             query = query.filter_by(kasir_id=kasir_id)
         if tanggal_mulai:
-            t_mulai = str(tanggal_mulai).strip()
-            if len(t_mulai) == 10:
-                t_mulai = f"{t_mulai} 00:00:00"
-            query = query.filter(ShiftRecord.waktu_mulai >= t_mulai)
+            start_utc, _ = get_local_date_range_utc(str(tanggal_mulai).strip())
+            query = query.filter(ShiftRecord.waktu_mulai >= start_utc)
         if tanggal_selesai:
-            t_selesai = str(tanggal_selesai).strip()
-            if len(t_selesai) == 10:
-                t_selesai = f"{t_selesai} 23:59:59"
-            query = query.filter(ShiftRecord.waktu_mulai <= t_selesai)
+            start_utc, end_utc = get_local_date_range_utc(str(tanggal_selesai).strip())
+            query = query.filter(ShiftRecord.waktu_selesai >= start_utc,
+                                 ShiftRecord.waktu_selesai < end_utc)
 
         total = query.count()
         shifts = query.order_by(ShiftRecord.id.desc()).offset(offset).limit(limit).all()
@@ -489,7 +525,7 @@ class ShiftService:
         Returns:
             str: Teks struk terformat siap cetak.
         """
-        shift = ShiftRecord.query.get(shift_id)
+        shift = db.session.get(ShiftRecord, shift_id)
         if not shift:
             raise ValueError("Shift tidak ditemukan")
 
@@ -525,6 +561,7 @@ class ShiftService:
         lines.append(row("Pend.Kantin :", f"Rp {shift.total_kantin or 0:,.0f}"))
 
         tunai_total = None
+        rincian_rusak = False
         if shift.detail_metode_json:
             try:
                 detail = json.loads(shift.detail_metode_json)
@@ -535,7 +572,10 @@ class ShiftService:
                         label = f"{m_name[:14]}:"
                         lines.append(row(label, f"Rp {item['total']:,.0f}"))
             except Exception:
-                pass
+                rincian_rusak = True
+
+        if rincian_rusak:
+            lines.append(row("RINCIAN BAYAR:", "TIDAK TERBACA"))
 
         if tunai_total is None:
             if (shift.total_qris or 0) > 0:
@@ -551,16 +591,19 @@ class ShiftService:
             tunai_seharusnya = shift.modal_awal + (shift.total_billing or 0) + (shift.total_kantin or 0) - (shift.total_qris or 0)
 
         lines.append(row("Uang Seharusnya:", f"Rp {tunai_seharusnya:,.0f}"))
-        lines.append(row("Uang Fisik Laci:", f"Rp {shift.uang_fisik or 0:,.0f}"))
-        
-        selisih = shift.selisih or 0
-        if selisih == 0:
-            selisih_str = "Rp 0 (PAS)"
-        elif selisih > 0:
-            selisih_str = f"+Rp {selisih:,.0f} (LEBIH)"
+        if shift.uang_fisik is None:
+            lines.append(row("Uang Fisik Laci:", "BELUM DIHITUNG"))
+            lines.append(row("Selisih Uang   :", "PENUTUPAN PAKSA"))
         else:
-            selisih_str = f"-Rp {abs(selisih):,.0f} (KURANG)"
-        lines.append(row("Selisih Uang   :", selisih_str))
+            lines.append(row("Uang Fisik Laci:", f"Rp {shift.uang_fisik:,.0f}"))
+            selisih = shift.selisih or 0
+            if selisih == 0:
+                selisih_str = "Rp 0 (PAS)"
+            elif selisih > 0:
+                selisih_str = f"+Rp {selisih:,.0f} (LEBIH)"
+            else:
+                selisih_str = f"-Rp {abs(selisih):,.0f} (KURANG)"
+            lines.append(row("Selisih Uang   :", selisih_str))
 
         if shift.catatan:
             lines.append("-" * c_width)

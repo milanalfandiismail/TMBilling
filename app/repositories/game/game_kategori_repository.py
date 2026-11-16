@@ -10,7 +10,7 @@ class GameKategoriRepository:
 
     @staticmethod
     def get_by_id(kategori_id):
-        return GameKategori.query.get(kategori_id)
+        return db.session.get(GameKategori, kategori_id)
         
     @staticmethod
     def get_by_nama(nama):

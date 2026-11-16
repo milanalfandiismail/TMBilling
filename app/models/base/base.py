@@ -25,6 +25,9 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor.execute("PRAGMA journal_mode=WAL;")
         cursor.execute("PRAGMA synchronous=NORMAL;")
         cursor.execute("PRAGMA busy_timeout=5000;")
+        cursor.execute("PRAGMA cache_size=-64000;")
+        cursor.execute("PRAGMA temp_store=MEMORY;")
+        cursor.execute("PRAGMA mmap_size=268435456;")
         cursor.close()
 
 
@@ -43,5 +46,6 @@ def now_local():
         di seluruh model aplikasi.
         Data existing (sebelum fitur ini) diasumsikan WIB.
         Migration script akan konversi WIB → UTC.
+        Nama fungsi dipertahankan demi kompatibilitas impor; nilainya UTC naive, bukan waktu lokal.
     """
     return datetime.now(timezone.utc).replace(tzinfo=None)

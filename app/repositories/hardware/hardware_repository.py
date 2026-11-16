@@ -18,9 +18,24 @@ class HardwareRepository:
         return HardwareMonitor.query.filter_by(pc_id=pc_id).first()
 
     @staticmethod
+    def get_by_pc_id_eager(pc_id):
+        """Satu baris hardware dengan relasi PC + grup untuk modal detail."""
+        from sqlalchemy.orm import joinedload
+        from app.models import PC
+        return HardwareMonitor.query.options(
+            joinedload(HardwareMonitor.pc).joinedload(PC.grup)
+        ).filter_by(pc_id=pc_id).first()
+
+    @staticmethod
     def get_all_with_pc():
-        """Mengambil semua data hardware monitor beserta relasi PC."""
-        return HardwareMonitor.query.join(HardwareMonitor.pc).all()
+        """Mengambil semua data hardware monitor beserta relasi PC dan grup (eager load)."""
+        from sqlalchemy.orm import joinedload
+        from app.models import PC
+        return (
+            HardwareMonitor.query
+            .options(joinedload(HardwareMonitor.pc).joinedload(PC.grup))
+            .all()
+        )
 
     @staticmethod
     def save(hardware):
@@ -30,7 +45,7 @@ class HardwareRepository:
     @staticmethod
     def get_by_id(hardware_id):
         """Mengambil data hardware monitor berdasarkan ID."""
-        return HardwareMonitor.query.get(hardware_id)
+        return db.session.get(HardwareMonitor, hardware_id)
 
     @staticmethod
     def delete(hardware):

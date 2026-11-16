@@ -49,9 +49,12 @@ tmp/
 # Environment variables and secrets
 .env
 .flaskenv
+initial_admin.txt
 
 # Testing and coverage
 .pytest_cache/
+.pytest_temp/
+test_warnet.db
 .coverage
 htmlcov/
 
@@ -567,9 +570,12 @@ $RECYCLE.BIN/
 /deploy/
 /skills
 
+# Binari hasil build (regenerasi via build_and_deploy.bat / rilis ZIP)
+/WarnetAgent/Deploy/*.exe
+/WarnetAgent/TMBilling_Monitor/HardwareHelper.exe
+/app/services/server_monitor/TMLHMService.exe
+
 # Agent tracks & Walkthroughs
-agent.md
-agents.md
 walkthrough.md
 CODEBASE_CONTEXT.md
 
@@ -603,7 +609,16 @@ app/static/assets/tutorials/temp/
 
 # Playwright MCP artifacts
 .playwright-mcp/
+tests/e2e/results/*
+!tests/e2e/results/.gitkeep
+# Folder lib/ di atas hanya untuk virtualenv; suite E2E memakai tests/e2e/lib
+!tests/e2e/lib/
+!tests/e2e/lib/**
 audit-screenshots/
 *.png
 !app/static/img/*.png
 !tm.png
+
+# Pesan commit/tag sementara untuk rilis
+.commitmsg.txt
+.tagmsg.txt

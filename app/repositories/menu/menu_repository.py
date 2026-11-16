@@ -7,6 +7,7 @@ Modul ini mengelola kueri database langsung ke tabel menu_item dan transaksi_men
 
 from app.models import MenuItem, TransaksiMenu, MenuStockLog
 from app.models import db
+from sqlalchemy.orm import joinedload
 
 class MenuRepository:
     """Repository class untuk mengelola data MenuItem dan TransaksiMenu."""
@@ -19,7 +20,7 @@ class MenuRepository:
     @staticmethod
     def get_by_id_including_archived(menu_id):
         """Mengambil data menu berdasarkan ID, termasuk yang sudah diarsipkan."""
-        return MenuItem.query.get(menu_id)
+        return db.session.get(MenuItem, menu_id)
 
     @staticmethod
     def get_by_name(nama):
@@ -42,9 +43,17 @@ class MenuRepository:
         return MenuItem.query.filter_by(is_active=False).order_by(MenuItem.nama.asc()).all()
 
     @staticmethod
-    def count_archived():
-        """Menghitung jumlah menu yang diarsipkan."""
-        return MenuItem.query.filter_by(is_active=False).count()
+    def decrement_stok_if_available(menu, jumlah):
+        """Kurangi stok atomik. False bila stok terbatas dan tidak cukup. Stok < 0 = unlimited."""
+        if not menu:
+            return False
+        if menu.stok < 0:
+            return True
+        rowcount = db.session.query(MenuItem).filter(
+            MenuItem.id == menu.id,
+            MenuItem.stok >= jumlah,
+        ).update({"stok": MenuItem.stok - jumlah}, synchronize_session=False)
+        return rowcount > 0
 
     @staticmethod
     def count_transaksi_by_menu(menu_id):
@@ -52,9 +61,32 @@ class MenuRepository:
         return TransaksiMenu.query.filter_by(menu_id=menu_id).count()
 
     @staticmethod
+    def count_transaksi_grouped():
+        """Menghitung jumlah transaksi per menu_id dalam satu query GROUP BY."""
+        from sqlalchemy import func
+        rows = (db.session.query(TransaksiMenu.menu_id, func.count(TransaksiMenu.id))
+                .group_by(TransaksiMenu.menu_id).all())
+        return {menu_id: total for menu_id, total in rows}
+
+    @staticmethod
     def delete_transaksi_by_menu(menu_id):
         """Menghapus seluruh transaksi menu yang terkait dengan menu_id."""
         TransaksiMenu.query.filter_by(menu_id=menu_id).delete()
+
+    @staticmethod
+    def delete_all_transaksi():
+        """Hapus seluruh riwayat transaksi F&B (maintenance)."""
+        return TransaksiMenu.query.delete()
+
+    @staticmethod
+    def delete_transaksi_by_date(tanggal):
+        """Hapus riwayat transaksi F&B pada tanggal lokal tertentu (maintenance)."""
+        from app.utils.timezone_utils import get_local_date_range_utc
+        start_utc, end_utc = get_local_date_range_utc(tanggal)
+        return TransaksiMenu.query.filter(
+            TransaksiMenu.tanggal >= start_utc,
+            TransaksiMenu.tanggal < end_utc
+        ).delete(synchronize_session=False)
 
     @staticmethod
     def save(obj):
@@ -67,26 +99,35 @@ class MenuRepository:
         db.session.delete(obj)
 
     @staticmethod
-    def get_transaksi_all():
-        """Mengambil semua riwayat transaksi penjualan menu."""
-        return TransaksiMenu.query.order_by(TransaksiMenu.tanggal.desc()).all()
-
-    @staticmethod
     def get_transaksi_by_id(t_id):
         """Mengambil data transaksi menu berdasarkan ID."""
-        return TransaksiMenu.query.get(t_id)
+        return db.session.get(TransaksiMenu, t_id)
 
     @staticmethod
     def count_transactions_today():
-        """Menghitung total transaksi menu hari ini."""
-        from datetime import datetime, time
-        today_start = datetime.combine(datetime.now().date(), time.min)
-        return TransaksiMenu.query.filter(TransaksiMenu.tanggal >= today_start).count()
+        """Menghitung total transaksi menu hari ini dalam timezone lokal warnet."""
+        from app.utils.timezone_utils import get_local_date_range_utc
+        start_utc, end_utc = get_local_date_range_utc()
+        return TransaksiMenu.query.filter(
+            TransaksiMenu.tanggal >= start_utc,
+            TransaksiMenu.tanggal < end_utc
+        ).count()
 
     @staticmethod
     def count_transactions_by_prefix(prefix):
         """Menghitung total transaksi menu berdasarkan prefix nomor nota."""
         return TransaksiMenu.query.filter(TransaksiMenu.no_nota.like(f"{prefix}%")).count()
+
+    @staticmethod
+    def get_max_nota_seq(date_str):
+        """Ambil nomor urut nota menu tertinggi hari ini (TMM-YYYYMMDD-NNN) dalam satu query."""
+        prefix = f"TMM-{date_str}-"
+        upper = prefix[:-1] + chr(ord(prefix[-1]) + 1)
+        seq = db.func.cast(db.func.substr(TransaksiMenu.no_nota, len(prefix) + 1), db.Integer)
+        return db.session.query(db.func.max(seq)).filter(
+            TransaksiMenu.no_nota >= prefix,
+            TransaksiMenu.no_nota < upper,
+        ).scalar() or 0
 
     @staticmethod
     def _apply_kasir_filter(query, kasir_id):
@@ -143,7 +184,7 @@ class MenuRepository:
     @staticmethod
     def get_transactions_by_date(date_obj=None, kasir_id=None, metode_pembayaran=None):
         """Mendapatkan daftar transaksi F&B pada tanggal tertentu (atau semua tanggal jika None), opsional difilter kasir."""
-        query = TransaksiMenu.query
+        query = TransaksiMenu.query.options(joinedload(TransaksiMenu.menu))
         if date_obj and str(date_obj).strip().lower() not in ("all", "semua", "none", ""):
             from app.utils.timezone_utils import get_local_date_range_utc
             start_utc, end_utc = get_local_date_range_utc(date_obj)
@@ -161,28 +202,6 @@ class MenuRepository:
             else:
                 query = query.filter(TransaksiMenu.metode_pembayaran == metode_pembayaran)
         return query.order_by(TransaksiMenu.tanggal.desc()).all()
-
-    @staticmethod
-    def get_transactions_by_date_paginated(date_obj=None, page=1, per_page=12, kasir_id=None, metode_pembayaran=None):
-        """Mendapatkan daftar transaksi F&B dengan pagination pada tanggal tertentu (atau semua tanggal jika None)."""
-        query = TransaksiMenu.query
-        if date_obj and str(date_obj).strip().lower() not in ("all", "semua", "none", ""):
-            from app.utils.timezone_utils import get_local_date_range_utc
-            start_utc, end_utc = get_local_date_range_utc(date_obj)
-            query = query.filter(
-                TransaksiMenu.tanggal >= start_utc,
-                TransaksiMenu.tanggal < end_utc
-            )
-        query = MenuRepository._apply_kasir_filter(query, kasir_id)
-        if metode_pembayaran:
-            if metode_pembayaran == "Tunai":
-                query = query.filter(
-                    (TransaksiMenu.metode_pembayaran.in_(["Tunai", "Cash"])) | 
-                    (TransaksiMenu.metode_pembayaran == None)
-                )
-            else:
-                query = query.filter(TransaksiMenu.metode_pembayaran == metode_pembayaran)
-        return query.order_by(TransaksiMenu.tanggal.desc()).paginate(page=page, per_page=per_page, error_out=False)
 
     @staticmethod
     def get_by_no_nota(no_nota):

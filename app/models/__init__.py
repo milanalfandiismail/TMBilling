@@ -39,14 +39,12 @@ from app.models.game.game_kategori import GameKategori
 from app.models.maintenance.maintenance import MaintenanceTicket
 from app.models.pc.pc_uptime import PCUptimeLog
 from app.models.tutorial.tutorial_model import SystemTutorial
-from app.models.branch.branch import Branch
-from app.models.branch.branch_inbound import BranchInbound
+# v1.6.5-rc2: Model Branch dan BranchInbound dihapus (subsystem multi-branch deprecate)
 
 __all__ = [
     'db', 'now_local', 'Grup', 'Paket', 'Member', 'PC', 'Sesi', 'Transaksi', 
     'User', 'Settings', 'MikroTikConfig', 'HardwareMonitor', 'PCProcess', 'MenuItem', 'TransaksiMenu',
     'MenuStockLog',
     'Turnamen', 'TurnamenTahap', 'TurnamenTim', 'TurnamenMatch',
-    'ShiftRecord', 'Game', 'GameKategori', 'MaintenanceTicket', 'PCUptimeLog', 'SystemTutorial', 'Branch',
-    'BranchInbound'
+    'ShiftRecord', 'Game', 'GameKategori', 'MaintenanceTicket', 'PCUptimeLog', 'SystemTutorial'
 ]

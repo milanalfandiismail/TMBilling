@@ -1,40 +1,152 @@
 // app/static/js/kasir/modules/settings/migration.js
 // Migration Manager & Dashboard Update Module
+// Responsif, Zero-Scrollbar, 2-Column Split, Search Filter Realtime, Dynamic Page Size & Detail Modal
 
 const MigrationModule = {
     _status: null,
     _selectedFile: null,
+    _historyList: [],
+    _searchQuery: '',
+    _currentPage: 1,
+    _pageSize: 6,
+    _mobileView: 'status',
+    _activeDetailRevision: null,
+    _latestRelease: null,
 
     async init() {
+        // Listener dipasang sekali di DOMContentLoaded; init() hanya memuat data.
         await this.load();
     },
 
+    _calcPageSize() {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        if (w < 768) return 5;
+        if (w < 1024) return 8;
+        if (w >= 1440 && h >= 1000) return 14;
+        return 10;
+    },
+
+    _setupResizeListener() {
+        window.addEventListener('resize', () => {
+            const newSize = this._calcPageSize();
+            if (newSize !== this._pageSize) {
+                this._pageSize = newSize;
+                this.renderHistoryPage();
+            }
+            // Auto sync mobile vs desktop layout visibility
+            if (window.innerWidth >= 768) {
+                const colStatus = document.getElementById('migration-col-status');
+                const colHistory = document.getElementById('migration-col-history');
+                if (colStatus) colStatus.classList.remove('hidden');
+                if (colHistory) colHistory.classList.remove('hidden');
+            } else {
+                this.switchMobileView(this._mobileView || 'status');
+            }
+        });
+    },
+
+    _setupSearch() {
+        const searchInput = document.getElementById('migration-search-input');
+        if (!searchInput) return;
+
+        searchInput.addEventListener('input', (e) => {
+            this._searchQuery = (e.target.value || '').toLowerCase().trim();
+            this._currentPage = 1;
+            this.renderHistoryPage();
+        });
+    },
+
+    _setupDropzone() {
+        const dropzone = document.getElementById('migration-dropzone');
+        if (!dropzone) return;
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add('border-emerald-500', 'bg-[#121212]');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('border-emerald-500', 'bg-[#121212]');
+            }, false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                const input = document.getElementById('migration-file-input');
+                if (input) {
+                    input.files = files;
+                    this.previewFile(input);
+                }
+            }
+        }, false);
+    },
+
+    _setupModalEvents() {
+        const modal = document.getElementById('modal-migration-detail');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) this.closeDetail();
+            });
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.closeDetail();
+        });
+    },
+
     async load() {
+        this._pageSize = this._calcPageSize();
         try {
             const data = await API.request('/api/v1/kasir/settings/migration/status');
-            if (data.success) {
+            if (data && data.success) {
                 this._status = data;
+                this._historyList = data.history || [];
                 this.renderStatus(data);
-                this.renderHistory(data.history || []);
+                
+                const countBadge = document.getElementById('migration-total-count');
+                if (countBadge) {
+                    countBadge.textContent = `${this._historyList.length} Migrasi`;
+                }
+
+                this._currentPage = 1;
+                this.renderHistoryPage();
             } else {
                 this.renderError('Gagal memuat status migrasi');
             }
         } catch (err) {
             console.error('[Migration] Error loading status:', err);
-            this.renderError(err.message);
+            this.renderError(err.message || 'Koneksi error');
         }
     },
 
     renderStatus(data) {
         const badge = document.getElementById('migration-status-badge');
-        if (!badge) return;
+        const summary = document.getElementById('migration-schema-summary');
 
-        if (data.needs_upgrade) {
-            badge.textContent = '⚠️ Perlu Upgrade';
-            badge.className = 'px-3 py-1 rounded text-[10px] lg:text-xs font-bold font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30';
-        } else {
-            badge.textContent = '✅ Up-to-Date';
-            badge.className = 'px-3 py-1 rounded text-[10px] lg:text-xs font-bold font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        if (badge) {
+            if (data.needs_upgrade) {
+                badge.textContent = '⚠️ Perlu Upgrade';
+                badge.className = 'px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold font-mono bg-amber-500/20 text-amber-400 border border-amber-500/30';
+                if (summary) {
+                    summary.textContent = 'Perlu Upgrade';
+                    summary.className = 'text-xs sm:text-sm font-mono font-bold text-amber-400 block mt-0.5';
+                }
+            } else {
+                badge.textContent = '✅ Up-to-Date';
+                badge.className = 'px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                if (summary) {
+                    summary.textContent = 'Sinkron';
+                    summary.className = 'text-xs sm:text-sm font-mono font-bold text-emerald-400 block mt-0.5';
+                }
+            }
         }
 
         const setText = (id, val) => {
@@ -45,49 +157,232 @@ const MigrationModule = {
         setText('migration-app-version', data.app_version);
         setText('migration-current-revision', data.current);
         setText('migration-head-revision', data.head);
+        setText('migration-db-engine', 'SQLite 3 WAL');
+        setText('migration-backup-status', 'Tersedia & Siap');
     },
 
-    renderHistory(history) {
+    _getFilteredHistory() {
+        if (!this._searchQuery) return this._historyList;
+        const q = this._searchQuery;
+        return this._historyList.filter(h => {
+            const rev = (h.revision || '').toLowerCase();
+            const down = (h.down_revision || '').toLowerCase();
+            const desc = (h.description || '').toLowerCase();
+            return rev.includes(q) || down.includes(q) || desc.includes(q);
+        });
+    },
+
+    renderHistoryPage() {
         const tbody = document.getElementById('migration-history-table');
         if (!tbody) return;
 
-        if (!history || history.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-neutral-500 text-xs lg:text-sm font-mono">Tidak ada riwayat migrasi</td></tr>';
+        const filtered = this._getFilteredHistory();
+
+        if (!filtered || filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="py-6 text-center text-neutral-500 text-[10px] sm:text-[11px] font-mono">Tidak ada riwayat migrasi yang cocok</td></tr>';
+            this._updatePaginationControls(1, 1);
             return;
         }
 
-        tbody.innerHTML = history.map(h => {
+        const totalPages = Math.max(1, Math.ceil(filtered.length / this._pageSize));
+        if (this._currentPage > totalPages) this._currentPage = totalPages;
+        if (this._currentPage < 1) this._currentPage = 1;
+
+        const start = (this._currentPage - 1) * this._pageSize;
+        const pageItems = filtered.slice(start, start + this._pageSize);
+
+        tbody.innerHTML = pageItems.map(h => {
             let statusBadge = '';
             if (h.is_head && h.is_current) {
-                statusBadge = '<span class="text-emerald-400 font-bold text-[10px] lg:text-xs">⬆ HEAD / Aktif</span>';
+                statusBadge = '<span class="text-emerald-400 font-bold text-[9px] sm:text-[10px]">⬆ HEAD / Aktif</span>';
             } else if (h.is_head) {
-                statusBadge = '<span class="text-amber-400 font-bold text-[10px] lg:text-xs">⬆ HEAD</span>';
+                statusBadge = '<span class="text-amber-400 font-bold text-[9px] sm:text-[10px]">⬆ HEAD</span>';
             } else if (h.is_current) {
-                statusBadge = '<span class="text-blue-400 font-bold text-[10px] lg:text-xs">◉ Aktif</span>';
+                statusBadge = '<span class="text-blue-400 font-bold text-[9px] sm:text-[10px]">◉ Aktif</span>';
             } else {
-                statusBadge = '<span class="text-neutral-600 text-[10px] lg:text-xs">—</span>';
+                statusBadge = '<span class="text-neutral-600 text-[9px] sm:text-[10px]">—</span>';
             }
 
+            const safeRev = (h.revision || '').replace(/'/g, "\'");
+
             return `
-                <tr class="border-b border-[#1c1c1c] hover:bg-[#0a0a0a] transition-colors">
-                    <td class="py-2.5 text-[10px] lg:text-xs font-mono text-neutral-200">${h.revision || '-'}</td>
-                    <td class="py-2.5 text-[10px] lg:text-xs font-mono text-neutral-500">${h.down_revision || '-'}</td>
-                    <td class="py-2.5 text-[10px] lg:text-xs text-neutral-300">${h.description}</td>
-                    <td class="py-2.5 text-right">${statusBadge}</td>
+                <tr class="border-b border-[#171717] hover:bg-[#0a0a0a] transition-colors group">
+                    <td class="py-2 text-[10px] sm:text-[11px] font-mono text-neutral-200 w-16 sm:w-20 align-top">${h.revision || '-'}</td>
+                    <td class="py-2 text-[10px] sm:text-[11px] font-mono text-neutral-500 w-16 sm:w-20 hidden xl:table-cell align-top">${h.down_revision || '-'}</td>
+                    <td class="py-2 text-[10px] sm:text-[11px] text-neutral-300 cursor-pointer hover:text-white align-top" onclick="MigrationModule.showDetail('${safeRev}')" title="Klik untuk lihat detail">
+                        <span class="break-words whitespace-normal leading-tight block hover:underline underline-offset-2 decoration-neutral-500">${h.description || '-'}</span>
+                    </td>
+                    <td class="py-2 text-center w-16 sm:w-20 align-top">${statusBadge}</td>
+                    <td class="py-2 text-right w-9 sm:w-11 2xl:w-20 align-top">
+                        <button type="button" onclick="MigrationModule.showDetail('${safeRev}')" title="Lihat detail lengkap"
+                            class="p-1 sm:px-1.5 sm:py-0.5 rounded text-[9px] sm:text-[10px] font-medium bg-[#141414] hover:bg-neutral-800 text-neutral-300 hover:text-white border border-[#222] transition-colors inline-flex items-center gap-1 shadow-sm">
+                            <svg class="w-3 h-3 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            <span class="hidden 2xl:inline">Detail</span>
+                        </button>
+                    </td>
                 </tr>
             `;
         }).join('');
+
+        this._updatePaginationControls(this._currentPage, totalPages);
+    },
+
+    _updatePaginationControls(curr, total) {
+        const info = document.getElementById('migration-page-info');
+        const prevBtn = document.getElementById('migration-prev-btn');
+        const nextBtn = document.getElementById('migration-next-btn');
+
+        if (info) {
+            info.textContent = `Hal ${curr} dari ${total}`;
+        }
+        if (prevBtn) {
+            prevBtn.disabled = curr <= 1;
+            if (curr <= 1) {
+                prevBtn.classList.add('opacity-40', 'cursor-not-allowed', 'text-neutral-600');
+                prevBtn.classList.remove('text-neutral-300', 'hover:bg-[#1a1a1a]');
+            } else {
+                prevBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'text-neutral-600');
+                prevBtn.classList.add('text-neutral-300', 'hover:bg-[#1a1a1a]');
+            }
+        }
+        if (nextBtn) {
+            nextBtn.disabled = curr >= total;
+            if (curr >= total) {
+                nextBtn.classList.add('opacity-40', 'cursor-not-allowed', 'text-neutral-600');
+                nextBtn.classList.remove('text-neutral-300', 'hover:bg-[#1a1a1a]');
+            } else {
+                nextBtn.classList.remove('opacity-40', 'cursor-not-allowed', 'text-neutral-600');
+                nextBtn.classList.add('text-neutral-300', 'hover:bg-[#1a1a1a]');
+            }
+        }
+    },
+
+    showDetail(revision) {
+        const item = this._historyList.find(h => String(h.revision) === String(revision));
+        if (!item) return;
+
+        this._activeDetailRevision = item.revision;
+
+        const revEl = document.getElementById('modal-mig-revision');
+        const downEl = document.getElementById('modal-mig-down');
+        const statusEl = document.getElementById('modal-mig-status');
+        const descEl = document.getElementById('modal-mig-desc');
+        const modal = document.getElementById('modal-migration-detail');
+
+        if (revEl) revEl.textContent = item.revision || '-';
+        if (downEl) downEl.textContent = item.down_revision || '-';
+
+        if (statusEl) {
+            if (item.is_head && item.is_current) {
+                statusEl.innerHTML = '<span class="px-2 py-0.5 rounded font-bold bg-emerald-950 text-emerald-400 border border-emerald-800">⬆ HEAD / Aktif</span>';
+            } else if (item.is_head) {
+                statusEl.innerHTML = '<span class="px-2 py-0.5 rounded font-bold bg-amber-950 text-amber-400 border border-amber-800">⬆ HEAD</span>';
+            } else if (item.is_current) {
+                statusEl.innerHTML = '<span class="px-2 py-0.5 rounded font-bold bg-blue-950 text-blue-400 border border-blue-800">◉ Aktif</span>';
+            } else {
+                statusEl.innerHTML = '<span class="text-neutral-500 font-mono">—</span>';
+            }
+        }
+
+        if (descEl) {
+            descEl.textContent = item.description || '(Tidak ada deskripsi pembaruan)';
+        }
+
+        if (modal) {
+            modal.classList.remove('hidden');
+        }
+    },
+
+    closeDetail() {
+        const modal = document.getElementById('modal-migration-detail');
+        if (modal) modal.classList.add('hidden');
+        this._activeDetailRevision = null;
+    },
+
+    async copyRevision() {
+        if (!this._activeDetailRevision) return;
+        try {
+            await navigator.clipboard.writeText(this._activeDetailRevision);
+            const btn = document.getElementById('btn-copy-revision');
+            if (btn) {
+                const orig = btn.innerHTML;
+                btn.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg><span class="text-emerald-400">Tersalin!</span>`;
+                setTimeout(() => {
+                    btn.innerHTML = orig;
+                }, 1500);
+            }
+            if (typeof Toast !== 'undefined') Toast.success('ID Revisi berhasil disalin!');
+        } catch (_) {
+            if (typeof Toast !== 'undefined') Toast.info(`Revisi: ${this._activeDetailRevision}`);
+        }
+    },
+
+    prevPage() {
+        if (this._currentPage > 1) {
+            this._currentPage--;
+            this.renderHistoryPage();
+        }
+    },
+
+    nextPage() {
+        const filtered = this._getFilteredHistory();
+        const totalPages = Math.max(1, Math.ceil(filtered.length / this._pageSize));
+        if (this._currentPage < totalPages) {
+            this._currentPage++;
+            this.renderHistoryPage();
+        }
+    },
+
+    switchMobileView(view) {
+        this._mobileView = view;
+        const colStatus = document.getElementById('migration-col-status');
+        const colHistory = document.getElementById('migration-col-history');
+        const pillStatus = document.getElementById('migration-pill-status');
+        const pillHistory = document.getElementById('migration-pill-history');
+
+        if (window.innerWidth >= 768) {
+            if (colStatus) colStatus.classList.remove('hidden');
+            if (colHistory) colHistory.classList.remove('hidden');
+            return;
+        }
+
+        if (view === 'status') {
+            if (colStatus) colStatus.classList.remove('hidden');
+            if (colHistory) colHistory.classList.add('hidden');
+
+            if (pillStatus) {
+                pillStatus.className = 'flex-1 py-1.5 px-3 text-[11px] font-bold rounded transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm';
+            }
+            if (pillHistory) {
+                pillHistory.className = 'flex-1 py-1.5 px-3 text-[11px] font-bold rounded transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200';
+            }
+        } else {
+            if (colStatus) colStatus.classList.add('hidden');
+            if (colHistory) colHistory.classList.remove('hidden');
+
+            if (pillHistory) {
+                pillHistory.className = 'flex-1 py-1.5 px-3 text-[11px] font-bold rounded transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm';
+            }
+            if (pillStatus) {
+                pillStatus.className = 'flex-1 py-1.5 px-3 text-[11px] font-bold rounded transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200';
+            }
+        }
     },
 
     renderError(msg) {
         const badge = document.getElementById('migration-status-badge');
         if (badge) {
             badge.textContent = '❌ Gagal Memuat';
-            badge.className = 'px-3 py-1 rounded text-[10px] lg:text-xs font-bold font-mono bg-red-500/20 text-red-400 border border-red-500/30';
+            badge.className = 'px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold font-mono bg-red-500/20 text-red-400 border border-red-500/30';
         }
         const content = document.getElementById('migration-status-content');
         if (content) {
-            content.innerHTML = `<div class="text-center py-4 text-red-400 text-xs lg:text-sm">${msg}</div>`;
+            content.innerHTML = `<div class="col-span-full text-center py-4 text-red-400 text-xs">${Utils.escapeHtml(msg)}</div>`;
         }
     },
 
@@ -101,87 +396,251 @@ const MigrationModule = {
         const btn = document.getElementById('migration-upload-btn');
 
         if (preview) preview.classList.remove('hidden');
-        if (nameEl) nameEl.textContent = `📄 ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        if (nameEl) nameEl.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
 
         if (btn) {
             btn.disabled = false;
-            btn.className = 'px-4 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:text-base font-bold rounded transition-colors cursor-pointer';
-            btn.textContent = '⬆ Unggah & Update Aplikasi';
+            btn.className = 'w-full py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded transition-colors flex items-center justify-center gap-1.5 shadow-sm cursor-pointer';
         }
+    },
+
+    clearSelectedFile(e) {
+        if (e) e.stopPropagation();
+        this._selectedFile = null;
+        const input = document.getElementById('migration-file-input');
+        if (input) input.value = '';
+
+        const preview = document.getElementById('migration-file-preview');
+        const btn = document.getElementById('migration-upload-btn');
+
+        if (preview) preview.classList.add('hidden');
+        if (btn) {
+            btn.disabled = true;
+            btn.className = 'w-full py-2 bg-neutral-800 text-neutral-500 text-xs font-bold rounded cursor-not-allowed transition-colors flex items-center justify-center gap-1.5 shadow-sm';
+        }
+    },
+
+    async checkGitHubUpdate() {
+        const btn = document.getElementById('btn-check-github');
+        const btnText = document.getElementById('btn-check-github-text');
+        const badge = document.getElementById('migration-github-badge');
+        const infoBox = document.getElementById('migration-github-info');
+        const startBtn = document.getElementById('btn-start-github-update');
+        const origText = btnText ? btnText.textContent : 'Cek Pembaruan GitHub';
+
+        if (btn) btn.disabled = true;
+        if (btnText) btnText.textContent = 'Memeriksa GitHub...';
+
+        try {
+            const data = await API.request('/api/v1/kasir/settings/migration/check_github');
+            if (data && data.success) {
+                this._latestRelease = data;
+
+                if (data.is_newer) {
+                    if (badge) {
+                        badge.textContent = `🚀 Versi ${data.latest_version} Tersedia!`;
+                        badge.className = 'px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+                    }
+                    if (infoBox) {
+                        infoBox.classList.remove('hidden');
+                        const tagEl = document.getElementById('github-release-tag');
+                        const nameEl = document.getElementById('github-release-name');
+                        const sizeEl = document.getElementById('github-release-size');
+                        if (tagEl) tagEl.textContent = data.latest_version;
+                        if (nameEl) nameEl.textContent = data.release_name || data.latest_version;
+                        if (sizeEl) sizeEl.textContent = `${(data.asset_size / 1024 / 1024).toFixed(2)} MB`;
+                    }
+                    if (startBtn) startBtn.classList.remove('hidden');
+                    if (typeof Toast !== 'undefined') Toast.success(`Rilis baru ditemukan: ${data.latest_version}`);
+                } else {
+                    if (badge) {
+                        badge.textContent = '✅ Versi Terbaru';
+                        badge.className = 'px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold font-mono bg-neutral-800 text-neutral-300 border border-neutral-700';
+                    }
+                    if (infoBox) infoBox.classList.add('hidden');
+                    if (startBtn) startBtn.classList.add('hidden');
+                    if (typeof Toast !== 'undefined') Toast.info(`Sistem Anda (${data.current_version}) sudah merupakan versi terbaru.`);
+                }
+            } else {
+                throw new Error(data?.error || 'Gagal memeriksa GitHub');
+            }
+        } catch (err) {
+            console.error('[Migration] GitHub check error:', err);
+            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Gagal mengecek GitHub');
+            if (badge) {
+                badge.textContent = 'Gagal Cek';
+                badge.className = 'px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-bold font-mono bg-red-500/20 text-red-400 border border-red-500/30';
+            }
+        } finally {
+            if (btn) btn.disabled = false;
+            if (btnText) btnText.textContent = origText;
+        }
+    },
+
+    openConfirmModal() {
+        if (!this._latestRelease) return;
+        const modal = document.getElementById('modal-github-confirm');
+        const verSub = document.getElementById('confirm-version-subtitle');
+        const notesEl = document.getElementById('confirm-release-notes');
+        const warnBox = document.getElementById('confirm-active-session-warning');
+        const pcCountEl = document.getElementById('confirm-active-pc-count');
+
+        if (verSub) verSub.textContent = `Versi Saat Ini: ${this._latestRelease.current_version} ➔ Versi Baru: ${this._latestRelease.latest_version}`;
+        if (notesEl) notesEl.textContent = this._latestRelease.release_notes || '(Tidak ada catatan rilis)';
+
+        if (this._latestRelease.active_sessions_count > 0) {
+            if (warnBox) warnBox.classList.remove('hidden');
+            if (pcCountEl) pcCountEl.textContent = `${this._latestRelease.active_sessions_count} PC`;
+        } else {
+            if (warnBox) warnBox.classList.add('hidden');
+        }
+
+        if (modal) modal.classList.remove('hidden');
+    },
+
+    closeConfirmModal() {
+        const modal = document.getElementById('modal-github-confirm');
+        if (modal) modal.classList.add('hidden');
+    },
+
+    async executeGitHubUpdate() {
+        this.closeConfirmModal();
+        await this._runStepperAndUpdate('/api/v1/kasir/settings/migration/update_github', {
+            asset_url: this._latestRelease?.asset_url
+        }, false);
     },
 
     async uploadUpdate() {
         if (!this._selectedFile) {
-            Toast.error('Pilih file ZIP terlebih dahulu');
+            if (typeof Toast !== 'undefined') Toast.error('Pilih file ZIP terlebih dahulu');
             return;
         }
-
         if (!this._selectedFile.name.match(/\.zip$/i)) {
-            Toast.error('Hanya file .zip yang didukung');
+            if (typeof Toast !== 'undefined') Toast.error('Hanya file .zip yang didukung');
             return;
         }
 
-        const btn = document.getElementById('migration-upload-btn');
-        const progress = document.getElementById('migration-progress-bar');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '<span class="animate-spin inline-block">⏳</span> Memproses...';
-        }
+        const formData = new FormData();
+        formData.append('update_file', this._selectedFile);
 
-        if (progress) {
-            progress.style.width = '100%';
-            progress.classList.remove('hidden');
-        }
-
-        try {
-            const formData = new FormData();
-            formData.append('update_file', this._selectedFile);
-
-            const resp = await fetch('/api/v1/kasir/settings/migration/upload', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || ''
-                },
-                body: formData
-            });
-
-            const result = await resp.json();
-
-            if (result.success) {
-                Toast.success('✅ Update berhasil! Server akan restart...');
-                // Tampilkan overlay restart
-                const overlay = document.createElement('div');
-                overlay.id = 'migration-restart-overlay';
-                overlay.className = 'fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center';
-                overlay.innerHTML = `
-                    <div class="text-center p-8">
-                        <div class="text-5xl mb-4 animate-spin inline-block">⏳</div>
-                        <p class="text-neutral-200 text-sm lg:text-base font-bold uppercase tracking-wider">Memproses Update & Merestart Server...</p>
-                        <p class="text-neutral-500 text-xs lg:text-sm mt-2">Extract ZIP → Migrasi Database → Restart</p>
-                    </div>
-                `;
-                document.body.appendChild(overlay);
-
-                // Auto reload setelah 5 detik
-                setTimeout(() => {
-                    window.location.reload();
-                }, 5000);
-            } else {
-                throw new Error(result.error || 'Gagal mengunggah update');
-            }
-        } catch (err) {
-            Toast.error(err.message);
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = '⬆ Unggah & Update Aplikasi';
-            }
-            if (progress) {
-                progress.style.width = '0%';
-                progress.classList.add('hidden');
-            }
-        }
+        await this._runStepperAndUpdate('/api/v1/kasir/settings/migration/upload', formData, true);
     },
 
+    async _runStepperAndUpdate(endpoint, payload, isFormData) {
+        const stepperModal = document.getElementById('modal-update-stepper');
+        if (stepperModal) stepperModal.classList.remove('hidden');
+
+        const setStep = (num, state) => {
+            const item = document.getElementById(`step-item-${num}`);
+            const dot = document.getElementById(`step-dot-${num}`);
+            if (!item || !dot) return;
+
+            if (state === 'active') {
+                item.className = 'flex items-center gap-2.5 text-emerald-400 font-bold';
+                dot.className = 'w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500 flex items-center justify-center text-[10px] font-mono shrink-0';
+                dot.textContent = String(num);
+            } else if (state === 'done') {
+                item.className = 'flex items-center gap-2.5 text-neutral-300';
+                dot.className = 'w-5 h-5 rounded-full bg-emerald-500 text-black border border-emerald-500 flex items-center justify-center text-[10px] font-bold shrink-0';
+                dot.textContent = '✓';
+            } else {
+                item.className = 'flex items-center gap-2.5 text-neutral-500';
+                dot.className = 'w-5 h-5 rounded-full bg-[#171717] border border-[#222] flex items-center justify-center text-[10px] font-mono shrink-0 text-neutral-500';
+                dot.textContent = String(num);
+            }
+        };
+
+        setStep(1, 'active');
+        setStep(2, 'pending');
+        setStep(3, 'pending');
+        setStep(4, 'pending');
+
+        try {
+            let res;
+            if (isFormData) {
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const fetchRes = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'X-CSRFToken': csrfToken },
+                    body: payload
+                });
+                res = await fetchRes.json();
+            } else {
+                res = await API.request(endpoint, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            if (!res || (!res.success && !res.message)) {
+                throw new Error(res?.error || 'Gagal memulai pembaruan');
+            }
+
+            // Step 1 Selesai
+            setStep(1, 'done');
+            setStep(2, 'done');
+            setStep(3, 'active');
+
+            const titleEl = document.getElementById('stepper-title');
+            const subEl = document.getElementById('stepper-subtitle');
+            if (titleEl) titleEl.textContent = 'Server Sedang Diperbarui...';
+            if (subEl) subEl.textContent = 'Runner mandiri sedang mengekstrak berkas & migrasi database.';
+
+            // Mulai polling reconnect server
+            setTimeout(() => {
+                setStep(3, 'done');
+                setStep(4, 'active');
+                if (titleEl) titleEl.textContent = 'Menghubungkan ke Server Baru...';
+                if (subEl) subEl.textContent = 'Menunggu proses start server baru selesai...';
+
+                let attempts = 0;
+                const maxAttempts = 50; // Max ~75 detik
+                const pollInterval = setInterval(async () => {
+                    attempts++;
+                    try {
+                        const checkRes = await fetch('/api/v1/kasir/auth/check', { cache: 'no-store' });
+                        if (checkRes.ok) {
+                            clearInterval(pollInterval);
+                            setStep(4, 'done');
+
+                            const spinner = document.getElementById('stepper-main-spinner');
+                            const successIcon = document.getElementById('stepper-main-success');
+                            if (spinner) spinner.classList.add('hidden');
+                            if (successIcon) successIcon.classList.remove('hidden');
+
+                            if (titleEl) titleEl.textContent = '🎉 PEMBARUAN BERHASIL!';
+                            if (subEl) subEl.textContent = 'Memuat ulang dashboard kasir...';
+
+                            setTimeout(() => {
+                                window.location.reload();
+                            }, 1200);
+                        }
+                    } catch (_) {
+                        // Masih proses restart, abaikan error network
+                    }
+
+                    if (attempts >= maxAttempts) {
+                        clearInterval(pollInterval);
+                        if (titleEl) titleEl.textContent = 'Waktu Tunggu Habis';
+                        if (subEl) subEl.textContent = 'Server belum merespons. Silakan segarkan halaman manual.';
+                    }
+                }, 1500);
+            }, 3000);
+
+        } catch (err) {
+            console.error('[Migration] Update failed:', err);
+            if (stepperModal) stepperModal.classList.add('hidden');
+            if (typeof Toast !== 'undefined') Toast.error(err.message || 'Gagal memulai pembaruan');
+        }
+    }
 };
 
+window.MigrationModule = MigrationModule;
 
+// Auto init dropzone, search & modal events when DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    MigrationModule._setupDropzone();
+    MigrationModule._setupSearch();
+    MigrationModule._setupResizeListener();
+    MigrationModule._setupModalEvents();
+});

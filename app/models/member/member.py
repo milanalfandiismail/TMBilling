@@ -85,24 +85,6 @@ class Member(db.Model):
             else:
                 self.kadaluarsa_pada = now_local() + timedelta(days=kadaluarsa_hari)
 
-    
-    def kurangi_waktu(self, menit=1):
-        """Mengurangi waktu tersimpan.
-        
-        Method ini biasanya dipanggil oleh client C# setiap menit
-        selama session aktif.
-        
-        Args:
-            menit (int, optional): Jumlah menit yang akan dikurangi. Defaults to 1.
-            
-        Returns:
-            tuple: (bool, int) - (Status berhasil/tidak, Sisa waktu tersimpan).
-        """
-        if self.waktu_tersimpan >= menit:
-            self.waktu_tersimpan -= menit
-            return True, self.waktu_tersimpan
-        return False, 0
-    
     def cek_kadaluarsa(self):
         """Memeriksa dan membersihkan waktu yang sudah kadaluarsa.
         
@@ -120,8 +102,13 @@ class Member(db.Model):
         """Ambil nama grup (string) untuk keperluan JSON."""
         return self.grup.nama if self.grup else "reguler"
 
-    def to_dict(self):
+    def to_dict(self, sesi=None):
         """Mengkonversi data member ke format dictionary untuk JSON serialization.
+        
+        Args:
+            sesi (Sesi, optional): Sesi aktif yang sudah diketahui pemanggil.
+                Bila diberikan, backref ``sesi_list`` tidak dipindai (hindari
+                query tambahan pada jalur polling client).
         
         Returns:
             dict: Dictionary berisi data member dengan format yang rapi.
@@ -132,10 +119,11 @@ class Member(db.Model):
         # Coba ambil sisa waktu real-time jika member sedang bermain (Live Sync)
         try:
             # Mencari sesi 'aktif' terbaru untuk member ini dari backref
-            sesi_aktif = next((s for s in self.sesi_list if s.status == 'aktif'), None)
+            sesi_aktif = sesi if sesi is not None else next(
+                (s for s in self.sesi_list if s.status == 'aktif'), None)
             if sesi_aktif:
                 waktu_tampil = sesi_aktif.sisa_menit()
-        except:
+        except Exception:  # noqa: silent - properti tampilan; gagal hitung -> kosong; data tidak berubah
             pass
 
         return {
@@ -145,6 +133,7 @@ class Member(db.Model):
             "email": self.email,
             "no_hp": self.no_hp,
             "grup": self.grup.nama if self.grup else "reguler",
+            "grup_id": self.grup_id,
             "grup_warna": self.grup.warna if self.grup else "#888888",
             "waktu_tersimpan": waktu_tampil,
             "kadaluarsa_pada": self.kadaluarsa_pada.strftime("%Y-%m-%d %H:%M:%S") if self.kadaluarsa_pada else None,

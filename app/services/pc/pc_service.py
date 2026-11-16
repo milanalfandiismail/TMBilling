@@ -1,16 +1,21 @@
-# app/services/pc_service.py
+﻿# app/services/pc_service.py
 
 """Service untuk manajemen PC/unit komputer.
 
-Modul ini menangani CRUD PC, bulk creation, dan status summary.
+Modul ini menangani CRUD PC dan bulk creation.
 """
 
-from app.models import PC, db, now_local
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
+
+from app.models import PC, Sesi, db, now_local
 from app.repositories import PCRepository
 from app.repositories import SesiRepository
 from app.repositories import GrupRepository
+from app.utils.helpers import natural_sort_key, remove_quiet
 from app.utils.logger import write_log
 from app.utils.validators import validate_string_length, validate_integer_range, validate_ip_address, validate_mac_address
+from app.services.write_lock import with_write_lock
 
 
 class PCService:
@@ -35,16 +40,7 @@ class PCService:
                 if grup_obj:
                     grup_id_parsed = grup_obj.id
         pcs = PCRepository.get_all(aktif_only, grup_id_parsed, search_query)
-        import re
-        
-        def natural_sort_key(pc):
-            g_id = pc.grup_id or 0
-            code = pc.kode or ""
-            # Pisahkan angka dari teks untuk perbandingan alami (human sorting)
-            split_parts = [int(text) if text.isdigit() else text.lower() for text in re.split(r'(\d+)', code)]
-            return (g_id, split_parts)
-
-        pcs.sort(key=natural_sort_key)
+        pcs.sort(key=lambda pc: (pc.grup_id or 0, natural_sort_key(pc.kode)))
         return pcs
 
     @staticmethod
@@ -73,26 +69,37 @@ class PCService:
         return PCRepository.get_by_kode(kode)
 
     @staticmethod
-    def get_status_summary():
-        """Ringkasan cepat status PC (Total, Terpakai, Kosong) untuk dashboard."""
-        all_pc = PCRepository.get_all(aktif_only=True)
-        total = len(all_pc)
-        terpakai = sum(1 for pc in all_pc if pc.sesi_aktif)
-        return {
-            "total": total, 
-            "terpakai": terpakai, 
-            "kosong": total - terpakai
-        }
+    def get_sesi_map():
+        """Peta pc_id -> sesi aktif dalam satu query (hindari N+1 pada daftar PC)."""
+        active_sessions = (
+            Sesi.query.options(
+                joinedload(Sesi.member),
+                joinedload(Sesi.user),
+                joinedload(Sesi.paket),
+                joinedload(Sesi.pc).joinedload(PC.grup),
+            )
+            .filter_by(status="aktif")
+            .order_by(Sesi.id.desc())
+            .all()
+        )
+        sesi_map = {}
+        for s in active_sessions:
+            if s.pc_id not in sesi_map:
+                sesi_map[s.pc_id] = s
+        return sesi_map
 
     @staticmethod
-    def group_by_grup(pcs):
+    def group_by_grup(pcs, sesi_map=None):
         """Kelompokkan list PC ke dalam dictionary berdasarkan nama grup."""
         result = {}
         for pc in pcs:
             g = pc.grup.nama if pc.grup else "reguler"
             if g not in result:
                 result[g] = []
-            result[g].append(pc.to_dict())
+            if sesi_map is not None:
+                result[g].append(pc.to_dict(sesi=sesi_map.get(pc.id), screenshot_info={}))
+            else:
+                result[g].append(pc.to_dict())
         return result
 
 
@@ -102,6 +109,7 @@ class PCService:
     # Fokus: Operasi standar untuk mengelola unit PC secara individu.
 
     @staticmethod
+    @with_write_lock
     def create(data, operator="system"):
         """Daftarkan unit PC baru dengan validasi kode dan IP unik."""
         kode = data.get("kode", "").strip().upper()
@@ -113,18 +121,25 @@ class PCService:
         if not re.match(r'^[A-Za-z0-9\-_]+$', kode):
             raise ValueError("Kode PC hanya boleh berisi huruf, angka, tanda hubung (-), atau garis bawah (_)")
         
-        if PCRepository.get_by_kode(kode):
+        existing = PCRepository.find_by_kode(kode)
+        if existing and existing.aktif:
             raise ValueError(f"PC dengan kode {kode} sudah ada")
 
         # --- VALIDASI IP ADDRESS UNIK ---
         ip_address = validate_ip_address(data.get("ip_address"), allow_empty=True, version=4)
-        if ip_address and PCRepository.find_by_ip(ip_address):
-            raise ValueError(f"IP Address '{ip_address}' sudah digunakan oleh PC lain")
+        if ip_address:
+            bentrok = (PCRepository.find_ip_exclude(ip_address, existing.id)
+                       if existing else PCRepository.find_by_ip(ip_address))
+            if bentrok:
+                raise ValueError(f"IP Address '{ip_address}' sudah digunakan oleh PC lain")
 
         # --- VALIDASI MAC ADDRESS UNIK ---
         mac_address = validate_mac_address(data.get("mac_address"), allow_empty=True)
-        if mac_address and PCRepository.find_by_mac(mac_address):
-            raise ValueError(f"MAC Address '{mac_address}' sudah digunakan oleh PC lain")
+        if mac_address:
+            bentrok = (PCRepository.find_mac_exclude(mac_address, existing.id)
+                       if existing else PCRepository.find_by_mac(mac_address))
+            if bentrok:
+                raise ValueError(f"MAC Address '{mac_address}' sudah digunakan oleh PC lain")
 
         grup_nama = data.get("grup", "reguler")
         grup_obj = GrupRepository.find_by_nama(grup_nama)
@@ -133,16 +148,24 @@ class PCService:
 
         nama_pc = validate_string_length(data.get("nama") or kode, min_len=1, max_len=50, field_name="Nama PC", required=False)
 
-        pc = PC(
-            kode=kode,
-            nama=nama_pc,
-            ip_address=ip_address,
-            mac_address=mac_address,
-            grup_id=grup_obj.id,
-        )
-        
-        db.session.add(pc)
-        db.session.commit()
+        if existing:
+            pc = existing
+            pc.aktif = True
+            pc.nama = nama_pc
+            pc.ip_address = ip_address
+            pc.mac_address = mac_address
+            pc.grup_id = grup_obj.id
+            db.session.commit()
+        else:
+            pc = PC(
+                kode=kode,
+                nama=nama_pc,
+                ip_address=ip_address,
+                mac_address=mac_address,
+                grup_id=grup_obj.id,
+            )
+            db.session.add(pc)
+            db.session.commit()
         
         detail_pc = {
             "kode": kode,
@@ -152,9 +175,12 @@ class PCService:
             "grup": grup_nama
         }
         write_log("TAMBAH_PC", f"PC {kode} ({grup_nama}) didaftarkan", user=operator, detail_json=detail_pc)
+        from app.services.cache import PCNetworkCacheStore
+        PCNetworkCacheStore.invalidate()
         return pc
 
     @staticmethod
+    @with_write_lock
     def update(pc_id, data, operator="system"):
         """Perbarui informasi teknis PC (Kode, Nama, IP, MAC, Grup) dengan validasi duplikasi."""
         pc = PCRepository.get_by_id(pc_id)
@@ -216,14 +242,66 @@ class PCService:
             "grup": pc.grup.nama if pc.grup else ""
         }
         write_log("EDIT_PC", f"Data PC {pc.kode} diperbarui", user=operator, detail_json=detail_pc)
+        from app.services.cache import PCNetworkCacheStore
+        PCNetworkCacheStore.invalidate()
         return pc
 
     @staticmethod
+    @with_write_lock
+    def archive(pc_id, operator="system"):
+        """Arsipkan PC (soft delete) tanpa menyentuh riwayat sesi."""
+        from app.services.cache import PCNetworkCacheStore, cleanup_pc_cache
+
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            raise ValueError("PC tidak ditemukan")
+        if pc.sesi_aktif:
+            raise ValueError(f"PC {pc.kode} tidak dapat diarsipkan karena sedang digunakan dalam sesi aktif.")
+
+        kode = pc.kode
+        pc.aktif = False
+        db.session.commit()
+        PCNetworkCacheStore.invalidate()
+        cleanup_pc_cache(pc_id)
+        try:
+            from app.services.hardware.hardware_service import TELEMETRY_HISTORY
+            TELEMETRY_HISTORY.pop(pc_id, None)
+        except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
+            pass
+        try:
+            from app.services.client.client_service import PENDING_COMMANDS
+            PENDING_COMMANDS.pop(pc_id, None)
+        except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
+            pass
+        write_log("ARSIP_PC", f"PC:{kode} diarsipkan", user=operator, detail_json={"kode": kode, "pc_id": pc_id})
+        return {"success": True, "message": f"PC {kode} diarsipkan"}
+
+    @staticmethod
+    @with_write_lock
+    def restore(pc_id, operator="system"):
+        """Pulihkan PC dari arsip agar kembali muncul di denah dan daftar."""
+        from app.services.cache import PCNetworkCacheStore
+
+        pc = PCRepository.get_by_id(pc_id)
+        if not pc:
+            raise ValueError("PC tidak ditemukan")
+        if pc.aktif:
+            raise ValueError("PC tidak dalam arsip")
+
+        kode = pc.kode
+        pc.aktif = True
+        db.session.commit()
+        PCNetworkCacheStore.invalidate()
+        write_log("RESTORE_PC", f"PC:{kode} dipulihkan dari arsip", user=operator, detail_json={"kode": kode, "pc_id": pc_id})
+        return {"success": True, "message": f"PC {kode} dipulihkan"}
+
+    @staticmethod
     def delete(pc_id, operator="system"):
-        """Hapus unit PC secara permanen dari sistem beserta seluruh dependensinya."""
+        """Hapus PC permanen beserta data anaknya; riwayat sesi dilepas, bukan dihapus."""
         import os
         from flask import current_app
-        from app.models import PCUptimeLog, HardwareMonitor, PCProcess, MaintenanceTicket, Sesi
+        from app.models import PCUptimeLog, HardwareMonitor, PCProcess, MaintenanceTicket
+        from app.services.write_lock import WRITE_LOCK
 
         pc = PCRepository.get_by_id(pc_id)
         if not pc:
@@ -235,39 +313,41 @@ class PCService:
 
         kode = pc.kode
         try:
-            # 2. Detach sesi historis (Category B) agar histori keuangan tetap utuh
-            Sesi.query.filter_by(pc_id=pc.id).update({"pc_id": None})
+            with WRITE_LOCK:
+                # 2. Riwayat sesi tetap ada, hanya referensi PC-nya dilepas
+                Sesi.query.filter_by(pc_id=pc.id).update({"pc_id": None}, synchronize_session=False)
 
-            # 3. Hapus seluruh data anak langsung (Category A)
-            PCUptimeLog.query.filter_by(pc_id=pc.id).delete()
-            HardwareMonitor.query.filter_by(pc_id=pc.id).delete()
-            PCProcess.query.filter_by(pc_id=pc.id).delete()
-            MaintenanceTicket.query.filter_by(pc_id=pc.id).delete()
+                # 3. Hapus seluruh data anak langsung (Category A)
+                PCUptimeLog.query.filter_by(pc_id=pc.id).delete()
+                HardwareMonitor.query.filter_by(pc_id=pc.id).delete()
+                PCProcess.query.filter_by(pc_id=pc.id).delete()
+                MaintenanceTicket.query.filter_by(pc_id=pc.id).delete()
 
-            # 4. Hapus entitas PC
-            db.session.delete(pc)
-            db.session.commit()
+                # 4. Hapus entitas PC
+                db.session.delete(pc)
+                db.session.commit()
 
             # 5. Cleanup In-Memory states (Non-fatal)
             try:
+                from app.services.cache import cleanup_pc_cache
+                cleanup_pc_cache(pc_id)
+            except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
+                pass
+            try:
                 from app.services.hardware.hardware_service import TELEMETRY_HISTORY
                 TELEMETRY_HISTORY.pop(pc_id, None)
-            except Exception:
+            except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
                 pass
 
             try:
                 from app.services.client.client_service import PENDING_COMMANDS
                 PENDING_COMMANDS.pop(pc_id, None)
-            except Exception:
+            except Exception:  # noqa: silent - perintah/cache PC sudah tidak ada -> tidak ada yang perlu dilakukan
                 pass
 
             # 6. Cleanup screenshot file di filesystem jika ada
-            try:
-                screenshot_path = os.path.join(current_app.root_path, 'static', 'uploads', 'screenshots', f"{kode}.png")
-                if os.path.exists(screenshot_path):
-                    os.remove(screenshot_path)
-            except Exception:
-                pass
+            screenshot_path = os.path.join(current_app.instance_path, 'uploads', 'screenshots', f"{kode}.png")
+            remove_quiet(screenshot_path)
 
             write_log("HAPUS_PC", f"PC:{kode} dihapus permanen beserta seluruh dependensinya", user=operator, detail_json={"kode": kode, "pc_id": pc_id})
             return {"success": True, "message": f"PC {kode} berhasil dihapus"}
@@ -278,6 +358,7 @@ class PCService:
             raise e
 
     @staticmethod
+    @with_write_lock
     def update_position(pc_id, pos_x, pos_y):
         """Update posisi PC di floor plan."""
         pc = PCRepository.get_by_id(pc_id)
@@ -295,6 +376,7 @@ class PCService:
     # Fokus: Penambahan unit PC dalam jumlah besar secara otomatis.
 
     @staticmethod
+    @with_write_lock
     def reset_admin_mode(pc_id, operator="system"):
         """Matiin mode admin secara paksa di database dan kirim perintah lock ke client."""
         pc = PCRepository.get_by_id(pc_id)
@@ -302,25 +384,25 @@ class PCService:
             raise ValueError("PC tidak ditemukan")
         
         pc.is_admin_mode = False
-        
-        # Tutup sesi admin jika ada
-        from app.repositories import SesiRepository
-        sesi_aktif = SesiRepository.get_aktif_by_pc(pc.id)
-        if sesi_aktif and (sesi_aktif.tipe == "admin" or sesi_aktif.tipe == "guest"):
-            sesi_aktif.status = "selesai"
-            sesi_aktif.selesai_pada = now_local()
 
-        db.session.commit()
+        # Tutup sesi admin/guest lewat service agar transaksi tutup tercatat
+        from app.repositories import SesiRepository
+        from app.services.sesi.sesi_service import SesiService
+        sesi_aktif = SesiRepository.get_aktif_by_pc(pc.id)
+        if sesi_aktif and sesi_aktif.tipe in ("admin", "guest"):
+            SesiService.tutup_sesi(sesi_aktif.id, operator=operator)
+        else:
+            db.session.commit()
 
         # Antrekan perintah lock ke client agar client segera kembali ke kiosk
         from app.services.client.client_service import ClientService
-        if pc.ip_address:
-            ClientService.queue_command(pc.ip_address, "lock")
+        ClientService.queue_command(pc.id, "lock")
 
         write_log("RESET_ADMIN", f"Mode Admin PC {pc.kode} dimatikan paksa", user=operator, detail_json={"kode": pc.kode})
         return True
 
     @staticmethod
+    @with_write_lock
     def create_batch(data, operator="system"):
         """Tambah PC massal dengan IP Range Start & End serta validasi duplikasi IP dan keselarasan jumlah unit."""
         import ipaddress
@@ -395,14 +477,15 @@ class PCService:
             
             generated_ip = str(ipaddress.IPv4Address(int(ip_start_obj) + offset))
 
-            # 1. Validasi Kode PC
+            # 1. Validasi Kode PC (kode arsip boleh dipakai lagi)
             existing_code_pc = PCRepository.find_by_kode(kode)
-            if existing_code_pc:
+            if existing_code_pc and existing_code_pc.aktif:
                 raise ValueError(f"Kode PC {kode} sudah ada di database")
 
-            # 2. Validasi IP Address
+            # 2. Validasi IP Address (baris arsip yang sama boleh dipakai ulang)
             existing_ip_pc = PCRepository.find_by_ip(generated_ip)
-            if existing_ip_pc:
+            if existing_ip_pc and (
+                    not existing_code_pc or existing_ip_pc.id != existing_code_pc.id):
                 raise ValueError(f"PC {kode} dengan IP {generated_ip} bentrok dengan PC {existing_ip_pc.kode}")
 
         # Loop kedua: Jika validasi lolos semua, simpan ke database
@@ -411,20 +494,30 @@ class PCService:
         for offset, i in enumerate(range(start_n, end_n + 1)):
             kode = _build_batch_code(i)
             generated_ip = str(ipaddress.IPv4Address(int(ip_start_obj) + offset))
-            
-            pc = PC(
-                kode=kode,
-                nama=kode,
-                ip_address=generated_ip,
-                grup_id=grup_obj.id,
-                aktif=True
-            )
-            pc_to_save.append(pc)
+
+            existing = PCRepository.find_by_kode(kode)
+            if existing:
+                existing.nama = kode
+                existing.ip_address = generated_ip
+                existing.grup_id = grup_obj.id
+                existing.aktif = True
+            else:
+                pc_to_save.append(PC(
+                    kode=kode,
+                    nama=kode,
+                    ip_address=generated_ip,
+                    grup_id=grup_obj.id,
+                    aktif=True
+                ))
             added.append(kode)
 
-        if pc_to_save:
+        if added:
             db.session.add_all(pc_to_save)
-            db.session.commit()
+            try:
+                db.session.commit()
+            except IntegrityError:
+                db.session.rollback()
+                raise ValueError("Kode atau IP PC sudah dipakai")
             
             detail_batch = {
                 "jumlah_ditambahkan": len(added),

@@ -7,6 +7,7 @@ tambah waktu/saldo serta sistem refund paket.
 """
 
 from flask import Blueprint, request, jsonify, session
+from app.models import db
 from app.middleware.auth import login_required, admin_required, shift_required
 from app.services import MemberService
 from app.services import PaketService
@@ -47,7 +48,8 @@ def list_member():
             per_page,
             grup_id=grup_id,
             sort_by=sort_by,
-            order=order
+            order=order,
+            aktif_only=request.args.get("include_arsip") != "1"
         )
         return jsonify(result), 200
     except Exception as e:
@@ -103,12 +105,49 @@ def edit_member(member_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@member_api_bp.route("/<int:member_id>/archive", methods=["POST"])
+@login_required
+@admin_required
+def archive_member(member_id):
+    """Nonaktifkan member tanpa menghapus riwayat."""
+    try:
+        kasir = session.get("kasir_username", "kasir")
+        MemberService.archive(member_id, operator=kasir)
+        return jsonify({"success": True, "message": "Member berhasil diarsipkan"}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@member_api_bp.route("/<int:member_id>/restore", methods=["POST"])
+@login_required
+@admin_required
+def restore_member(member_id):
+    """Pulihkan member dari arsip."""
+    try:
+        kasir = session.get("kasir_username", "kasir")
+        MemberService.restore(member_id, operator=kasir)
+        return jsonify({"success": True, "message": "Member berhasil dipulihkan"}), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @member_api_bp.route("/<int:member_id>", methods=["DELETE"])
 @login_required
 @admin_required
 def delete_member(member_id):
-    """Hapus akun member (Akan gagal jika member sedang aktif bermain)."""
+    """Hapus akun member permanen (riwayat sesi/transaksi dilepas)."""
     try:
+        from app.models import Member
+        member = db.session.get(Member, member_id)
+        if not member:
+            return jsonify({"error": "Member tidak ditemukan"}), 404
+        confirm = str((request.get_json(silent=True) or {}).get("confirm", "")).strip().lower()
+        if confirm != (member.username or "").lower():
+            return jsonify({"error": "Ketik username member untuk konfirmasi hapus permanen"}), 400
         kasir = session.get("kasir_username", "kasir")
         MemberService.delete(member_id, operator=kasir)
         return jsonify({"success": True, "message": "Member berhasil dihapus"}), 200
@@ -135,21 +174,25 @@ def tambah_waktu():
         metode_pembayaran = data.get("metode_pembayaran", "Tunai")
         
         selections = data.get("selections")
+        items = []
         if selections:
             for sel in selections:
                 paket_id = sel.get("paket_id")
                 qty = int(sel.get("qty", 1))
                 if qty <= 0:
                     raise ValueError("Kuantitas harus minimal 1")
-                paket = PaketService.get_by_id(paket_id)
-                MemberService.tambah_waktu(member_id, paket, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran)
+                items.append((PaketService.get_by_id(paket_id), qty))
         else:
             paket_id = data.get("paket_id")
             qty = int(data.get("qty", 1))
             if qty <= 0:
                 raise ValueError("Kuantitas harus minimal 1")
-            paket = PaketService.get_by_id(paket_id)
-            MemberService.tambah_waktu(member_id, paket, operator=kasir, qty=qty, metode_pembayaran=metode_pembayaran)
+            items.append((PaketService.get_by_id(paket_id), qty))
+
+        MemberService.tambah_waktu_batch(
+            member_id, items, operator=kasir, metode_pembayaran=metode_pembayaran,
+            client_request_id=data.get("client_request_id"),
+        )
             
         return jsonify({"success": True, "message": "Waktu berhasil ditambah"}), 200
     except ValueError as e:

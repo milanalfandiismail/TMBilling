@@ -69,6 +69,28 @@ def test_shift_lifecycle_with_catatan_and_qris(app_ctx):
     assert saved.catatan == "Kurang 5rb karena salah kembalian"
     assert saved.total_qris == 75000
 
+def test_end_shift_gagal_ringkasan_tidak_commit_setengah(app_ctx, monkeypatch):
+    kasir = User(username="kasir_gagal", nama_lengkap="Gagal", role="kasir")
+    kasir.set_password("gagal123")
+    db.session.add(kasir)
+    db.session.commit()
+
+    shift = ShiftService.start_shift("kasir_gagal", modal_awal=50000, operator="admin")
+
+    def gagal(_shift_id):
+        raise RuntimeError("ringkasan gagal")
+
+    monkeypatch.setattr(ShiftService, "get_shift_summary", staticmethod(gagal))
+
+    with pytest.raises(RuntimeError):
+        ShiftService.end_shift(shift.id, uang_fisik=50000, catatan="x")
+
+    db.session.rollback()
+    saved = db.session.get(ShiftRecord, shift.id)
+    assert saved.status == "AKTIF"
+    assert saved.waktu_selesai is None
+
+
 def test_closed_shift_summary_time_bounded(app_ctx):
     kasir = User(username="kasir_siti", nama_lengkap="Siti Aminah", role="kasir")
     kasir.set_password("siti123")
@@ -125,3 +147,32 @@ def test_generate_shift_receipt_text(app_ctx):
     assert "Andi Pratama" in receipt
     assert "Modal Awal" in receipt
     assert "Selisih" in receipt
+
+
+def test_struk_shift_rincian_rusak_ditandai(app_ctx):
+    kasir = User(username="kasir_rusak", nama_lengkap="Kasir Rusak", role="kasir")
+    kasir.set_password("x")
+    db.session.add(kasir)
+    db.session.commit()
+    shift = ShiftService.start_shift("kasir_rusak", modal_awal=100000, operator="admin")
+    shift.detail_metode_json = "{bukan json"
+    shift.total_billing = 50000
+    db.session.commit()
+    teks = ShiftService.generate_shift_receipt_text(shift.id)
+    assert "TIDAK TERBACA" in teks
+    assert "Uang Seharusnya" in teks
+
+
+def test_struk_shift_rincian_valid_tanpa_penanda(app_ctx):
+    import json
+    kasir = User(username="kasir_valid", nama_lengkap="Kasir Valid", role="kasir")
+    kasir.set_password("x")
+    db.session.add(kasir)
+    db.session.commit()
+    shift = ShiftService.start_shift("kasir_valid", modal_awal=100000, operator="admin")
+    shift.detail_metode_json = json.dumps({"tunai": {"total": 10000}, "non_tunai": []})
+    shift.total_billing = 10000
+    db.session.commit()
+    teks = ShiftService.generate_shift_receipt_text(shift.id)
+    assert "TIDAK TERBACA" not in teks
+    assert "Uang Seharusnya" in teks

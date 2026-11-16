@@ -4,11 +4,34 @@ const PC = {
     currentPage: 1,
     perPage: 6,
     searchQuery: '',
-    currentGrupId: null,
+    currentGrupId: '',
     groups: [],
     _allPcs: [],
     _lastFingerprint: null,
     _hasResizeListener: false,
+    arsipMode: false,
+
+    toggleView(arsip) {
+        this.arsipMode = arsip;
+        document.getElementById('pc-table').classList.toggle('hidden', arsip);
+        document.getElementById('pc-arsip-list').classList.toggle('hidden', !arsip);
+        document.getElementById('pc-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
+        document.getElementById('pc-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
+        ArsipList.setGrup(arsip ? (this.currentGrupId || null) : null);
+        if (arsip) {
+            this._loadArsipGroups();
+            ArsipList.onChanged(() => { this._loadArsipGroups(); this.load(true); });
+            ArsipList.mount({
+                res: 'pc',
+                container: document.getElementById('pc-arsip-list')
+            });
+        } else {
+            ArsipList.onChanged(null);
+            this.currentGrupId = '';
+            this.renderTabs();
+            this.load(true);
+        }
+    },
 
     getAdaptivePerPage() {
         const width = window.innerWidth;
@@ -76,8 +99,8 @@ const PC = {
             const groups = [...rawGroups].sort((a, b) => Number(a.id) - Number(b.id));
             this.groups = groups;
 
-            if (!this.currentGrupId || !groups.some(g => Number(g.id) === Number(this.currentGrupId))) {
-                this.currentGrupId = groups.length > 0 ? Number(groups[0].id) : null;
+            if (this.currentGrupId && !groups.some(g => Number(g.id) === Number(this.currentGrupId))) {
+                this.currentGrupId = '';
             }
 
             const newFingerprint = JSON.stringify({
@@ -95,19 +118,19 @@ const PC = {
 
             const addSelect = document.getElementById('inp-pc-grup');
             if (addSelect && !isSilent) {
-                addSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                addSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
             const modalAddSelect = document.getElementById('modal-pc-grup');
             if (modalAddSelect && !isSilent) {
-                modalAddSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                modalAddSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
             const batchSelect = document.getElementById('inp-batch-grup');
             if (batchSelect && !isSilent) {
-                batchSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                batchSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
             const modalBatchSelect = document.getElementById('modal-batch-grup');
             if (modalBatchSelect && !isSilent) {
-                modalBatchSelect.innerHTML = groups.map(g => `<option value="${g.nama}">${g.nama.toUpperCase()}</option>`).join('');
+                modalBatchSelect.innerHTML = groups.map(g => `<option value="${Utils.escapeHtml(g.nama)}">${Utils.escapeHtml(g.nama.toUpperCase())}</option>`).join('');
             }
 
             this.renderTabs();
@@ -119,6 +142,22 @@ const PC = {
         }
     },
 
+    async _loadArsipGroups() {
+        if (!this.arsipMode) return;
+        try {
+            const grupData = await API.grup.list({ include_arsip: true });
+            this._arsipGroups = grupData.grup || grupData.grup_list || grupData || [];
+            this._arsipCounts = ArsipList.counts(await ArsipList.fetch('pc'));
+            this.renderTabs();
+            if (this.arsipMode && this.currentGrupId && !this._arsipCounts[String(this.currentGrupId)]) {
+                this.currentGrupId = '';
+                ArsipList.setGrup(null);
+                this.renderTabs();
+                ArsipList.mount({ res: 'pc', container: document.getElementById('pc-arsip-list') });
+            }
+        } catch (e) { /* daftar grup arsip opsional */ }
+    },
+
     renderTabs() {
         const tabsContainer = document.getElementById('pc-group-tabs');
         if (!tabsContainer) return;
@@ -128,8 +167,22 @@ const PC = {
             return;
         }
 
-        const tabsHtml = this.groups.map(g => {
-            const count = (this._allPcs || []).filter(p => Number(p.grup_id) === Number(g.id)).length;
+        const total = this.arsipMode
+            ? Object.values(this._arsipCounts || {}).reduce((a, b) => a + b, 0)
+            : (this._allPcs || []).length;
+        const allTab = `
+            <button type="button" onclick="PC.selectGroup('')"
+                class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 ${!this.currentGrupId ? 'bg-[#161616] text-white border border-neutral-400 shadow-sm' : 'bg-[#0c0c0c] hover:bg-[#141414] text-neutral-400 hover:text-neutral-200 border border-[#1c1c1c]'}">
+                <span class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full bg-neutral-500"></span>
+                <span class="tracking-wide uppercase">SEMUA</span>
+                <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono ${!this.currentGrupId ? 'bg-[#242424] text-neutral-200 font-bold' : 'bg-[#141414] text-neutral-500 font-semibold'}">${total} UNIT</span>
+            </button>`;
+        const source = this.arsipMode ? (this._arsipGroups || this.groups) : this.groups;
+        const tabsHtml = allTab + source.map(g => {
+            const count = this.arsipMode
+                ? ((this._arsipCounts || {})[String(g.id)] || 0)
+                : (this._allPcs || []).filter(p => Number(p.grup_id) === Number(g.id)).length;
+            if (this.arsipMode && count === 0) return '';
             const isActive = Number(this.currentGrupId) === Number(g.id);
             const gColor = g.warna || '#3B82F6';
 
@@ -139,7 +192,7 @@ const PC = {
                         class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 bg-[#161616] text-white border shadow-sm"
                         style="border-color: ${gColor};">
                         <span class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="tracking-wide uppercase">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
                         <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono bg-[#242424] text-neutral-200 font-bold">${count} UNIT</span>
                     </button>
                 `;
@@ -148,7 +201,7 @@ const PC = {
                     <button type="button" onclick="PC.selectGroup(${g.id})"
                         class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 bg-[#0c0c0c] hover:bg-[#141414] text-neutral-400 hover:text-neutral-200 border border-[#1c1c1c]">
                         <span class="w-1.5 h-1.5 2xl:w-2 2xl:h-2 rounded-full opacity-60" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="tracking-wide uppercase">${Utils.escapeHtml(g.nama.toUpperCase())}${g.aktif === false ? ' · ARSIP' : ''}</span>
                         <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono bg-[#141414] text-neutral-500 font-semibold">${count} UNIT</span>
                     </button>
                 `;
@@ -159,18 +212,22 @@ const PC = {
     },
 
     selectGroup(grupId) {
-        this.currentGrupId = Number(grupId);
+        this.currentGrupId = (grupId === '' || grupId === null || grupId === undefined) ? '' : Number(grupId);
         this.currentPage = 1;
         this.renderTabs();
+        if (this.arsipMode) {
+            ArsipList.setGrup(this.currentGrupId || null);
+            ArsipList.mount({ res: 'pc', container: document.getElementById('pc-arsip-list') });
+            return;
+        }
         this.renderActiveGroup();
     },
 
     renderActiveGroup() {
-        if (!this.currentGrupId && this.groups.length > 0) {
-            this.currentGrupId = Number(this.groups[0].id);
-        }
-        const activeGroup = (this.groups || []).find(g => Number(g.id) === Number(this.currentGrupId));
-        const filteredPcs = (this._allPcs || []).filter(p => Number(p.grup_id) === Number(this.currentGrupId));
+        const activeGroup = (this.groups || []).find(g => Number(g.id) === Number(this.currentGrupId)) || null;
+        const filteredPcs = this.currentGrupId
+            ? (this._allPcs || []).filter(p => Number(p.grup_id) === Number(this.currentGrupId))
+            : (this._allPcs || []);
 
         PCGrid.render(filteredPcs, {
             activeGroup: activeGroup,
@@ -375,15 +432,28 @@ const PC = {
         }
     },
 
-    async delete(id) {
-        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-300 font-semibold mb-1">Hapus PC ini secara permanen?</p><p class="text-[11px] lg:text-sm text-neutral-500">Seluruh data uptime log, hardware telemetry, proses, dan tiket perawatan unit ini akan dihapus bersih.</p></div>';
+    async delete(id, kode) {
+        const message = `<div class="text-center"><p class="text-xs lg:text-base text-neutral-300 font-semibold mb-1">Hapus permanen PC <span class="font-mono font-bold text-neutral-100">${Utils.escapeHtml(kode || '')}</span>?</p><p class="text-[11px] lg:text-sm text-neutral-500">Unit ini dihapus bersih; riwayat sesi tetap ada tanpa referensi PC.</p></div>`;
         Modal.confirm(message, async () => {
             try {
-                const res = await API.pc.delete(id);
+                const res = await API.pc.delete(id, kode);
                 Toast.success(res.message || 'PC berhasil dihapus');
                 this.load();
             } catch (err) {
                 Toast.error(err.message || 'Gagal menghapus PC');
+            }
+        }, null, { requireCheck: 'Saya paham data ini dihapus permanen dan tidak bisa dikembalikan.' });
+    },
+
+    async archive(id) {
+        const message = '<div class="text-center"><p class="text-xs lg:text-base text-neutral-300 font-semibold mb-1">Arsipkan PC ini?</p><p class="text-[11px] lg:text-sm text-neutral-500">PC disembunyikan dari daftar aktif, seluruh riwayat tetap utuh.</p></div>';
+        Modal.confirm(message, async () => {
+            try {
+                const res = await API.pc.archive(id);
+                Toast.success(res.message || 'PC diarsipkan');
+                this.load();
+            } catch (err) {
+                Toast.error(err.message || 'Gagal mengarsipkan PC');
             }
         });
     },

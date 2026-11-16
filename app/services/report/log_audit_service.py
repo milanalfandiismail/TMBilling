@@ -1,4 +1,4 @@
-# app/services/report/log_audit_service.py
+﻿# app/services/report/log_audit_service.py
 
 """Service khusus pemrosesan & pembersihan log audit sistem.
 
@@ -8,10 +8,19 @@ pembersihan log, serta penghapusan riwayat audit.
 
 import re
 import json
-from datetime import datetime
 from app.models import db
-from app.repositories import TransaksiRepository, SesiRepository
+from app.repositories import TransaksiRepository, SesiRepository, MenuRepository
+from app.services.write_lock import WRITE_LOCK, with_write_lock
+from app.utils.timezone_utils import format_local_now
 from app.utils.logger import read_logs, write_log, clear_logs
+from app.utils.timezone_utils import get_local_date_range_utc
+
+
+LOCKED_TRANSAKSI_JENIS = frozenset({
+    "beli_paket_guest", "beli_paket_member",
+    "tambah_waktu_sesi", "tambah_waktu_guest",
+    "refund_paket", "blackout_refund",
+})
 
 
 class LogAuditService:
@@ -26,6 +35,7 @@ class LogAuditService:
 
         parsed_logs = []
         for line in raw_logs:
+            data = None
             if line.startswith("{") and line.endswith("}"):
                 try:
                     data = json.loads(line)
@@ -49,7 +59,7 @@ class LogAuditService:
                     ip_address, browser_agent, detail_json = "-", "-", None
 
             from app.utils.logger import ACTION_TO_CATEGORY_MAP
-            if 'data' in locals() and isinstance(data, dict) and 'category' in data:
+            if isinstance(data, dict) and 'category' in data:
                 category = data['category']
             else:
                 category = ACTION_TO_CATEGORY_MAP.get(action.upper(), "SYSTEM")
@@ -129,28 +139,39 @@ class LogAuditService:
         return {"success": False, "total_dibersihkan": 0, "archive_path": None}
 
     @staticmethod
+    @with_write_lock
     def clear_all_transactions(operator="system"):
         """Menghapus seluruh riwayat transaksi & sesi (Maintenance)."""
+        if SesiRepository.get_all_aktif():
+            raise ValueError("Tutup semua sesi aktif sebelum menghapus riwayat")
         try:
             count_t = TransaksiRepository.delete_all()
+            count_m = MenuRepository.delete_all_transaksi()
             count_s = SesiRepository.delete_history()
             db.session.commit()
             write_log(
                 "CLEAR_ALL_HISTORY",
-                f"Seluruh riwayat dikosongkan ({count_t} transaksi, {count_s} sesi)",
+                f"Seluruh riwayat dikosongkan ({count_t} transaksi, {count_m} kantin, {count_s} sesi)",
                 user=operator,
-                detail_json={"transaksi_dihapus": count_t, "sesi_dihapus": count_s, "action": "clear_all"}
+                detail_json={"transaksi_dihapus": count_t, "menu_dihapus": count_m, "sesi_dihapus": count_s, "action": "clear_all"}
             )
             return True
         except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:  # noqa: silent - gagal rollback; error asli sudah dicatat oleh handler luar
+                pass
             write_log("ERROR", f"Gagal hapus seluruh riwayat: {str(e)}", user=operator, detail_json={"error": str(e)})
             return False
 
     @staticmethod
+    @with_write_lock
     def delete_transaction(t_id, operator="system"):
         """Menghapus satu transaksi (Audit)."""
+        t = TransaksiRepository.get_by_id(t_id)
+        if t and t.jenis in LOCKED_TRANSAKSI_JENIS:
+            raise ValueError("Nota paket tidak bisa dihapus. Gunakan Refund agar saldo member ikut kembali.")
         try:
-            t = TransaksiRepository.get_by_id(t_id)
             if not t:
                 return False
 
@@ -170,31 +191,51 @@ class LogAuditService:
                 return True
             return False
         except Exception as e:
+            try:
+                db.session.rollback()
+            except Exception:  # noqa: silent - gagal rollback; error asli sudah dicatat oleh handler luar
+                pass
             write_log("ERROR", f"Gagal hapus struk {t_id}: {str(e)}", user=operator, detail_json={"error": str(e)})
             return False
 
     @staticmethod
     def clear_transactions_by_date(tanggal, operator="system"):
         """Menghapus riwayat transaksi & sesi pada tanggal tertentu (Audit)."""
-        try:
-            count_t = TransaksiRepository.delete_by_date(tanggal)
-            count_s = SesiRepository.delete_history_by_date(tanggal)
-            db.session.commit()
-            write_log(
-                "CLEAR_TANGGAL",
-                f"Riwayat tanggal {tanggal} dihapus ({count_t} transaksi, {count_s} sesi)",
-                user=operator,
-                detail_json={"tanggal_target": tanggal, "transaksi_dihapus": count_t, "sesi_dihapus": count_s}
-            )
-            return True
-        except Exception as e:
-            write_log("ERROR", f"Gagal hapus riwayat tanggal {tanggal}: {str(e)}", user=operator, detail_json={"error": str(e), "tanggal_target": tanggal})
-            return False
+        # Cek sesi aktif dan hapus riwayat harus satu blok dengan pembukaan sesi
+        # (WRITE_LOCK) agar nota sesi yang baru dibuka tidak ikut terhapus.
+        with WRITE_LOCK:
+            _, target_end = get_local_date_range_utc(tanggal)
+            for sesi in SesiRepository.get_all_aktif():
+                mulai = sesi.mulai_pada or sesi.waktu_mulai_sesi
+                if mulai and mulai < target_end:
+                    raise ValueError(
+                        "Tutup semua sesi aktif sebelum menghapus riwayat tanggal ini"
+                    )
+            try:
+                count_t = TransaksiRepository.delete_by_date(tanggal)
+                count_m = MenuRepository.delete_transaksi_by_date(tanggal)
+                count_s = SesiRepository.delete_history_by_date(tanggal)
+                db.session.commit()
+            except Exception as e:
+                try:
+                    db.session.rollback()
+                except Exception:  # noqa: silent - gagal rollback; error asli sudah dicatat oleh handler luar
+                    pass
+                write_log("ERROR", f"Gagal hapus riwayat tanggal {tanggal}: {str(e)}", user=operator, detail_json={"error": str(e), "tanggal_target": tanggal})
+                return False
+
+        write_log(
+            "CLEAR_TANGGAL",
+            f"Riwayat tanggal {tanggal} dihapus ({count_t} transaksi, {count_m} kantin, {count_s} sesi)",
+            user=operator,
+            detail_json={"tanggal_target": tanggal, "transaksi_dihapus": count_t, "menu_dihapus": count_m, "sesi_dihapus": count_s}
+        )
+        return True
 
     @staticmethod
     def prepare_export_data(filter_text=""):
         """Siapkan data log untuk di-export ke file eksternal."""
         logs = read_logs(5000, filter_text if filter_text else None)
         content = "\n".join(logs)
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        timestamp = format_local_now("%Y%m%d_%H%M%S")
         return content, timestamp

@@ -26,14 +26,62 @@ def api_key_required(f):
     def decorated(*args, **kwargs):
         """Wrapper untuk memastikan request memiliki API Key valid."""
         api_key = request.headers.get("X-Client-Key")
-        # Ambil key dari config, fallback ke key default jika tidak diset
         expected_key = current_app.config.get("CLIENT_API_KEY")
+        sender_ip = request.headers.get("X-Forwarded-For", request.remote_addr or "").split(",")[0].strip() or request.remote_addr or ""
         
         if not api_key or not expected_key or not hmac.compare_digest(str(api_key), str(expected_key)):
-            write_log("API_KEY_GAGAL", f"Invalid/Missing API Key from {request.remote_addr}")
+            write_log("API_KEY_GAGAL", f"Invalid/Missing API Key from {sender_ip}")
+            try:
+                from app.services.cache.client_state_store import ApiKeyMismatchStore
+                from app.services.cache.system_cache_store import PCNetworkCacheStore
+                cached = PCNetworkCacheStore.get_by_ip(sender_ip)
+                pc_id = cached.get("id") if cached else None
+                ApiKeyMismatchStore.record_mismatch(ip=sender_ip, pc_id=pc_id)
+                if request.is_json:
+                    data = request.get_json(silent=True) or {}
+                    body_ip = data.get("ip_address")
+                    if body_ip and body_ip != sender_ip:
+                        cached_body = PCNetworkCacheStore.get_by_ip(body_ip)
+                        ApiKeyMismatchStore.record_mismatch(ip=body_ip, pc_id=cached_body.get("id") if cached_body else None)
+            except Exception as e:
+                write_log("CLIENT_SECURITY", f"Gagal mencatat mismatch API key: {e}")
             return jsonify({"error": "Akses ditolak. API Key tidak valid atau belum dikonfigurasi"}), 401
+        
+        # Jika API Key valid, bersihkan penanda mismatch untuk IP/PC ini
+        try:
+            from app.services.cache.client_state_store import ApiKeyMismatchStore
+            from app.services.cache.system_cache_store import PCNetworkCacheStore
+            cached = PCNetworkCacheStore.get_by_ip(sender_ip)
+            pc_id = cached.get("id") if cached else None
+            ApiKeyMismatchStore.clear_mismatch(ip=sender_ip, pc_id=pc_id)
+        except Exception as e:
+            write_log("CLIENT_SECURITY", f"Gagal membersihkan mismatch API key: {e}")
+
         return f(*args, **kwargs)
     return decorated
+
+
+def _peer_ip():
+    from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
+    return IpWhitelistService.extract_client_ip(
+        headers=request.headers, remote_addr=request.remote_addr)
+
+
+@client_api_bp.errorhandler(ValueError)
+def _handle_value_error(err):
+    return jsonify({"success": False, "error": str(err)}), 400
+
+
+def _client_ip(data):
+    peer = _peer_ip()
+    claimed = (data.get("ip_address") or "").strip()
+    if claimed in ("Unknown", "unknown"):
+        claimed = ""
+    if peer in ("127.0.0.1", "::1", "localhost"):
+        return claimed or peer
+    if claimed and claimed != peer:
+        raise ValueError("IP client tidak cocok dengan koneksi")
+    return peer
 
 
 # =========================================================================
@@ -50,7 +98,7 @@ def identify():
 
     try:
         result = ClientService.identify(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
             role=role
         )
@@ -69,7 +117,7 @@ def status():
 
     try:
         result = ClientService.get_status(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
             role=role
         )
@@ -92,7 +140,7 @@ def selesai():
     data = request.get_json() or {}
     try:
         result = ClientService.tutup_sesi(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip()
         )
         return jsonify(result), 200
@@ -106,15 +154,22 @@ def selesai():
 def admin_login():
     """Login admin langsung di PC client (Bypass Lock Screen)."""
     data = request.get_json() or {}
+    from app.services.auth import login_throttle
+    username = data.get("username", "").strip()
+    peer = _peer_ip()
+    if login_throttle.check(peer, username):
+        return jsonify({"success": False, "error": "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."}), 429
     try:
         result = ClientService.admin_login(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
-            username=data.get("username", "").strip(),
+            username=username,
             password=data.get("password", "")
         )
+        login_throttle.ok(peer, username)
         return jsonify(result), 200
     except ValueError as e:
+        login_throttle.fail(peer, username)
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -123,14 +178,15 @@ def admin_login():
 @client_api_bp.route("/emergency-login", methods=["POST"])
 @api_key_required
 def emergency_login():
-    """Login emergency dari PC client (bisa offline/online, selalu diterima jika identitas soket sah)."""
+    """Login emergency dari PC client; token server atau IP PC asal yang sah."""
     data = request.get_json() or {}
     try:
         result = ClientService.emergency_login(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
             username=data.get("username", "SYSTEM").strip(),
-            socket_ip=request.remote_addr
+            token=data.get("token"),
+            request_ip=_peer_ip()
         )
         return jsonify(result), 200
     except PermissionError as e:
@@ -153,7 +209,7 @@ def afk_lock():
     data = request.get_json() or {}
     try:
         result = ClientService.afk_lock(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
             pin=data.get("pin")
         )
@@ -171,7 +227,7 @@ def afk_unlock():
     data = request.get_json() or {}
     try:
         result = ClientService.afk_unlock(
-            ip_address=data.get("ip_address"),
+            ip_address=_client_ip(data),
             mac_address=data.get("mac_address", "").upper().strip(),
             credential=data.get("credential")
         )
@@ -194,7 +250,14 @@ def get_warnet_config():
         
         title = SettingsService.get("warnet_title", "TMBilling")
         announcement = SettingsService.get("warnet_announcement", "")
-        qris_url = SettingsService.get("qris_image_url", "/static/uploads/qris/default_qris.png")
+        if announcement:
+            from app.utils.helpers import sanitize_html
+            announcement = sanitize_html(announcement)
+        qris_path = SettingsService.get("qris_image_url", "/static/uploads/qris/default_qris.png")
+        if not qris_path.startswith('/'):
+            qris_path = f"/{qris_path.lstrip('/')}"
+        base = (SettingsService.get("app_public_url", "") or request.host_url).rstrip('/')
+        qris_url = f"{base}{qris_path}"
         
         paket = PaketService.get_all(aktif_only=True)
         
@@ -209,6 +272,7 @@ def get_warnet_config():
             "title": title,
             "announcement": announcement,
             "qris_url": qris_url,
+            "qris_path": qris_path,
             "paket": [p.to_dict() for p in paket],
             "menu": menu_list
         }), 200
@@ -217,18 +281,24 @@ def get_warnet_config():
 
 
 def _resolve_client_pc(data):
-    """Helper untuk meresolve PC dari request payload atau remote header."""
+    """Helper untuk meresolve PC dari request payload atau remote header (Cache-Accelerated)."""
     from app.repositories import PCRepository
-    raw_ip = data.get("ip_address")
-    if raw_ip in ["Unknown", "unknown", "", None]:
-        raw_ip = None
-        
-    ip_address = raw_ip or request.headers.get("X-IP-Address") or request.remote_addr
+    from app.services.cache.memory_store import PCNetworkCacheStore
+    ip_address = _client_ip(data)
     mac_address = data.get("mac_address", "").upper().strip()
     
-    pc = PCRepository.get_by_ip(ip_address)
-    if not pc and mac_address:
-        pc = PCRepository.find_by_mac(mac_address)
+    cached = PCNetworkCacheStore.resolve_pc(ip=ip_address, mac=mac_address)
+    if cached:
+        pc = PCRepository.get_by_id(cached["id"])
+    else:
+        pc = PCRepository.get_by_ip(ip_address)
+        if not pc and mac_address:
+            pc = PCRepository.find_by_mac(mac_address)
+        if pc:
+            PCNetworkCacheStore.invalidate()
+    if pc and ip_address:
+        from app.services.cache import OnlineStatusStore
+        OnlineStatusStore.set_ip(pc.id, ip_address)
     return pc, ip_address, mac_address
 
 
@@ -280,14 +350,29 @@ def vnc_stopped():
 def fast_poll():
     """Endpoint bagi background monitor agent untuk mengecek perintah cepat masuk (VNC, Refresh, Kill, dll)."""
     data = request.get_json() or {}
-    pc, ip_address, mac_address = _resolve_client_pc(data)
-        
-    if not pc:
-        return jsonify({"success": False, "error": "PC tidak dikenal"}), 404
-        
+    ip_address = _client_ip(data)
+    mac_address = data.get("mac_address", "").upper().strip()
+
+    from app.services.cache.memory_store import PCNetworkCacheStore
     from app.services.client.client_service import ClientService
-    cmd = ClientService.pop_fast_command(pc.id)
+
+    cached = PCNetworkCacheStore.resolve_pc(ip=ip_address, mac=mac_address)
+    if cached:
+        pc_id = cached["id"]
+        pc_kode = cached.get("kode", "PC")
+    else:
+        from app.repositories import PCRepository
+        pc = PCRepository.get_by_ip(ip_address)
+        if not pc and mac_address:
+            pc = PCRepository.find_by_mac(mac_address)
+        if not pc:
+            return jsonify({"success": False, "error": "PC tidak dikenal"}), 404
+        PCNetworkCacheStore.invalidate()
+        pc_id = pc.id
+        pc_kode = pc.kode
+
+    cmd = ClientService.pop_fast_command(pc_id)
     if cmd:
-        write_log("FAST_COMMAND_DISPATCHED", f"Perintah cepat [{cmd}] diambil oleh PC {pc.kode} ({ip_address})", detail_json={"pc_id": pc.id, "cmd": cmd})
-    
+        write_log("FAST_COMMAND_DISPATCHED", f"Perintah cepat [{cmd}] diambil oleh PC {pc_kode} ({ip_address})", detail_json={"pc_id": pc_id, "cmd": cmd})
+
     return jsonify({"success": True, "command": cmd}), 200

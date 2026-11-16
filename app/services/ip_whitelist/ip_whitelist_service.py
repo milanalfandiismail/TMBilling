@@ -14,6 +14,7 @@ import secrets
 import socket
 from app.services.settings.settings_service import SettingsService
 from app.utils.logger import write_log
+from app.utils.timezone_utils import now_utc
 
 
 class IpWhitelistService:
@@ -39,8 +40,8 @@ class IpWhitelistService:
     @staticmethod
     def set_enabled(enabled):
         """Aktifkan/nonaktifkan whitelist."""
-        val = 'true' if enabled else 'false'
-        SettingsService.set(IpWhitelistService.ENABLED_KEY, val)
+        flag = str(enabled).strip().lower() in ("true", "1", "yes")
+        SettingsService.set(IpWhitelistService.ENABLED_KEY, "true" if flag else "false")
 
     @staticmethod
     def get_public_url():
@@ -109,24 +110,45 @@ class IpWhitelistService:
 
     @staticmethod
     def is_ip_whitelisted(ip):
-        """Cek apakah sebuah IP masuk whitelist."""
-        return ip in IpWhitelistService.get_whitelisted_ips()
+        """Cek apakah sebuah IP masuk whitelist (mendukung entri CIDR)."""
+        try:
+            addr = ipaddress.ip_address(ip)
+        except ValueError:
+            return False
+        for entry in IpWhitelistService.get_whitelisted_ips():
+            try:
+                if "/" in entry:
+                    if addr in ipaddress.ip_network(entry, strict=False):
+                        return True
+                elif addr == ipaddress.ip_address(entry):
+                    return True
+            except ValueError:
+                continue
+        return False
 
     @staticmethod
     def add(ip, label=''):
-        """Tambah IP ke whitelist. Raise ValueError jika invalid/duplicate."""
-        from app.utils.validators import validate_ip_address, validate_string_length
-        clean_ip = validate_ip_address(ip, allow_empty=False, version=4)
+        """Tambah IP/CIDR ke whitelist. Raise ValueError jika invalid/duplicate."""
+        from app.utils.validators import validate_string_length
+        raw_ip = (ip or "").strip()
+        if not raw_ip:
+            raise ValueError("Alamat IP tidak boleh kosong")
+        try:
+            net = ipaddress.ip_network(raw_ip, strict=False)
+        except ValueError:
+            raise ValueError("Format alamat IP tidak valid (contoh: 192.168.1.100)")
+        if net.version != 4:
+            raise ValueError("Format alamat IP harus berupa IPv4 yang valid")
+        clean_ip = str(net) if "/" in raw_ip else str(net.network_address)
         clean_label = validate_string_length(label, min_len=1, max_len=100, field_name="Label IP Whitelist", required=False) if label else "Manual entry"
 
         entries = IpWhitelistService._load_entries()
         if any(e['ip'] == clean_ip for e in entries):
             raise ValueError(f"IP '{clean_ip}' sudah ada di whitelist.")
 
-        import datetime
         entries.append({
             'ip': clean_ip,
-            'added_at': datetime.datetime.now().isoformat(),
+            'added_at': now_utc().isoformat(),
             'label': clean_label
         })
         IpWhitelistService._save_entries(entries)
@@ -213,7 +235,6 @@ class IpWhitelistService:
     @staticmethod
     def seed_defaults(app):
         """Seed IP whitelist default saat first-run. Idempotent."""
-        import datetime
         with app.app_context():
             if SettingsService.get(IpWhitelistService.ENABLED_KEY) is None:
                 SettingsService.set(IpWhitelistService.ENABLED_KEY, 'true')
@@ -229,10 +250,10 @@ class IpWhitelistService:
                 except Exception:
                     try:
                         lan_ip = socket.gethostbyname(socket.gethostname())
-                    except Exception:
+                    except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
                         pass
 
-                now_iso = datetime.datetime.now().isoformat()
+                now_iso = now_utc().isoformat()
                 default_list = [
                     {'ip': '127.0.0.1', 'added_at': now_iso, 'label': 'localhost'}
                 ]

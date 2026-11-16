@@ -1,6 +1,7 @@
-@echo off
+﻿@echo off
 title TMBilling Server Installer
 color 0E
+cd /d "%~dp0"
 
 echo ==========================================================
 echo    TMBilling Server - Setup dan Instalasi
@@ -11,9 +12,18 @@ echo.
 python --version >nul 2>&1
 if errorlevel 1 goto :no_python
 python --version
+python -c "import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)" >nul 2>&1
+if errorlevel 1 goto :old_python
 echo [OK] Python ditemukan.
 echo.
 goto :check_venv
+
+:old_python
+echo [ERROR] Versi Python terlalu lama. TMBilling membutuhkan Python 3.11 atau lebih baru.
+echo         Unduh versi terbaru di: https://www.python.org/downloads/
+echo ==========================================================
+pause
+exit /b 1
 
 :no_python
 echo [ERROR] Python tidak terdeteksi di sistem!
@@ -49,9 +59,10 @@ echo.
 :install_deps
 echo [INFO] Memperbarui pip...
 .venv\Scripts\python.exe -m pip install --upgrade pip --quiet
+if errorlevel 1 echo [PERINGATAN] Gagal memutakhirkan pip; memakai versi yang terpasang.
 echo [INFO] Memasang dependensi dari requirements.txt...
 echo        (Membutuhkan koneksi internet, harap tunggu...)
-.venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\python.exe -m pip install -r requirements.txt
 if errorlevel 1 goto :pip_error
 echo [OK] Semua dependensi berhasil dipasang.
 echo.
@@ -81,21 +92,33 @@ echo.
 :init_db
 echo [INFO] Menginisialisasi database...
 .venv\Scripts\python.exe install_scripts\init_db.py
+if errorlevel 1 goto :db_error
 echo.
 
 echo ==========================================================
 echo   INSTALASI SELESAI!
 echo ==========================================================
 echo.
-echo   Informasi Login Default:
+echo   Informasi Login Superadmin Awal:
 echo     Username : admin
-echo     Password : admin123
+if exist initial_admin.txt (
+    type initial_admin.txt
+) else (
+    echo     Password acak telah dibuat di berkas: initial_admin.txt
+)
 echo.
 echo   Langkah selanjutnya:
-echo     1. Edit file .env jika perlu menyesuaikan konfigurasi
-echo     2. Jalankan "start.bat" untuk menyalakan server kasir
-echo     3. Buka browser ke http://localhost:7015
+echo     1. Simpan password acak dari berkas "initial_admin.txt"
+echo     2. Edit file .env jika perlu menyesuaikan konfigurasi
+echo     3. Jalankan "start.bat" untuk menyalakan server kasir
+echo     4. Buka browser ke http://localhost:7015
+echo     5. Login lalu ubah password di menu: Manajemen Staff ^> Akun Kasir ^& Admin
 echo.
-echo   PENTING: Ganti password admin setelah login pertama!
 echo ==========================================================
 pause
+
+:db_error
+echo.
+echo [ERROR] Inisialisasi database gagal. Periksa pesan di atas.
+pause
+exit /b 1

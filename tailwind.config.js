@@ -7,9 +7,10 @@ module.exports = {
     theme: {
         extend: {
             fontFamily: {
-                'space-grotesk': ['Space Grotesk', 'sans-serif'],
-                'inter': ['Inter', 'sans-serif'],
-                mono: ['JetBrains Mono', 'monospace'],
+                sans: ['Segoe UI', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                'space-grotesk': ['Segoe UI', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                'inter': ['Segoe UI', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                mono: ['Consolas', 'JetBrains Mono', 'monospace'],
             },
             colors: {
                 surface: '#0a0a0a',
@@ -32,20 +33,8 @@ module.exports = {
                 '24': 'repeat(24, minmax(0, 1fr))',
                 '30': 'repeat(30, minmax(0, 1fr))',
             },
-            keyframes: {
-                'pulse-red-bg': {
-                    '0%, 100%': { backgroundColor: '#161616', borderColor: '#ef4444' },
-                    '50%': { backgroundColor: '#7f1d1d', borderColor: '#b91c1c' },
-                },
-                'pulse-orange-bg': {
-                    '0%, 100%': { backgroundColor: '#161616', borderColor: '#f59e0b' },
-                    '50%': { backgroundColor: '#78350f', borderColor: '#d97706' },
-                }
-            },
-            animation: {
-                'pulse-red-bg': 'pulse-red-bg 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                'pulse-orange-bg': 'pulse-orange-bg 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            },
+            keyframes: {},
+            animation: {},
         },
     },
     plugins: [],

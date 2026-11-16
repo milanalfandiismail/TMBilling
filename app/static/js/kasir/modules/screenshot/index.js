@@ -7,6 +7,7 @@ const Screenshot = {
     searchTimeout: null,
     _isFetching: false,
     _lastFingerprint: null,
+    _groupsCache: null,
 
     resetState() {
         this.cachedData = [];
@@ -72,6 +73,11 @@ const Screenshot = {
     stopPolling() { },
 
     async load(isSilent = false) {
+        // Screenshot baru muncul tiap beberapa detik; lewati tick silent yang terlalu rapat.
+        const nowTs = Date.now();
+        if (isSilent && this._lastFetchTs && nowTs - this._lastFetchTs < 2000) return;
+        this._lastFetchTs = nowTs;
+
         if (this._isFetching) return;
         this._isFetching = true;
 
@@ -81,9 +87,10 @@ const Screenshot = {
         }
 
         try {
+            const needGroups = !this._groupsCache || this._groupsCache.length === 0;
             const [data, grupResponse] = await Promise.all([
                 API.request('/api/v1/kasir/monitor/screenshot/all'),
-                API.grup ? API.grup.list() : Promise.resolve({ grup: [] })
+                needGroups && API.grup ? API.grup.list() : Promise.resolve(null)
             ]);
 
             if (data && data.success && Array.isArray(data.data)) {
@@ -91,7 +98,7 @@ const Screenshot = {
                 const oldData = this.cachedData || [];
 
                 // 1. Ekstrak & urutkan grup dari endpoint API grup atau fallback dari data PC
-                const rawGroups = (grupResponse && (grupResponse.grup || grupResponse.grup_list)) || [];
+                const rawGroups = grupResponse ? ((grupResponse.grup || grupResponse.grup_list) || []) : this._groupsCache;
                 let groups = [...rawGroups].sort((a, b) => Number(a.id) - Number(b.id));
 
                 if (groups.length === 0) {
@@ -106,6 +113,8 @@ const Screenshot = {
                     groups = [...fallbackMap.values()].sort((a, b) => a.id - b.id);
                 }
                 this.groups = groups;
+                // shortcut: daftar grup di-cache sampai reload, grup baru muncul setelah refresh halaman
+                if (groups.length > 0) this._groupsCache = groups;
 
                 // 2. Set grup aktif default jika belum ada atau grup yang aktif terhapus
                 if (!this.currentGrupId || !groups.some(g => Number(g.id) === Number(this.currentGrupId))) {
@@ -163,14 +172,19 @@ const Screenshot = {
             const cardEl = document.querySelector(`.screenshot-card[data-pcid="${pc.pc_id}"]`);
             if (!cardEl) return;
 
-            const timeChanged = !oldPc || oldPc.screenshot_time !== pc.screenshot_time;
+            const timeChanged = !oldPc || oldPc.screenshot_time !== pc.screenshot_time || oldPc.screenshot_time_display !== pc.screenshot_time_display;
             const urlChanged = !oldPc || oldPc.screenshot_url !== pc.screenshot_url;
 
             if (timeChanged || urlChanged) {
                 // Update waktu update
                 const timeEl = cardEl.querySelector('.screenshot-update-time');
                 if (timeEl) {
-                    timeEl.textContent = pc.screenshot_time || 'N/A';
+                    const timeInfo = this._formatScreenshotTime(pc.screenshot_time, pc.mtime, pc.screenshot_time_display);
+                    timeEl.textContent = timeInfo.display;
+                    const footerEl = cardEl.querySelector('.screenshot-footer') || timeEl.parentElement;
+                    if (footerEl) {
+                        footerEl.title = timeInfo.full;
+                    }
                 }
 
                 // Update container preview gambar tanpa flicker pada PC lain
@@ -184,6 +198,7 @@ const Screenshot = {
                         if (existingImg) {
                             existingImg.src = `${resolvedUrl}?t=${new Date().getTime()}`;
                         } else {
+                            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
                             imgContainer.innerHTML = `
                                 <img src="${resolvedUrl}?t=${new Date().getTime()}" class="w-full h-full object-cover opacity-85 group-hover:opacity-100 transition-opacity" alt="Screenshot ${pc.pc_kode}">
                                 <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
@@ -225,7 +240,7 @@ const Screenshot = {
                         class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 bg-[#161616] text-white border shadow-sm"
                         style="border-color: ${gColor};">
                         <span class="w-2 h-2 2xl:w-2.5 2xl:h-2.5 rounded-full" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="tracking-wide uppercase">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
                         <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono bg-[#242424] text-neutral-200 font-bold">${count} PC</span>
                     </button>
                 `;
@@ -234,7 +249,7 @@ const Screenshot = {
                     <button type="button" onclick="Screenshot.selectGroup(${g.id})"
                         class="px-2.5 sm:px-3 2xl:px-3.5 py-1 sm:py-1.5 2xl:py-2 rounded text-xs 2xl:text-sm font-bold transition-all flex items-center gap-1.5 2xl:gap-2 shrink-0 bg-[#0c0c0c] hover:bg-[#141414] text-neutral-400 hover:text-neutral-200 border border-[#1c1c1c]">
                         <span class="w-1.5 h-1.5 2xl:w-2 2xl:h-2 rounded-full opacity-60" style="background-color: ${gColor};"></span>
-                        <span class="tracking-wide">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
+                        <span class="tracking-wide uppercase">${Utils.escapeHtml(g.nama.toUpperCase())}</span>
                         <span class="text-[10px] 2xl:text-xs px-1.5 2xl:px-2 py-0.2 2xl:py-0.5 rounded font-mono bg-[#141414] text-neutral-500 font-semibold">${count} PC</span>
                     </button>
                 `;
@@ -276,7 +291,7 @@ const Screenshot = {
                 }
             }
             Toast.show(`Perintah screenshot dikirim ke ${successCount} PC (${groupName})`, "success");
-            setTimeout(() => this.load(true), 3000);
+            setTimeout(() => this.load(), 3000);
         } catch (error) {
             console.error("Error trigger group screenshot:", error);
             Toast.show("Terjadi kesalahan saat memicu screenshot", "error");
@@ -294,7 +309,7 @@ const Screenshot = {
             });
             if (data && data.success) {
                 Toast.show(`Perintah screenshot dikirim`, "success");
-                setTimeout(() => this.load(true), 3000);
+                setTimeout(() => this.load(), 3000);
             } else {
                 Toast.show(data?.error || "Gagal mengirim perintah", "error");
             }
@@ -323,6 +338,48 @@ const Screenshot = {
             lightbox.classList.add('hidden');
             lightbox.classList.remove('flex');
         }
+    },
+
+    _formatScreenshotTime(rawTime, mtime, displayTime) {
+        if (displayTime) {
+            return {
+                display: displayTime,
+                full: rawTime || displayTime
+            };
+        }
+        if (!rawTime || rawTime === 'N/A' || rawTime === '-') {
+            return {
+                display: '—',
+                full: 'Belum ada tangkapan layar'
+            };
+        }
+        const parts = String(rawTime).trim().split(/\s+/);
+        if (parts.length >= 2) {
+            const datePart = parts[0];
+            const timePart = parts[1];
+            const tzPart = parts.slice(2).join(' ') || '';
+            const sub = datePart.split('/');
+            if (sub.length === 3) {
+                const [d, m, y] = sub;
+                const now = new Date();
+                const isToday = parseInt(d, 10) === now.getDate() &&
+                                parseInt(m, 10) === (now.getMonth() + 1) &&
+                                parseInt(y, 10) === now.getFullYear();
+
+                const display = isToday
+                    ? `${timePart}${tzPart ? ' ' + tzPart : ''}`
+                    : `${d}/${m} ${timePart.slice(0, 5)}${tzPart ? ' ' + tzPart : ''}`;
+
+                return {
+                    display,
+                    full: rawTime
+                };
+            }
+        }
+        return {
+            display: rawTime,
+            full: rawTime
+        };
     },
 
     renderGrid() {
@@ -362,6 +419,7 @@ const Screenshot = {
             const hasImage = Boolean(pc.screenshot_url);
             const resolvedUrl = hasImage && window.API ? API.resolveMediaUrl(pc.screenshot_url) : (pc.screenshot_url || '');
             const imageUrl = hasImage ? `${resolvedUrl}?t=${new Date().getTime()}` : '';
+            const timeInfo = this._formatScreenshotTime(pc.screenshot_time, pc.mtime, pc.screenshot_time_display);
 
             return `
                 <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] hover:border-[#2a2a2a] rounded-lg overflow-hidden transition-all shadow-sm" data-pcid="${pc.pc_id}">
@@ -387,9 +445,11 @@ const Screenshot = {
                         </div>
                     </div>
                     
-                    <div class="px-2 py-1 text-[10px] 2xl:text-[11px] text-neutral-400 flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c] mt-auto">
-                        <span>Update:</span>
-                        <span class="screenshot-update-time font-mono font-medium text-neutral-300 text-[10px]">${pc.screenshot_time || 'N/A'}</span>
+                    <div class="screenshot-footer px-2 py-1 min-h-[26px] text-[10px] 2xl:text-[11px] text-neutral-400 flex justify-between items-center bg-[#0c0c0c] border-t border-[#1c1c1c] mt-auto" title="${timeInfo.full}">
+                        <span class="flex items-center text-neutral-500 shrink-0" title="Tangkapan Layar">
+                            <svg class="w-3 h-3 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        </span>
+                        <span class="screenshot-update-time font-mono font-medium text-neutral-300 text-[10px] 2xl:text-[11px] truncate ml-auto text-right">${timeInfo.display}</span>
                     </div>
                 </div>
             `;

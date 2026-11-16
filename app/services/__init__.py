@@ -24,12 +24,13 @@ Services:
     SettingsService: Konfigurasi sistem key-value (auto-shutdown, dll).
     TransaksiService: Penomoran nota dan pencatatan transaksi.
     UserService: CRUD akun staff kasir/admin.
-    PluginManager: Manajemen siklus hidup plugins eksternal.
 """
 
 from app.services.settings.settings_service import SettingsService
 from app.services.backup.backup_service import BackupService
+from app.services.health.health_service import HealthService
 from app.services.hardware.hardware_service import HardwareService
+from app.services.hardware.uptime_service import UptimeService
 from app.services.menu.menu_service import MenuService
 from app.services.transaksi.transaksi_service import TransaksiService
 from app.services.user.user_service import UserService
@@ -51,13 +52,21 @@ from app.services.tournament.tournament_service import TournamentService
 from app.services.sesi.sesi_service import SesiService
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.services.owner.analytics_service import OwnerAnalyticsService
-from app.services.plugins.plugin_manager import PluginManager
-from app.services.plugins.base_plugin import BasePlugin
 from app.services.server_monitor.server_monitor_service import ServerMonitorService
 from app.services.maintenance.maintenance_service import MaintenanceService
 from app.services.cloudflare_tunnel.cloudflare_tunnel_service import CloudflareTunnelService
 from app.services.vnc.vnc_service import VNCService
 from app.services.tutorial.tutorial_service import TutorialService
+from app.services.cache.memory_store import (
+    ProcessMemoryStore,
+    HardwareMetricsStore,
+    UptimeMemoryStore,
+    OnlineStatusStore,
+    SettingsCacheStore,
+    PCNetworkCacheStore,
+    AntiTheftGraceTracker,
+)
+
 
 __all__ = [
     "ShiftService",
@@ -65,17 +74,17 @@ __all__ = [
     "AuthService",
     "BlackoutService", 
     "BackupService",
+    "HealthService",
     "ClientService",
     "DashboardService",
     "GrupService",
     "HardwareService",
+    "UptimeService",
     "MemberService",
     "MenuService",
     "OwnerAnalyticsService",
     "PaketService",
     "PCService",
-    "PluginManager",
-    "BasePlugin",
     "ReportService",
     "LogAuditService",
     "PdfExportService",
@@ -89,5 +98,13 @@ __all__ = [
     "MaintenanceService",
     "CloudflareTunnelService",
     "VNCService",
-    "TutorialService"
-]
+    "TutorialService",
+    "ProcessMemoryStore",
+    "HardwareMetricsStore",
+    "UptimeMemoryStore",
+    "OnlineStatusStore",
+    "SettingsCacheStore",
+    "PCNetworkCacheStore",
+    "AntiTheftGraceTracker",
+
+]

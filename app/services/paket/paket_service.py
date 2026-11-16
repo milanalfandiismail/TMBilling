@@ -1,4 +1,4 @@
-# app/services/paket_service.py
+﻿# app/services/paket_service.py
 
 """Service untuk manajemen paket harga.
 
@@ -13,6 +13,7 @@ from app.repositories import SesiRepository
 from app.repositories import GrupRepository
 from app.utils.logger import write_log
 from app.utils.validators import validate_string_length, validate_integer_range
+from app.services.write_lock import with_write_lock
 
 
 class PaketService:
@@ -55,10 +56,16 @@ class PaketService:
 
     @staticmethod
     def get_by_id(paket_id):
-        """Ambil satu detail paket berdasarkan ID."""
-        return PaketRepository.get_by_id(paket_id)
+        """Ambil satu detail paket berdasarkan ID, None bila tidak ada."""
+        from werkzeug.exceptions import NotFound
+
+        try:
+            return PaketRepository.get_by_id(paket_id)
+        except NotFound:
+            return None
 
     @staticmethod
+    @with_write_lock
     def create(data, operator="system"):
         """Buat paket baru dengan validasi nama unik dan grup yang tersedia."""
         nama = validate_string_length(data.get("nama", ""), min_len=2, max_len=50, field_name="Nama paket", required=True)
@@ -105,6 +112,7 @@ class PaketService:
     # Fokus: Mengubah data paket dan menghapus paket dengan proteksi integritas sesi.
 
     @staticmethod
+    @with_write_lock
     def update(paket_id, data, operator="system"):
         """Update detail paket (harga, durasi, status aktif, dll)."""
         paket = PaketRepository.get_by_id(paket_id)
@@ -148,7 +156,7 @@ class PaketService:
                 perubahan["kadaluarsa_hari"] = {"lama": paket.kadaluarsa_hari, "baru": val}
                 paket.kadaluarsa_hari = val
         if "aktif" in data:
-            val = bool(data["aktif"])
+            val = str(data["aktif"]).strip().lower() in ("true", "1", "yes")
             if val != paket.aktif:
                 perubahan["aktif"] = {"lama": paket.aktif, "baru": val}
                 paket.aktif = val
@@ -158,16 +166,60 @@ class PaketService:
         return paket
 
     @staticmethod
-    def delete(paket_id, operator="system"):
-        """Hapus paket jika tidak sedang digunakan oleh sesi aktif manapun."""
+    @with_write_lock
+    def archive(paket_id, operator="system"):
+        """Nonaktifkan paket agar tidak muncul di pilihan tanpa menghapus riwayatnya."""
         paket = PaketRepository.get_by_id(paket_id)
+        if not paket:
+            raise ValueError("Paket tidak ditemukan")
+
+        nama_paket = paket.nama
+        paket.aktif = False
+        db.session.commit()
+        write_log("ARSIP_PAKET", f"Paket {nama_paket} diarsipkan", user=operator,
+                  detail_json={"nama_paket": nama_paket, "paket_id": paket_id})
+        return True
+
+    @staticmethod
+    @with_write_lock
+    def restore(paket_id, operator="system"):
+        """Pulihkan paket dari arsip agar bisa dipilih kembali."""
+        paket = PaketRepository.get_by_id(paket_id)
+        if not paket:
+            raise ValueError("Paket tidak ditemukan")
+        if paket.aktif:
+            raise ValueError("Paket tidak dalam arsip")
+
+        nama_paket = paket.nama
+        paket.aktif = True
+        db.session.commit()
+        write_log("RESTORE_PAKET", f"Paket {nama_paket} dipulihkan dari arsip", user=operator,
+                  detail_json={"nama_paket": nama_paket, "paket_id": paket_id})
+        return True
+
+    @staticmethod
+    def delete(paket_id, operator="system"):
+        """Hapus paket permanen; riwayat sesi/transaksi dilepas, bukan dihapus."""
+        from app.models import Sesi, Transaksi
+        from app.services.write_lock import WRITE_LOCK
+
+        paket = PaketRepository.get_by_id(paket_id)
+        if not paket:
+            raise ValueError("Paket tidak ditemukan")
 
         # PROTEKSI: Jangan hapus paket kalau ada user yang lagi main pake paket ini
         if SesiRepository.get_aktif_by_paket(paket.id):
             raise ValueError("Paket ini sedang dipakai member/guest yang sedang main!")
 
         nama_paket = paket.nama
-        db.session.delete(paket)
-        db.session.commit()
+        try:
+            with WRITE_LOCK:
+                Sesi.query.filter_by(paket_id=paket.id).update({"paket_id": None}, synchronize_session=False)
+                Transaksi.query.filter_by(paket_id=paket.id).update({"paket_id": None}, synchronize_session=False)
+                db.session.delete(paket)
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         write_log("HAPUS_PAKET", f"Paket {nama_paket} dihapus permanen", user=operator, detail_json={"nama_paket": nama_paket})
         return True

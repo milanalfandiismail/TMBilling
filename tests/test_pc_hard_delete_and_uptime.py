@@ -137,20 +137,20 @@ class TestPCHardDelete(unittest.TestCase):
         TELEMETRY_HISTORY[pc_id] = [{"cpu_usage": 25.0}]
         PENDING_COMMANDS[pc_id] = "screenshot"
 
-        # Execute Hard Delete
+        # Execute delete: PC dihapus permanen, riwayat sesi dilepas
         result = PCService.delete(pc_id, operator="admin")
         self.assertTrue(result["success"])
 
-        # Verification: PC must not exist in DB
+        # Verification: PC terhapus
         self.assertIsNone(PC.query.get(pc_id))
 
-        # Verification: Category A records must be deleted
+        # Verification: Category A ikut terhapus
         self.assertEqual(PCUptimeLog.query.filter_by(pc_id=pc_id).count(), 0)
         self.assertEqual(HardwareMonitor.query.filter_by(pc_id=pc_id).count(), 0)
         self.assertEqual(PCProcess.query.filter_by(pc_id=pc_id).count(), 0)
         self.assertEqual(MaintenanceTicket.query.filter_by(pc_id=pc_id).count(), 0)
 
-        # Verification: Category B (Sesi) is preserved with pc_id = None
+        # Verification: Category B (Sesi) tetap ada tanpa referensi PC
         saved_sesi = Sesi.query.get(sesi.id)
         self.assertIsNotNone(saved_sesi)
         self.assertIsNone(saved_sesi.pc_id)
@@ -161,6 +161,27 @@ class TestPCHardDelete(unittest.TestCase):
         # Verification: In-memory state cleared
         self.assertNotIn(pc_id, TELEMETRY_HISTORY)
         self.assertNotIn(pc_id, PENDING_COMMANDS)
+
+    def test_delete_pc_tanpa_riwayat_tetap_hard_delete(self):
+        import tempfile
+
+        pc_id = self.pc.id
+        self.assertEqual(Sesi.query.filter_by(pc_id=pc_id).count(), 0)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            self.app.instance_path = tmp
+            shot_dir = os.path.join(tmp, "uploads", "screenshots")
+            os.makedirs(shot_dir)
+            shot = os.path.join(shot_dir, f"{self.pc.kode}.png")
+            with open(shot, "wb") as f:
+                f.write(b"png")
+
+            result = PCService.delete(pc_id, operator="admin")
+
+            self.assertTrue(result["success"])
+            self.assertFalse(os.path.exists(shot))
+
+        self.assertIsNone(PC.query.get(pc_id))
 
     def test_delete_pc_blocked_when_active_session_exists(self):
         # Create active session on PC

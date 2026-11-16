@@ -8,14 +8,14 @@
 <p align="center">
   <strong>Sistem Manajemen Billing Warnet & Game Center Modern (Enterprise Grade)</strong>
   <br />
-  Backend Flask · Frontend Modular Vanilla JS · WarnetAgent Tauri v2 & Rust · TightVNC Remote Control
+  Backend Flask · Frontend Modular Vanilla JS · WarnetAgent Tauri 1.5 & Rust · TightVNC Remote Control
 </p>
 
 <p align="center">
-  <img alt="Version" src="https://img.shields.io/badge/Version-v1.6.4-blue.svg?style=flat-square" />
-  <img alt="Python" src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python" />
-  <img alt="Flask" src="https://img.shields.io/badge/Flask-3.0-000000?style=flat-square&logo=flask" />
-  <img alt="Tauri" src="https://img.shields.io/badge/Tauri-v2.0-FFC131?style=flat-square&logo=tauri" />
+  <img alt="Version" src="https://img.shields.io/badge/Version-v1.6.5-blue.svg?style=flat-square" />
+  <img alt="Python" src="https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python" />
+  <img alt="Flask" src="https://img.shields.io/badge/Flask-3.1-000000?style=flat-square&logo=flask" />
+  <img alt="Tauri" src="https://img.shields.io/badge/Tauri-v1.5-FFC131?style=flat-square&logo=tauri" />
   <img alt="Rust" src="https://img.shields.io/badge/Rust-1.75%2B-DEA584?style=flat-square&logo=rust" />
   <img alt="Database" src="https://img.shields.io/badge/Database-SQLite-003B57?style=flat-square&logo=sqlite" />
   <img alt="License" src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" />
@@ -28,13 +28,14 @@
 **TMBilling** adalah solusi manajemen operasional terpadu untuk warnet, cybercafe, dan arena esports modern. Dirancang dengan arsitektur **3-Layer Separation of Concerns (SoC)** yang tangguh, sistem ini mengintegrasikan server billing kasir, kasir kantin/FnB terpadu, kendali jarak jauh (remote control TightVNC berbasis web), monitoring hardware baseline anti-maling, dan pertahanan klien 5-lapis (*5-Layer Anti-Tamper Security*).
 
 > 📚 **Dokumentasi Lengkap (Single Source of Truth):**  
-> Untuk panduan arsitektur mendalam, 28 spesifikasi fitur lengkap, katalog 250 endpoint API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
+> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 34 Blueprint & 254 Route API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
 
 ---
 
-## ✨ Sorotan Fitur Utama (v1.6.4)
+## ✨ Sorotan Fitur Utama (v1.6.5-rc3)
 
-- 🌐 **Multi-Branch Control Panel**: Akses, kelola, dan pantau banyak cabang warnet dari satu dashboard terpusat tanpa memerlukan IP publik statis.
+- 🔐 **Zero-Config Out-of-the-Box Security**: Instalasi instan tanpa konfigurasi manual yang rumit. Server otomatis meng-generate `SECRET_KEY` kuat 64-hex persisten ke `.env`, membuat password superadmin acak sekali-pakai (`initial_admin.txt`), auto-generate password VNC unik, dan memproteksi pembaruan sistem via URL Whitelist anti-SSRF.
+- ☁️ **Cloudflare Tunnel & Remote Access**: Akses dashboard kasir & owner dari internet secara instan tanpa perlu port-forwarding router atau IP publik statis.
 - ⚡ **Multi-PC Selection & Batch Actions (`remoteBatch`)**: Seleksi banyak PC sekaligus (drag select/checkbox) untuk Shutdown, Restart, Kunci, Pindah PC, atau Terapkan Paket promosi secara massal.
 - 🖥️ **TightVNC Remote Control + Dual-Clipboard Sync**: Kendalikan layar, keyboard, dan mouse PC klien langsung dari browser web kasir dengan sinkronisasi clipboard teks dua arah otomatis (Port 5900 Loopback).
 - 🔌 **Blackout Auto-Recovery System**: Toleransi pemadaman listrik otomatis. Durasi dan saldo pelanggan tidak hilang ketika terjadi mati lampu mendadak (*Auto Session Resume*).
@@ -43,9 +44,9 @@
 - 🔒 **Kunci Meja AFK / Istirahat Sementara (Screen Lock)**: Fitur penguncian layar PC klien saat ditinggal istirahat dengan tampilan hitam polos minimalis, countdown billing real-time, autentikasi password member / PIN guest, remote control kasir, dan master unlock.
 - 💼 **Shift Kasir & Hitung Buta (*Blind Cash Reconciliation*)**: Sistem serah terima shift anti-manipulasi kasir dengan input modal awal dinamis, *blind count* uang fisik laci, auto-audit selisih (surplus/defisit), cetak struk handover thermal 58mm, dan fitur *Admin Force Close*.
 - 🍔 **POS Kantin & Log Mutasi Stok Inventaris**: Kasir penjualan makanan/minuman dengan stok unlimited/limited, audit log mutasi stok (`MenuStockLog`), restock barang, multi-payment (Tunai/QRIS/Transfer), dan cetak struk thermal 58mm/80mm.
-- ☁️ **Cloudflare Tunnel Auto-Service**: Akses dashboard kasir & owner dari internet secara instan tanpa perlu port-forwarding router.
 - 📋 **Dynamic Tutorials CMS**: Modul SOP dan panduan operator warnet bawaan berbasis custom CKEditor 5 WYSIWYG.
-- 📂 **Web File Explorer & Process Monitor**: Jelajahi file disk PC klien serta pantau / matikan proses aplikasi yang not-responding dari jarak jauh.
+- 📂 **Process Monitor**: Pantau dan matikan proses aplikasi yang not-responding dari jarak jauh.
+- 🗂️ **Arsip vs Hapus Permanen Terpisah**: Setiap PC, paket, member, user, game, grup, dan menu punya dua aksi berbeda — arsip (nonaktifkan, bisa dipulihkan) dan hapus permanen yang meminta konfirmasi centang, melepas relasi riwayat tanpa menghapus data transaksi. Semua data terarsip terkumpul di tab **Data Diarsipkan** dengan pill kategori + pill grup, footer `Total N arsip`, dan tombol pulihkan yang langsung menyegarkan daftar.
 - 📱 **Responsive Dual-Layout**: Antarmuka adaptif untuk layar 1024px, 1920px Full HD, serta layar sentuh tablet/smartphone.
 
 ---
@@ -55,16 +56,16 @@
 ```text
 c:\Project GIT\TMBilling
 ├── app/                        # Backend Server Flask & Frontend Kasir Web
-│   ├── config.py               # Single Source of Version Truth (v1.6.4)
-│   ├── models/                 # 26 Database Model SQLAlchemy
-│   ├── routes/                 # 30 Blueprint REST & WebSocket (250 Endpoints)
-│   ├── services/               # 35+ Service Layer Logika Bisnis
+│   ├── config.py               # Single Source of Version Truth (v1.6.5-rc3)
+│   ├── models/                 # 24 Model Database SQLAlchemy
+│   ├── routes/                 # 34 Blueprint REST + VNC Bridge (254 Route)
+│   ├── services/               # 36 Service Class Logika Bisnis (31 Sub-Domain)
 │   └── static/js/kasir/        # Modular Vanilla ES6 Frontend JS
 ├── docs/                       # Master Dokumentasi
 │   ├── DOCUMENTATION.md        # Master Technical Manual & Single Source of Truth
 │   └── superpowers/            # Arsip Rencana Kerja & Spesifikasi
 ├── tools/ckeditor-builder/     # Custom CKEditor 5 Build untuk CMS
-├── WarnetAgent/                # Source Code Klien Warnet (Rust / Tauri v2)
+├── WarnetAgent/                # Source Code Klien Warnet (Rust / Tauri 1.5)
 │   ├── TMBillingTauri/         # Klien Utama (Lockscreen, Overlay, Win32 Hooks)
 │   ├── TMBilling_Monitor/      # Modul Hardware Monitor & Process Helper
 │   ├── MGCTM/                  # Watchdog Service Supervisor
@@ -84,16 +85,16 @@ c:\Project GIT\TMBilling
 ## 🚀 Panduan Instalasi & Pengoperasian Cepat
 
 ### Prasyarat Sistem:
-- **Server Billing**: Windows 10/11 / Windows Server, Python 3.10+, Koneksi Internet (untuk dependensi awal).
+- **Server Billing**: Windows 10/11 / Windows Server, Python 3.11+, browser dashboard Chrome/Edge 111+ (CSS Tailwind 4 memakai OKLCH & `@property`), Koneksi Internet (untuk dependensi awal).
 - **PC Klien Warnet**: Windows 10/11 64-bit, Microsoft Edge WebView2 Runtime.
-- **Pengembang (Opsional)**: Node.js 18+, Rust & Cargo 1.75+, .NET Framework 4.5+ SDK.
+- **Pengembang (Opsional)**: Node.js 20+ (Tailwind CLI 4), Rust & Cargo 1.75+, .NET Framework 4.5+ SDK.
 
 ---
 
 ### 1. Setup & Menjalankan Server Billing (Komputer Server / Kasir)
 
 1. **Unduh Paket Server**:
-   Unduh paket rilis server terbaru (misal: `TMBilling_Server_v1.6.4.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak di komputer server/kasir Anda (contoh: `C:\TMBilling`). *(Bagi developer, silakan gunakan `git clone` pada [Panduan Pengembang](#3-panduan-pengembang-developer--build-pipeline))*.
+   Unduh paket rilis server terbaru (misal: `TMBilling_Server_v1.6.5-rc3.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak di komputer server/kasir Anda (contoh: `C:\TMBilling`). *(Bagi developer, silakan gunakan `git clone` pada [Panduan Pengembang](#3-panduan-pengembang-developer--build-pipeline))*.
 
 2. **Instalasi Server 1-Klik**:
    Jalankan file `install.bat` di direktori utama:
@@ -107,19 +108,64 @@ c:\Project GIT\TMBilling
    start.bat
    ```
    > Server otomatis berjalan di background pada port `7015`. Buka browser ke:
-   > **`http://localhost:7015`** *(Login Default: `admin` / `admin123`)*.
+   > **`http://localhost:7015`**  
+   > *(Kredensial Superadmin Awal: Username `admin`, Password acak dicetak di terminal startup dan disimpan pada berkas `initial_admin.txt` di root folder. Harap login dan segera ganti di menu **Manajemen Staff > Akun Kasir & Admin**)*.
 
 4. **Menghentikan Server**:
    ```cmd
    stop.bat
    ```
 
+5. **Cara Pembaruan / Update Versi Server**:
+   - **Update Otomatis 1-Klik (Mulai v1.6.5-rc2)**:
+     Buka Dashboard Kasir > menu **Pengaturan** > sub-tab **Migrasi & Update**, klik tombol **Cek Pembaruan GitHub**, lalu tekan **Mulai Update 1-Klik**. Sistem otomatis mencadangkan database, mengekstrak rilis baru, memasang dependensi, menjalankan migrasi skema, dan memulai ulang server tanpa mengunci file. Hanya satu pembaruan dapat berjalan pada satu waktu (klaim `instance/update.lock`; permintaan kedua dibalas `409`), penukaran berkas dicatat di `instance/update_journal.json` sehingga pembaruan yang terputus di tengah jalan dipulihkan otomatis pada percobaan berikutnya, dan paket hanya dipublikasikan lewat `os.replace` setelah unduhan selesai. Bila pemasangan dependensi atau migrasi gagal, updater berhenti dan **tidak** menyalakan server (detail rollback ada di `docs/DOCUMENTATION.md` §9.3).
+   - **Update Cepat via `update.bat`**:
+     Unduh rilis `TMBilling_Server_v<versi>.zip`, lalu jalankan:
+     ```cmd
+     update.bat TMBilling_Server_v1.6.5-rc3.zip
+     ```
+     Atau cukup *drag-and-drop* file ZIP rilis ke file `update.bat`.
+   - **Update Manual (Bagi yang memperbarui dari versi terdahulu)**:
+     1. Pastikan Python **3.11+** (wajib untuk SQLAlchemy 2.1):
+        ```cmd
+        .venv\Scripts\python.exe -c "import sys; print(sys.version)"
+        ```
+     2. Hentikan server, lalu pastikan port `7015` benar-benar lepas:
+        ```cmd
+        stop.bat
+        netstat -ano | findstr :7015
+        ```
+        Tidak boleh ada baris `LISTENING`.
+     3. Cadangkan database sebelum menimpa berkas:
+        ```cmd
+        .venv\Scripts\python.exe -c "import sqlite3,os; os.makedirs('backups',exist_ok=True); s=sqlite3.connect(r'instance\warnet.db'); d=sqlite3.connect(r'backups\manual_pre_update.db'); s.backup(d); s.close(); d.close()"
+        copy .env .env.bak
+        ```
+     4. Unduh paket rilis server terbaru (`TMBilling_Server_v<versi>.zip`) dari **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)**, lalu ekstrak dan timpa ke folder instalasi:
+        ```powershell
+        Expand-Archive -Path TMBilling_Server_v<versi>.zip -DestinationPath . -Force
+        ```
+        *Data aman: `.env`, `instance/`, dan `backups/` tidak ada di dalam ZIP dan tidak akan tertimpa. Jangan hapus `plugins/` bila Anda memakai plugin kustom.*
+     5. Pasang dependensi (wajib bila `requirements.txt` berubah):
+        ```cmd
+        .venv\Scripts\python.exe -m pip install -r requirements.txt
+        ```
+     6. Jalankan migrasi skema (wajib bila rilis membawa perubahan skema; aman diulang):
+        ```cmd
+        .venv\Scripts\python.exe install_scripts\run_migration.py
+        ```
+     7. Nyalakan kembali server dan verifikasi:
+        ```cmd
+        start.bat
+        ```
+        Buka `http://localhost:7015/api/health` dan pastikan `status` bernilai `ok` (atau `degraded` hanya bila disk/backup bermasalah), lalu uji login dan satu transaksi.
+
 ---
 
 ### 2. Setup & Instalasi WarnetAgent (PC Klien Warnet)
 
 1. **Unduh Paket Klien**:
-   Unduh paket rilis klien terbaru (misal: `TMBilling_Client_v1.6.4.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak ke PC Klien *(atau salin isi folder `WarnetAgent\Deploy` jika Anda mengunduh full repository)*.
+   Unduh paket rilis klien terbaru (misal: `TMBilling_Client_v1.6.5-rc3.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak ke PC Klien *(atau salin isi folder `WarnetAgent\Deploy` jika Anda mengunduh full repository)*.
 2. Klik kanan **`install.bat`** lalu pilih **Run as administrator** (atau jalankan biasa).
 3. Masukkan **IP Server Billing** saat diminta (contoh: `192.168.1.100`). Port default `7015` akan otomatis digunakan *(kecuali jika Anda mengubah port server billing, Anda dapat memasukkan format `IP:PORT`, contoh: `192.168.1.100:8080`)*. Masukkan juga **API Key** yang dapat Anda cek dan kelola di dashboard server melalui menu **Sidebar > Pengaturan > Umum & Keamanan > API Key System (Client API Key)**.
 
@@ -136,7 +182,13 @@ c:\Project GIT\TMBilling
    - Mendaftarkan shortcut Startup Windows agar agen otomatis aktif saat PC booting.
    - Menghitung hash SHA-256 binary untuk proteksi integritas dan langsung menjalankan agen di background.
 
-5. **Uninstalasi Klien**:
+5. **Cara Pembaruan / Update Versi Klien**:
+   Karena biner klien memiliki proteksi anti-tamper dan pengawas supervisor ganda (*watchdog mutual guard*), pembaruan versi klien dilakukan dengan alur bersih berikut:
+   1. Jalankan **`uninstall.bat`** (atau `TMBilling_Uninstaller.exe`) di PC klien untuk menghentikan seluruh proses proteksi secara legal dan membersihkan instalasi versi lama.
+   2. Unduh dan ekstrak paket klien versi terbaru (`TMBilling_Client_v<versi>.zip`) dari **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)**.
+   3. Jalankan **`install.bat`** seperti biasa, lalu masukkan IP Server Billing dan API Key yang sesuai.
+
+6. **Uninstalasi Klien**:
    Jalankan **`uninstall.bat`** di PC klien untuk meluncurkan panel uninstalasi aman.
 
 ---
@@ -155,7 +207,7 @@ c:\Project GIT\TMBilling
    developer_install.bat
    ```
 
-3. **Kompilasi & Build Seluruh Komponen Klien (Rust / Tauri v2)**:
+3. **Kompilasi & Build Seluruh Komponen Klien (Rust / Tauri 1.5)**:
    ```cmd
    build_and_deploy.bat
    ```
@@ -163,14 +215,30 @@ c:\Project GIT\TMBilling
 
 4. **Menjalankan Pengujian Backend (Pytest)**:
    ```powershell
-   .\.venv\Scripts\python.exe -m pytest
+   .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+   npm run test:unit
    ```
+   > `npm run test:unit` menjalankan seluruh unit test paralel memakai semua core (per-worker DB/temp/backup/notes). Gunakan `.\.venv\Scripts\python.exe -m pytest` untuk mode serial.
 
-5. **Memeriksa Kompilasi Klien Rust**:
+5. **Menjalankan Pengujian End-to-End Browser (Playwright)**:
+   ```powershell
+   npm run test:e2e
+   ```
+   > 15 suite Chromium (385 check) berjalan paralel otomatis memakai seluruh CPU (`--jobs 1` untuk serial). Setiap suite memakai database, port, catatan, dan backup sendiri; `instance/warnet.db`, `backups/`, `instance/notes/`, `.env`, dan `initial_admin.txt` dijaga guard sha256.
+
+6. **Memeriksa Kompilasi Klien Rust**:
    ```powershell
    cd WarnetAgent\TMBillingTauri\src-tauri
    cargo check
    ```
+
+7. **Upgrade / Sinkronisasi Dependensi Python**:
+   ```powershell
+   .\.venv\Scripts\python.exe scripts\upgrade_packages.py --check    # lihat paket yang sudah usang
+   .\.venv\Scripts\python.exe scripts\upgrade_packages.py            # pasang dependensi sesuai requirements.txt
+   .\.venv\Scripts\python.exe scripts\upgrade_packages.py --latest   # upgrade semua paket ke versi terbaru
+   ```
+   > `--latest` memasang versi terbaru untuk seluruh paket di `requirements.txt`, menulis ulang pin `nama==versi` di file itu, dan menyimpan salinan lama ke `backups/requirements_<timestamp>.txt`. Script menolak berjalan di luar virtual environment. Setelah upgrade, jalankan `npm run test:unit` untuk memastikan tidak ada regresi. Upgrade manual: `.\.venv\Scripts\python.exe -m pip install -r requirements.txt` (mengikuti pin yang ada) atau `.\.venv\Scripts\python.exe -m pip install -U <paket>` lalu sesuaikan pin di `requirements.txt`.
 
 ---
 
@@ -178,8 +246,8 @@ c:\Project GIT\TMBilling
 
 | Dokumen | Deskripsi |
 | :--- | :--- |
-| **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog lengkap 28 fitur, katalog 250 endpoint REST API, skema 25 database models, panduan backend/frontend/Rust, dan spesifikasi protokol WebSocket. |
-| **[CHANGELOG.md](file:///c:/Project%20GIT/TMBilling/CHANGELOG.md)** | **Catatan Rilis** — Riwayat log perubahan dan rilis dari `v1.0.0` hingga `v1.6.4`. |
+| **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog lengkap 31 domain fitur, 34 Blueprint & 254 Route REST API, skema 24 model database, panduan backend/frontend/Rust, dan spesifikasi VNC bridge (WebSocket via Websockify). |
+| **[CHANGELOG.md](file:///c:/Project%20GIT/TMBilling/CHANGELOG.md)** | **Catatan Rilis** — Riwayat log perubahan dan rilis dari `v1.0.0` hingga `v1.6.5-rc3`. |
 
 ---
 

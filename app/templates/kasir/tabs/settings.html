@@ -1,424 +1,647 @@
 <!-- ===== TAB: SETTINGS ===== -->
 <div id="tab-settings" class="tab-content hidden space-y-6">
     <!-- Settings Content Area -->
-    <div class="w-full space-y-6">
+    <div class="w-full max-w-7xl mx-auto space-y-6">
 
-        <!-- ==================== SUB-TAB: GENERAL ==================== -->
         <!-- ==================== SUB-TAB: GENERAL (UMUM & KEAMANAN) ==================== -->
-        <div id="subtab-general" class="subtab-content space-y-6">
-            <!-- Card: Auto Shutdown -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Auto
-                    Shutdown</h3>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                        <label for="shutdown-timer" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Timer
-                            shutdown (detik)</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Waktu tunggu sebelum PC mati saat tidak
-                            dipakai</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Minimal 30 detik, maksimal 600 detik</p>
-                    </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <input type="number" id="shutdown-timer"
-                            class="w-24 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 text-center focus:outline-none focus:border-neutral-500"
-                            value="180" step="10" min="30" max="600">
-                        <span class="text-xs lg:max-xl:text-xs xl:text-base text-neutral-500 font-mono">dtk</span>
-                    </div>
-                </div>
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveAutoShutdown()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan</button>
-                </div>
+        <div id="subtab-general" class="subtab-content">
+            <!-- Mobile Segmented Tab Switcher (< 768px) -->
+            <div class="flex md:hidden p-1 bg-[#080808] border border-[#1f1f1f] rounded-lg mb-2.5">
+                <button type="button" id="general-mobile-pill-operasional" onclick="Settings.switchGeneralMobileView('operasional')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm">
+                    <i class="fa-solid fa-sliders text-[11px]"></i>
+                    <span>Operasional</span>
+                </button>
+                <button type="button" id="general-mobile-pill-keamanan" onclick="Settings.switchGeneralMobileView('keamanan')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <i class="fa-solid fa-shield-halved text-[11px]"></i>
+                    <span>Keamanan</span>
+                </button>
             </div>
 
-            <!-- Card: Interval Polling & Telemetry PC Client -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-                <div class="flex items-center justify-between gap-2 mb-4">
-                    <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">
-                        Interval Polling & Telemetry PC Client
-                    </h3>
-                    <span class="px-2 py-0.5 rounded text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        Sinkronisasi Global
-                    </span>
-                </div>
-                <div>
-                    <label class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">
-                        Frekuensi Heartbeat & Sinkronisasi Client
-                    </label>
-                    <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">
-                        Pilih frekuensi detak sinkronisasi status billing, remote lock, dan pengiriman telemetry hardware dari seluruh PC Client ke Server.
-                    </p>
-                    <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">
-                        Opsi dibatasi 1s, 5s, atau 10s untuk mencegah celah manipulasi waktu (exploit bonus waktu) dan menjaga efisiensi jaringan.
-                    </p>
-                </div>
-
-                <!-- 3 Preset Pill Selector Buttons -->
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                    <!-- Option 1s -->
-                    <button type="button" onclick="Settings.selectPollingInterval(1)" id="polling-interval-btn-1"
-                        class="polling-interval-btn relative flex flex-col items-start p-3 lg:max-xl:p-3.5 xl:p-4 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
-                        <div class="flex items-center justify-between w-full">
-                            <span class="text-xs lg:max-xl:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider">
-                                ⚡ 1 Detik
-                            </span>
-                            <span class="w-2 h-2 lg:max-xl:w-2 xl:w-2.5 2xl:w-2.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+            <!-- Responsive 2-Column Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 xl:gap-3.5">
+                <!-- Kolom Kiri: Operasional Sistem -->
+                <div id="general-col-operasional" class="space-y-2.5 md:block">
+                    <!-- Card 1: Auto Shutdown -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-clock text-neutral-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Auto Shutdown</span>
+                            </h3>
+                            <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Min 30s • Max 600s</span>
                         </div>
-                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans group-hover:text-neutral-400">
-                            Super responsif / Realtime tinggi
-                        </span>
-                    </button>
-
-                    <!-- Option 5s (Default / Recommended) -->
-                    <button type="button" onclick="Settings.selectPollingInterval(5)" id="polling-interval-btn-5"
-                        class="polling-interval-btn relative flex flex-col items-start p-3 lg:max-xl:p-3.5 xl:p-4 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
-                        <div class="flex items-center justify-between w-full">
-                            <span class="text-xs lg:max-xl:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider">
-                                🛡️ 5 Detik
-                            </span>
-                            <span class="w-2 h-2 lg:max-xl:w-2 xl:w-2.5 2xl:w-2.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
-                        </div>
-                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans group-hover:text-neutral-400">
-                            Standar & Rekomendasi Warnet
-                        </span>
-                    </button>
-
-                    <!-- Option 10s -->
-                    <button type="button" onclick="Settings.selectPollingInterval(10)" id="polling-interval-btn-10"
-                        class="polling-interval-btn relative flex flex-col items-start p-3 lg:max-xl:p-3.5 xl:p-4 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
-                        <div class="flex items-center justify-between w-full">
-                            <span class="text-xs lg:max-xl:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider">
-                                🍃 10 Detik
-                            </span>
-                            <span class="w-2 h-2 lg:max-xl:w-2 xl:w-2.5 2xl:w-2.5 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
-                        </div>
-                        <span class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-1 font-normal font-sans group-hover:text-neutral-400">
-                            Hemat Resource / Jaringan Ramai
-                        </span>
-                    </button>
-                </div>
-
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveClientPollingInterval()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">
-                        Simpan
-                    </button>
-                </div>
-            </div>
-
-            <!-- Card: Uninstall Token Client -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">Uninstall
-                    Token Client</h3>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                        <label for="uninstall-token-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Token
-                            Keamanan Uninstall</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Token dinamis untuk mematikan proteksi
-                            client secara aman
-                            demi maintenance tanpa memicu BSOD.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 64 karakter</p>
-                    </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <input type="text" id="uninstall-token-input"
-                            class="w-full sm:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
-                            placeholder="Contoh: TM_UNINSTALL_SAFE_2026">
-                    </div>
-                </div>
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveUninstallToken()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan</button>
-                </div>
-            </div>
-
-            <!-- Card: API Key System -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">API Key
-                    System</h3>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                        <label for="client-apikey-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Client API
-                            Key</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">API Key global yang digunakan oleh
-                            klien untuk terhubung
-                            secara aman dengan server.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Minimal 4 karakter, maksimal 128 karakter</p>
-                    </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <input type="text" id="client-apikey-input"
-                            class="w-full sm:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
-                            placeholder="Contoh: TM2026QWERTY-api-key">
-                    </div>
-                </div>
-                <!-- Highlighted Security Warning Box -->
-                <div class="mt-4 p-3.5 bg-amber-500/10 border border-amber-500/30 rounded flex items-start gap-3">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-400 text-base mt-0.5 shrink-0"></i>
-                    <div class="space-y-0.5">
-                        <p class="text-xs lg:max-xl:text-xs xl:text-sm font-bold text-amber-300 uppercase tracking-wider">
-                            Peringatan Keamanan Kunci Rahasia
-                        </p>
-                        <p class="text-[11px] lg:max-xl:text-[11px] xl:text-xs text-amber-200/80 leading-relaxed">
-                            Kunci ini digunakan untuk otentikasi koneksi antar sistem dan klien. <strong class="text-amber-300 font-semibold">Jangan pernah menyebarkan kunci ini kepada pihak yang tidak dikenal atau tidak dipercaya!</strong>
-                        </p>
-                    </div>
-                </div>
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveClientApiKey()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan
-                        API Key</button>
-                </div>
-            </div>
-
-            <!-- Card: Timezone -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">🌐 Zona
-                    Waktu (Timezone)</h3>
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    <div>
-                        <label for="timezone-select" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Timezone
-                            Display</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Semua waktu di dashboard &amp; laporan akan
-                            ditampilkan dalam zona waktu ini</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Pilih zona waktu standar (WIB/WITA/WIT/UTC)</p>
-                    </div>
-                    <div class="flex items-center gap-2 w-full sm:w-auto">
-                        <select id="timezone-select"
-                            class="w-full sm:w-80 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
-                        </select>
-                    </div>
-                </div>
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveTimezone()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ==================== SUB-TAB: METODE PEMBAYARAN ==================== -->
-        <div id="subtab-payment" class="subtab-content hidden space-y-6">
-            <!-- Card: Payment Methods -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">💳 Metode
-                    Pembayaran</h3>
-                <div class="space-y-4">
-                    <div>
-                        <label for="new-payment-method-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Kelola Metode Pembayaran</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Daftar metode pembayaran yang tersedia saat transaksi.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 50 karakter</p>
-                    </div>
-                    
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="new-payment-method-input"
-                            class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
-                            placeholder="Contoh: ShopeePay">
-                        <button onclick="Settings.addPaymentMethod()"
-                            class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-200 text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">+ Tambah</button>
-                    </div>
-
-                    <div class="bg-[#050505] border border-[#1c1c1c] rounded overflow-hidden">
-                        <ul id="payment-methods-list" class="divide-y divide-[#1c1c1c]">
-                            <!-- List item diisi via JS -->
-                        </ul>
-                    </div>
-                </div>
-                <div class="flex justify-end mt-4 pt-4 border-t border-[#1c1c1c]">
-                    <button onclick="Settings.savePaymentMethods()"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Simpan Perubahan</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- ==================== SUB-TAB: INFO WARNET & KIOSK ==================== -->
-        <div id="subtab-kiosk" class="subtab-content hidden space-y-6">
-            <!-- Card: Konfigurasi Kiosk Screen -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Konfigurasi Info
-                    Warnet</h3>
-
-                <!-- 1. Unggah QRIS (Paling Atas) -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <span class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Gambar
-                            QRIS Pembayaran</span>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Unggah gambar QRIS statis baru untuk
-                            pembayaran di Kiosk.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Format: JPG/PNG/WEBP, maksimal 5MB</p>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-amber-400/80 mt-0.5">💡 Tips: Gunakan foto
-                            vertikal/portrait agar QRIS
-                            terlihat jelas dan proporsional di layar Kiosk.</p>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <div id="qris-preview-container"
-                            class="w-16 lg:max-xl:w-28 xl:w-40 h-16 lg:max-xl:h-28 xl:h-40 bg-[#050505] border border-[#1c1c1c] rounded flex items-center justify-center overflow-hidden cursor-pointer"
-                            onclick="Settings.viewQRIS()">
-                            <img id="settings-qris-preview" src="/static/uploads/qris/default_qris.png"
-                                class="max-w-full max-h-full object-contain" alt="QRIS Preview">
-                        </div>
-                        <label for="qris-file-input"
-                            class="cursor-pointer px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-300 transition-colors">
-                            Pilih File
-                            <input type="file" id="qris-file-input" accept="image/*" class="hidden"
-                                onchange="Settings.previewQRIS(this)">
-                        </label>
-                    </div>
-                </div>
-
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- 2. Identitas Warnet -->
-                <!-- Judul Kiosk -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <label for="warnet-title-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Nama
-                            Warnet / Judul Kiosk</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Nama warnet yang akan ditampilkan di
-                            pojok kiri atas Kiosk.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 100 karakter</p>
-                    </div>
-                    <input type="text" id="warnet-title-input"
-                        class="w-full md:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
-                        placeholder="Contoh: TMBilling">
-                </div>
-
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- Alamat Warnet -->
-                <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                    <div class="max-w-md">
-                        <label for="warnet-address-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Alamat
-                            Warnet</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Alamat warnet yang akan dicetak di
-                            bagian atas struk belanja dan ditampilkan di peta publik.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 255 karakter</p>
-                    </div>
-                    <textarea id="warnet-address-input" rows="2"
-                        class="w-full md:w-80 lg:w-[480px] xl:w-[580px] 2xl:w-[680px] min-h-[64px] lg:min-h-[76px] xl:min-h-[88px] px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 resize-y font-sans leading-relaxed"
-                        placeholder="Contoh: Jl. Merdeka No. 123, Kel. Gambir, Kec. Gambir, Kota Jakarta Pusat 10110"></textarea>
-                </div>
-
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- No. Telepon Warnet -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <label for="warnet-phone-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">No.
-                            Telepon Warnet</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Nomor telepon yang akan dicetak di
-                            bagian atas struk belanja.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Format nomor telepon (8-20 digit, contoh: 08123456789)</p>
-                    </div>
-                    <input type="text" id="warnet-phone-input"
-                        class="w-full md:w-64 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
-                        placeholder="Contoh: 0812-3456-7890">
-                </div>
-
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- Pesan Kaki Struk (Input Textarea format mirip Alamat) -->
-                <div class="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                    <div class="max-w-md">
-                        <label for="warnet-footer-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Pesan Kaki
-                            Struk</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Pesan footer yang dicetak di bagian
-                            paling bawah struk belanja.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 255 karakter</p>
-                    </div>
-                    <textarea id="warnet-footer-input" rows="2"
-                        class="w-full md:w-80 lg:w-[480px] xl:w-[580px] 2xl:w-[680px] min-h-[64px] lg:min-h-[76px] xl:min-h-[88px] px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 resize-y font-sans leading-relaxed"
-                        placeholder="Contoh: Terima kasih atas kunjungan Anda, selamat bermain kembali!"></textarea>
-                </div>
-
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- 3. Google Maps / Lokasi Warnet -->
-                <div class="flex flex-col gap-3">
-                    <div>
-                        <label for="warnet-gmaps-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Lokasi &amp; Google Maps</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Kode embed &lt;iframe&gt; atau tautan Google Maps untuk peta lokasi di halaman Publik.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Format kode iframe embed &lt;iframe ...&gt; atau URL link peta</p>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-amber-400/80 mt-0.5">💡 Tips: Salin kode embed dari Google Maps (Bagikan ➔ Sematkan peta) atau tempelkan URL share peta.</p>
-                    </div>
-                    <div class="space-y-3">
-                        <textarea id="warnet-gmaps-input" rows="2"
-                            class="w-full min-h-[64px] lg:min-h-[115px] xl:min-h-[135px] 2xl:min-h-[150px] px-3 py-2.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono resize-y leading-relaxed"
-                            placeholder='Contoh: <iframe src="https://www.google.com/maps/embed?pb=..." ...></iframe> atau https://maps.app.goo.gl/...'
-                            oninput="Settings.updateGmapsPreview()"></textarea>
-
-                        <!-- Preview Container -->
-                        <div id="settings-gmaps-preview-box" class="w-full bg-[#050505] border border-[#1c1c1c] rounded overflow-hidden hidden">
-                            <div class="px-3 py-1.5 bg-[#0c0c0c] border-b border-[#1c1c1c] flex items-center justify-between">
-                                <span class="text-[10px] font-mono uppercase text-neutral-400 font-bold">🗺️ Preview Peta Live</span>
-                                <span id="settings-gmaps-status-badge" class="text-[9px] font-mono text-emerald-400">Embed Aktif</span>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                            <div class="min-w-0 flex-1">
+                                <label for="shutdown-timer" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Waktu Tunggu PC Idle (Detik)
+                                </label>
+                                <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 truncate">
+                                    Shutdown otomatis saat PC client tidak aktif / login
+                                </p>
                             </div>
-                            <div id="settings-gmaps-iframe-wrapper" class="w-full h-48 sm:h-64 flex items-center justify-center p-2">
-                                <!-- Dinamis dimasukkan iframe / preview -->
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <div class="flex items-center gap-1 bg-[#050505] border border-[#1c1c1c] rounded px-2 py-1.5">
+                                    <input type="number" id="shutdown-timer"
+                                        class="w-16 2xl:w-20 bg-transparent text-xs xl:text-sm 2xl:text-base text-neutral-200 text-center focus:outline-none font-mono py-1 2xl:py-1.5"
+                                        value="180" step="10" min="30" max="600">
+                                    <span class="text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">dtk</span>
+                                </div>
+                                <button type="button" onclick="Settings.saveAutoShutdown()"
+                                    class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Interval Polling & Telemetry PC Client -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-bolt text-emerald-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Interval Polling &amp; Telemetry</span>
+                            </h3>
+                            <span class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                Auto-Save
+                            </span>
+                        </div>
+                        <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400">
+                            Frekuensi detak sinkronisasi billing, remote lock &amp; telemetry client:
+                        </p>
+                        <!-- 3 Preset Pill Selector Buttons -->
+                        <div class="grid grid-cols-3 gap-1.5 sm:gap-2 xl:gap-2.5 2xl:gap-3 mt-2 xl:mt-2.5 2xl:mt-3">
+                            <!-- Option 1s -->
+                            <button type="button" onclick="Settings.selectPollingInterval(1, true)" id="polling-interval-btn-1"
+                                class="polling-interval-btn relative flex flex-col items-start p-2 sm:p-2.5 xl:p-3 2xl:p-3.5 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
+                                <div class="flex items-center justify-between w-full">
+                                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
+                                        ⚡ 1s
+                                    </span>
+                                    <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 xl:w-2.5 xl:h-2.5 2xl:w-3 2xl:h-3 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+                                </div>
+                                <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 xl:mt-1 group-hover:text-neutral-200 truncate w-full font-sans">
+                                    Realtime
+                                </span>
+                            </button>
+
+                            <!-- Option 5s (Default / Recommended) -->
+                            <button type="button" onclick="Settings.selectPollingInterval(5, true)" id="polling-interval-btn-5"
+                                class="polling-interval-btn relative flex flex-col items-start p-2 sm:p-2.5 xl:p-3 2xl:p-3.5 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
+                                <div class="flex items-center justify-between w-full">
+                                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
+                                        🛡️ 5s
+                                    </span>
+                                    <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 xl:w-2.5 xl:h-2.5 2xl:w-3 2xl:h-3 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+                                </div>
+                                <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 xl:mt-1 group-hover:text-neutral-200 truncate w-full font-sans">
+                                    Standar
+                                </span>
+                            </button>
+
+                            <!-- Option 10s -->
+                            <button type="button" onclick="Settings.selectPollingInterval(10, true)" id="polling-interval-btn-10"
+                                class="polling-interval-btn relative flex flex-col items-start p-2 sm:p-2.5 xl:p-3 2xl:p-3.5 rounded border border-[#222] bg-[#080808] hover:border-neutral-500 hover:bg-[#111] transition-all text-left group">
+                                <div class="flex items-center justify-between w-full">
+                                    <span class="text-xs sm:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 flex items-center gap-1 tracking-wider uppercase">
+                                        🍃 10s
+                                    </span>
+                                    <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 xl:w-2.5 xl:h-2.5 2xl:w-3 2xl:h-3 rounded-full bg-neutral-600 polling-indicator shrink-0"></span>
+                                </div>
+                                <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 xl:mt-1 group-hover:text-neutral-200 truncate w-full font-sans">
+                                    Hemat
+                                </span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Timezone -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <span>🌐 Zona Waktu (Timezone)</span>
+                            </h3>
+                            <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">WIB / WITA / WIT / UTC</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                            <div class="min-w-0 flex-1">
+                                <label for="timezone-select" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Format Waktu Laporan &amp; Billing
+                                </label>
+                                <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 truncate">
+                                    Zona display pada log sesi dan struk pembayaran
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <select id="timezone-select"
+                                    class="w-36 sm:w-44 px-2 py-1.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500">
+                                </select>
+                                <button type="button" onclick="Settings.saveTimezone()"
+                                    class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- 4. Pengumuman / Aturan -->
-                <div class="flex flex-col gap-3">
-                    <div>
-                        <span class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Pengumuman / Aturan</span>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Aturan atau pengumuman yang akan ditampilkan di layar Kiosk Client, TV Signage, dan Public Landing Page.</p>
+                <!-- Kolom Kanan: Kredensial & Keamanan -->
+                <div id="general-col-keamanan" class="space-y-2.5 md:block hidden">
+                    <!-- Card 4: Uninstall Token Client -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-shield-halved text-neutral-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Uninstall Token Client</span>
+                            </h3>
+                            <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Max 64 char</span>
+                        </div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                            <div class="min-w-0 flex-1">
+                                <label for="uninstall-token-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Token Keamanan Uninstall Client
+                                </label>
+                                <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5 truncate">
+                                    Matikan proteksi client saat maintenance tanpa BSOD
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <input type="text" id="uninstall-token-input"
+                                    class="w-40 sm:w-48 2xl:w-60 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
+                                    placeholder="TM_UNINSTALL_SAFE">
+                                <button type="button" onclick="Settings.saveUninstallToken()"
+                                    class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Card 5: API Key System -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-key text-amber-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Client API Key System</span>
+                            </h3>
+                            <span class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                Kunci Global
+                            </span>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                                <label for="client-apikey-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Otentikasi Klien ke Server (4 - 128 Karakter)
+                                </label>
+                                <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-sans">Tersimpan di .env</span>
+                            </div>
+                            <!-- Input with Eye Toggle, Copy, and Save -->
+                            <div class="flex items-center gap-1.5">
+                                <div class="relative flex-1">
+                                    <input type="password" id="client-apikey-input"
+                                        class="w-full pl-2.5 pr-8 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono tracking-wider"
+                                        placeholder="TM2026QWERTY-api-key">
+                                    <button type="button" id="btn-toggle-apikey-eye" onclick="Settings.toggleApiKeyVisibility()"
+                                        title="Tampilkan / Sembunyikan API Key"
+                                        class="absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-300 p-0.5 transition-colors">
+                                        <i class="fa-solid fa-eye text-xs xl:text-sm 2xl:text-base"></i>
+                                    </button>
+                                </div>
+                                <button type="button" id="btn-copy-apikey" onclick="Settings.copyClientApiKey()"
+                                    title="Salin API Key ke Clipboard"
+                                    class="p-2 sm:px-2.5 sm:py-1.5 xl:py-2 xl:px-3 2xl:py-2.5 2xl:px-4 bg-[#141414] hover:bg-[#202020] border border-[#252525] hover:border-neutral-500 text-neutral-300 text-xs xl:text-sm 2xl:text-base font-medium rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95">
+                                    <i class="fa-solid fa-copy text-xs xl:text-sm 2xl:text-base"></i>
+                                    <span class="hidden sm:inline">Salin</span>
+                                </button>
+                                <button type="button" onclick="Settings.saveClientApiKey()"
+                                    class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Micro-Notice 1-baris -->
+                        <div class="mt-2.5 xl:mt-3 2xl:mt-3.5 px-2.5 py-1.5 xl:px-3.5 xl:py-2 2xl:px-4 2xl:py-2.5 bg-amber-500/10 border border-amber-500/25 rounded flex items-center gap-2 xl:gap-2.5 2xl:gap-3">
+                            <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xs lg:text-sm xl:text-base 2xl:text-lg shrink-0"></i>
+                            <p class="text-[10px] sm:text-xs xl:text-sm 2xl:text-base text-amber-200/90 leading-tight">
+                                <strong class="text-amber-300 font-semibold">Rahasia:</strong> Jangan berikan kunci ini kepada pihak yang tidak dikenal atau tidak dipercaya.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== SUB-TAB: METODE PEMBAYARAN & QRIS ==================== -->
+        <div id="subtab-payment" class="subtab-content hidden">
+            <!-- Mobile Segmented Tab Switcher (< 768px) -->
+            <div class="flex md:hidden p-1 bg-[#080808] border border-[#1f1f1f] rounded-lg mb-2.5">
+                <button type="button" id="payment-mobile-pill-methods" onclick="Settings.switchPaymentMobileView('methods')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm">
+                    <i class="fa-solid fa-credit-card text-[11px]"></i>
+                    <span>Metode Pembayaran</span>
+                </button>
+                <button type="button" id="payment-mobile-pill-qris" onclick="Settings.switchPaymentMobileView('qris')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <i class="fa-solid fa-qrcode text-[11px]"></i>
+                    <span>Gambar QRIS</span>
+                </button>
+            </div>
+
+            <!-- Responsive 2-Column Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 xl:gap-3.5">
+                <!-- Kolom Kiri: Kelola Metode Pembayaran -->
+                <div id="payment-col-methods" class="space-y-2.5 md:block">
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-credit-card text-emerald-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Metode Pembayaran</span>
+                            </h3>
+                            <span id="payment-methods-count" class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                3 Aktif
+                            </span>
+                        </div>
+
+                        <!-- Baris Tambah Cepat (Quick Preset Chips) -->
+                        <div class="mb-2.5 space-y-1">
+                            <span class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 uppercase font-bold tracking-wider block">
+                                Tambah Cepat Preset:
+                            </span>
+                            <div id="payment-quick-presets" class="flex flex-wrap gap-1.5">
+                                <!-- Diisi via JS: [+ DANA] [+ GoPay] [+ OVO] dll -->
+                            </div>
+                        </div>
+
+                        <!-- Hint Metode Pembayaran Digital / Non-Tunai -->
+                        <div class="p-2.5 xl:p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[11px] xl:text-xs leading-relaxed flex items-start gap-2.5 mb-2.5">
+                            <i class="fa-solid fa-circle-info text-amber-400 text-xs xl:text-sm mt-0.5 shrink-0"></i>
+                            <div>
+                                <span class="font-bold text-amber-200">Panduan Metode Pembayaran:</span>
+                                <p class="text-neutral-300 mt-0.5">
+                                    Pastikan metode yang ditambahkan adalah pembayaran <span class="text-amber-300 font-semibold">Digital / Non-Tunai</span> (contoh: QRIS, Transfer Bank, DANA, GoPay, OVO, EDC/Debit).
+                                </p>
+                                <p class="text-neutral-400 mt-1">
+                                    Uang fisik/cash sudah otomatis dikelola sistem sebagai <span class="text-emerald-400 font-bold">'Tunai'</span> untuk rekonsiliasi laci kasir & shift. Hindari menambahkan metode yang mengandung kata <em>'Tunai'</em> atau <em>'Cash'</em>.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Input Custom Method dengan Tombol Inline + Tambah -->
+                        <div class="flex items-center gap-1.5 mb-2.5">
+                            <input type="text" id="new-payment-method-input"
+                                class="flex-1 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-sans"
+                                placeholder="Ketik metode digital/bank baru (misal: BCA, DANA, Mandiri)..."
+                                onkeydown="if(event.key==='Enter'){event.preventDefault(); Settings.addPaymentMethod();}">
+                            <button type="button" onclick="Settings.addPaymentMethod()"
+                                class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                <i class="fa-solid fa-plus text-[11px]"></i>
+                                <span>Tambah</span>
+                            </button>
+                        </div>
+
+                        <!-- Daftar Metode Pembayaran Aktif (Grid Chips) -->
+                        <div class="space-y-1">
+                            <span class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 uppercase font-bold tracking-wider block">
+                                Metode Pembayaran Aktif:
+                            </span>
+                            <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2 xl:p-2.5 2xl:p-3 overflow-y-auto max-h-[160px] xl:max-h-[200px] 2xl:max-h-[240px] scrollbar-thin">
+                                <div id="payment-methods-list" class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                    <!-- Diisi via JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 font-sans mt-2 xl:mt-2.5 2xl:mt-3">
+                            Metode aktif otomatis tersimpan dan tersedia pada modul Transaksi Kasir, POS, Refill Member, dan Kiosk.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Kolom Kanan: Pengaturan & Upload Gambar QRIS -->
+                <div id="payment-col-qris" class="space-y-2.5 md:block hidden">
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                        <div class="flex items-center justify-between mb-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-qrcode text-amber-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Gambar QRIS Pembayaran</span>
+                            </h3>
+                            <span class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                                Auto-Upload
+                            </span>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row items-center gap-3 xl:gap-4">
+                            <!-- Preview Box -->
+                            <div id="qris-preview-container"
+                                class="w-24 h-24 xl:w-28 xl:h-28 2xl:w-32 2xl:h-32 bg-[#050505] border border-[#1c1c1c] hover:border-neutral-500 rounded flex items-center justify-center overflow-hidden cursor-pointer shrink-0 transition-colors group relative"
+                                onclick="Settings.viewQRIS()" title="Klik untuk memperbesar QRIS">
+                                <img id="settings-qris-preview" src="/static/uploads/qris/default_qris.png"
+                                    class="max-w-full max-h-full object-contain" alt="QRIS Preview">
+                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs xl:text-sm 2xl:text-base font-bold gap-1">
+                                    <i class="fa-solid fa-magnifying-glass-plus text-xs xl:text-sm 2xl:text-base"></i>
+                                    <span>Zoom</span>
+                                </div>
+                            </div>
+
+                            <!-- Controls & Tips -->
+                            <div class="flex-1 space-y-2 text-left w-full sm:w-auto">
+                                <div class="space-y-0.5">
+                                    <p class="text-xs xl:text-sm 2xl:text-base text-neutral-300 font-medium">Format: JPG, PNG, WEBP (Max 5MB)</p>
+                                    <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400">Gunakan foto vertikal/portrait agar proporsional dan jelas.</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label for="qris-file-input"
+                                        class="cursor-pointer px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs xl:text-sm 2xl:text-base font-bold text-neutral-200 transition-colors inline-flex items-center gap-1.5 shadow-sm active:scale-95">
+                                        <i class="fa-solid fa-cloud-arrow-up text-xs xl:text-sm 2xl:text-base"></i>
+                                        <span>Pilih File QRIS</span>
+                                        <input type="file" id="qris-file-input" accept="image/*" class="hidden"
+                                            onchange="Settings.previewQRIS(this)">
+                                    </label>
+                                    <button type="button" onclick="Settings.viewQRIS()"
+                                        class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#121212] hover:bg-[#1c1c1c] border border-[#222] rounded text-xs xl:text-sm 2xl:text-base text-neutral-300 font-medium transition-colors flex items-center gap-1 active:scale-95 shadow-sm">
+                                        <i class="fa-solid fa-eye text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                        <span>Lihat</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Micro-Notice Kiosk Hint -->
+                        <div class="mt-3 xl:mt-3.5 2xl:mt-4 px-2.5 py-1.5 xl:px-3.5 xl:py-2 2xl:px-4 2xl:py-2.5 bg-blue-500/10 border border-blue-500/25 rounded flex items-center gap-2 xl:gap-2.5 2xl:gap-3">
+                            <i class="fa-solid fa-circle-info text-blue-400 text-xs lg:text-sm xl:text-base 2xl:text-lg shrink-0"></i>
+                            <p class="text-[10px] sm:text-xs xl:text-sm 2xl:text-base text-blue-200/90 leading-tight">
+                                Gambar QRIS ini otomatis ditampilkan di layar Kiosk.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+                        <!-- ==================== SUB-TAB: INFO WARNET & KIOSK ==================== -->
+        <div id="subtab-kiosk" class="subtab-content hidden">
+            <!-- 4 Horizontal Pills Navigation -->
+            <div class="flex items-center gap-1.5 p-1 bg-[#080808] border border-[#1f1f1f] rounded-lg mb-2.5 overflow-x-auto scrollbar-none">
+                <button type="button" id="kiosk-pill-profile" onclick="Settings.switchKioskPill('profile')"
+                    class="flex-1 min-w-[120px] py-1.5 xl:py-2 2xl:py-2.5 px-3 2xl:px-4 text-xs xl:text-sm 2xl:text-base font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm">
+                    <i class="fa-solid fa-store text-[11px] xl:text-xs 2xl:text-sm"></i>
+                    <span>Profil &amp; Struk</span>
+                </button>
+                <button type="button" id="kiosk-pill-maps" onclick="Settings.switchKioskPill('maps')"
+                    class="flex-1 min-w-[120px] py-1.5 xl:py-2 2xl:py-2.5 px-3 2xl:px-4 text-xs xl:text-sm 2xl:text-base font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <i class="fa-solid fa-map-location-dot text-[11px] xl:text-xs 2xl:text-sm"></i>
+                    <span>Lokasi &amp; Peta</span>
+                </button>
+                <button type="button" id="kiosk-pill-announcement" onclick="Settings.switchKioskPill('announcement')"
+                    class="flex-1 min-w-[140px] py-1.5 xl:py-2 2xl:py-2.5 px-3 2xl:px-4 text-xs xl:text-sm 2xl:text-base font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <i class="fa-solid fa-bullhorn text-[11px] xl:text-xs 2xl:text-sm"></i>
+                    <span>Aturan &amp; Pengumuman</span>
+                </button>
+                <button type="button" id="kiosk-pill-tv" onclick="Settings.switchKioskPill('tv')"
+                    class="flex-1 min-w-[120px] py-1.5 xl:py-2 2xl:py-2.5 px-3 2xl:px-4 text-xs xl:text-sm 2xl:text-base font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <i class="fa-solid fa-tv text-[11px] xl:text-xs 2xl:text-sm"></i>
+                    <span>Tampilan TV</span>
+                </button>
+            </div>
+
+            <!-- VIEW 1: PROFIL & STRUK WARNET -->
+            <div id="kiosk-view-profile" class="space-y-2.5">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                    <div class="flex items-center justify-between mb-2 pb-2 border-b border-[#1c1c1c]">
+                        <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-store text-emerald-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                            <span>Profil &amp; Identitas Struk Warnet</span>
+                        </h3>
+                        <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Tampil di Kiosk &amp; Struk Belanja</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 xl:gap-3.5">
+                        <!-- Nama Warnet / Judul Kiosk -->
+                        <div class="bg-[#080808] border border-[#191919] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-4 space-y-1.5 xl:space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="warnet-title-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Nama Warnet / Judul Kiosk
+                                </label>
+                                <span class="text-[8px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Max 100 char</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <input type="text" id="warnet-title-input"
+                                    class="flex-1 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-sans"
+                                    placeholder="Contoh: TMBilling Warnet">
+                                <button type="button" onclick="Settings.saveWarnetTitle()"
+                                    class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- No. Telepon Warnet -->
+                        <div class="bg-[#080808] border border-[#191919] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-4 space-y-1.5 xl:space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="warnet-phone-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    No. Telepon Warnet
+                                </label>
+                                <span class="text-[8px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Struk Belanja</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <input type="text" id="warnet-phone-input"
+                                    class="flex-1 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
+                                    placeholder="Contoh: 0812-3456-7890">
+                                <button type="button" onclick="Settings.saveWarnetPhone()"
+                                    class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Alamat Warnet -->
+                        <div class="bg-[#080808] border border-[#191919] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-4 space-y-1.5 xl:space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="warnet-address-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Alamat Warnet (Struk &amp; Publik)
+                                </label>
+                                <span class="text-[8px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Max 255 char</span>
+                            </div>
+                            <div class="flex items-start gap-1.5">
+                                <textarea id="warnet-address-input" rows="5"
+                                    class="flex-1 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 resize-none font-sans leading-relaxed"
+                                    placeholder="Contoh: Jl. Merdeka No. 123..."></textarea>
+                                <button type="button" onclick="Settings.saveWarnetAddress()"
+                                    class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm mt-0.5">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Pesan Kaki Struk -->
+                        <div class="bg-[#080808] border border-[#191919] rounded p-2.5 sm:p-3 xl:p-3.5 2xl:p-4 space-y-1.5 xl:space-y-2">
+                            <div class="flex items-center justify-between">
+                                <label for="warnet-footer-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Pesan Kaki Struk (Footer Struk)
+                                </label>
+                                <span class="text-[8px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Max 255 char</span>
+                            </div>
+                            <div class="flex items-start gap-1.5">
+                                <textarea id="warnet-footer-input" rows="5"
+                                    class="flex-1 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 resize-none font-sans leading-relaxed"
+                                    placeholder="Contoh: Terima kasih atas kunjungan Anda..."></textarea>
+                                <button type="button" onclick="Settings.saveWarnetFooter()"
+                                    class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm mt-0.5">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 2: LOKASI & PETA GOOGLE MAPS -->
+            <div id="kiosk-view-maps" class="space-y-2.5 hidden">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                    <div class="flex items-center justify-between mb-2 pb-2 border-b border-[#1c1c1c]">
+                        <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-map-location-dot text-blue-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                            <span>Lokasi &amp; Peta Google Maps</span>
+                        </h3>
+                        <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Tampil di Halaman Publik Warnet</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
+                        <!-- Kolom Kiri: Input GMaps Embed Code & Actions -->
+                        <div class="space-y-2">
+                            <div>
+                                <label for="warnet-gmaps-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                    Kode Embed Peta (&lt;iframe&gt;) atau URL Google Maps
+                                </label>
+                                <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5">
+                                    Salin dari Google Maps: <em>Bagikan ➔ Sematkan peta</em> atau tempelkan link URL.
+                                </p>
+                            </div>
+                            <textarea id="warnet-gmaps-input" rows="10"
+                                class="w-full h-64 sm:h-72 lg:h-[280px] px-2.5 py-2 xl:py-2.5 2xl:py-3 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono resize-none leading-relaxed"
+                                placeholder='Contoh: <iframe src="https://www.google.com/maps/embed?pb=..." ...></iframe>'
+                                oninput="Settings.updateGmapsPreview()"></textarea>
+
+                            <div class="flex items-center justify-between gap-2 pt-1">
+                                <button type="button" onclick="Settings.toggleGmapsPreview()"
+                                    class="px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold transition-colors flex items-center gap-1.5 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-map text-[11px]"></i>
+                                    <span>Toggle Preview Peta</span>
+                                </button>
+                                <button type="button" onclick="Settings.saveWarnetGmaps()"
+                                    class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                                    <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                    <span>Simpan Lokasi</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Kolom Kanan: Preview Container -->
+                        <div class="space-y-1">
+                            <div id="settings-gmaps-preview-box" class="w-full bg-[#050505] border border-[#1c1c1c] rounded overflow-hidden">
+                                <div class="px-2.5 py-1 xl:px-3 xl:py-1.5 2xl:px-3.5 2xl:py-2 bg-[#0c0c0c] border-b border-[#1c1c1c] flex items-center justify-between">
+                                    <span class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-mono uppercase text-neutral-400 font-bold flex items-center gap-1">
+                                        <i class="fa-solid fa-location-dot text-emerald-400 text-[10px] xl:text-xs 2xl:text-sm"></i>
+                                        <span>Preview Peta Live</span>
+                                    </span>
+                                    <span id="settings-gmaps-status-badge" class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-mono text-emerald-400">Embed Aktif</span>
+                                </div>
+                                <div id="settings-gmaps-iframe-wrapper" class="w-full h-64 sm:h-72 lg:h-[280px] flex items-center justify-center p-1.5">
+                                    <!-- Dinamis dimasukkan iframe / preview -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: ATURAN & PENGUMUMAN KIOSK -->
+            <div id="kiosk-view-announcement" class="space-y-2.5 hidden">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5">
+                    <div class="flex items-center justify-between mb-2 pb-2 border-b border-[#1c1c1c]">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-bullhorn text-amber-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Aturan &amp; Pengumuman Kiosk</span>
+                            </h3>
+                            <span class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                                Kiosk &amp; TV
+                            </span>
+                        </div>
+                        <button type="button" onclick="Settings.saveWarnetAnnouncement()"
+                            class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                            <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                            <span>Simpan Aturan Kiosk</span>
+                        </button>
+                    </div>
+
                     <div class="w-full">
-                        <div id="warnet-announcement-editor" class="text-xs lg:max-xl:text-xs xl:text-base"></div>
+                        <div id="warnet-announcement-editor" class="text-xs"></div>
                         <input type="hidden" id="warnet-announcement-input">
                     </div>
                 </div>
-
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveKioskSettings()"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">Simpan
-                        Pengaturan Kiosk</button>
-                </div>
             </div>
-        </div>
 
-        <!-- ==================== SUB-TAB: TV SIGNAGE ==================== -->
-        <div id="subtab-tv" class="subtab-content hidden space-y-6">
-            <!-- Card: Konfigurasi TV Signage -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 space-y-4 sm:space-y-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">📺 Konfigurasi TV Signage &amp; Digital Signage</h3>
-
-                <!-- Running Text -->
-                <div class="flex flex-col md:flex-row gap-3 md:gap-4">
-                    <div class="md:w-1/3">
-                        <label for="tv-running-text" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Running Text Footer</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Teks berjalan di footer lobi Smart TV. Buat minimalis dan informatif.</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Maksimal 255 karakter</p>
+            <!-- VIEW 4: TAMPILAN TV SIGNAGE -->
+            <div id="kiosk-view-tv" class="space-y-2.5 hidden">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5 space-y-3 xl:space-y-4">
+                    <div class="flex items-center justify-between pb-2 border-b border-[#1c1c1c]">
+                        <div class="flex items-center gap-2">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider flex items-center gap-1.5">
+                                <i class="fa-solid fa-tv text-purple-400 text-xs lg:text-sm xl:text-base 2xl:text-lg"></i>
+                                <span>Konfigurasi TV Signage &amp; Digital Signage</span>
+                            </h3>
+                            <span class="px-1.5 sm:px-2 xl:px-2.5 2xl:px-3 py-0.5 xl:py-1 2xl:py-1.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-purple-500/10 text-purple-300 border border-purple-500/20">
+                                Smart TV Lobi
+                            </span>
+                        </div>
+                        <button type="button" onclick="Settings.saveTVSignageSettings()"
+                            class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors flex items-center gap-1 shrink-0 active:scale-95 shadow-sm">
+                            <i class="fa-solid fa-floppy-disk text-[11px] xl:text-xs 2xl:text-sm"></i>
+                            <span>Simpan Pengaturan TV</span>
+                        </button>
                     </div>
-                    <textarea id="tv-running-text" rows="2"
-                        class="flex-1 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
-                        placeholder="Contoh: Selamat datang di warnet kami! Dapatkan promo paket malam murah mulai pukul 22.00 WIB..."></textarea>
-                </div>
 
-                <div class="w-full h-px bg-[#1c1c1c]"></div>
-
-                <!-- URL Akses LAN Smart TV -->
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#050505] p-3.5 sm:p-4 rounded border border-[#171717]">
-                    <div>
-                        <p class="text-xs lg:max-xl:text-sm xl:text-base font-bold text-neutral-300">🔗 Link Akses Smart TV (Jaringan LAN)</p>
-                        <p class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 mt-0.5">Buka link ini pada browser Smart TV / monitor lobi yang terhubung ke jaringan router warnet yang sama.</p>
+                    <!-- Running Text Footer -->
+                    <div class="bg-[#080808] border border-[#191919] rounded p-3 xl:p-3.5 2xl:p-4 space-y-1.5 xl:space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label for="tv-running-text" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold block">
+                                Running Text Footer
+                            </label>
+                            <span class="text-[8px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-400 font-mono">Max 255 char</span>
+                        </div>
+                        <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400">Teks berjalan di footer lobi Smart TV. Buat minimalis dan informatif.</p>
+                        <textarea id="tv-running-text" rows="4"
+                            class="w-full px-2.5 py-2 xl:py-2.5 2xl:py-3 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-sans resize-none leading-relaxed"
+                            placeholder="Contoh: Selamat datang di warnet kami! Dapatkan promo paket malam murah mulai pukul 22.00 WIB..."></textarea>
                     </div>
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto shrink-0">
-                        <code class="px-3.5 py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-sm text-emerald-400 font-mono tracking-wide break-all text-center sm:text-left" id="tv-lan-url-preview">http://IP_SERVER:7015/tv</code>
-                        <a href="/tv" target="_blank" class="w-full sm:w-auto justify-center px-3 py-2 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs font-bold text-neutral-200 transition-colors inline-flex items-center gap-1.5">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
-                            </svg>
-                            <span>Buka TV</span>
-                        </a>
-                    </div>
-                </div>
 
-                <div class="flex justify-end mt-4">
-                    <button onclick="Settings.saveTVSignageSettings()"
-                        class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center">Simpan Pengaturan TV Signage</button>
+                    <!-- Link Akses LAN Smart TV -->
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#080808] border border-[#191919] rounded p-3 xl:p-3.5 2xl:p-4">
+                        <div class="space-y-0.5">
+                            <p class="text-xs xl:text-sm 2xl:text-base font-bold text-neutral-200 flex items-center gap-1.5">
+                                <i class="fa-solid fa-link text-neutral-400 text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                <span>Link Akses Smart TV (Jaringan LAN)</span>
+                            </p>
+                            <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400">Buka link ini pada browser Smart TV / monitor lobi yang terhubung ke router warnet yang sama.</p>
+                        </div>
+                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto min-w-0">
+                            <code class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-emerald-400 font-mono tracking-wide break-all text-center sm:text-left min-w-0" id="tv-lan-url-preview">http://IP_SERVER:7015/tv</code>
+                            <a href="/tv" target="_blank" class="px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-[#171717] hover:bg-[#222] border border-[#262626] rounded text-xs xl:text-sm 2xl:text-base font-bold text-neutral-200 transition-colors inline-flex items-center justify-center gap-1.5 active:scale-95 shadow-sm shrink-0">
+                                <i class="fa-solid fa-arrow-up-right-from-square text-[11px] xl:text-xs 2xl:text-sm"></i>
+                                <span>Buka TV</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -429,279 +652,461 @@
         </div>
 
         <!-- ==================== SUB-TAB: CLOUDFLARE TUNNEL ==================== -->
-        <div id="subtab-cloudflare_tunnel" class="subtab-content hidden space-y-6">
+        <div id="subtab-cloudflare_tunnel" class="subtab-content hidden space-y-3 sm:space-y-4 xl:space-y-5">
             <!-- Card: Cloudflare Tunnel Configuration -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-2">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300 text-xl shrink-0">🌐</div>
-                        <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">
-                            Cloudflare Tunnel Auto-Manager
-                        </h3>
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5 space-y-3 sm:space-y-4 xl:space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-3 border-b border-[#1c1c1c]">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 xl:w-10 xl:h-10 2xl:w-11 2xl:h-11 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300 text-base xl:text-lg 2xl:text-xl shrink-0">🌐</div>
+                        <div class="min-w-0">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider truncate sm:whitespace-normal">
+                                Cloudflare Tunnel Auto-Manager
+                            </h3>
+                            <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5">Kelola konektivitas publik aman tanpa port forwarding</p>
+                        </div>
                     </div>
-                    <div id="cf-tunnel-status-badge" class="px-3.5 py-1.5 rounded text-xs lg:max-xl:text-xs xl:text-base font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700 w-fit">
+                    <div id="cf-tunnel-status-badge" class="px-2.5 sm:px-3 xl:px-3.5 2xl:px-4 py-1 xl:py-1.5 2xl:py-2 rounded text-[10px] sm:text-xs xl:text-sm 2xl:text-base font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700 w-fit shrink-0">
                         Memuat Status...
                     </div>
                 </div>
 
                 <!-- Section 1: Tunnel Token -->
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 py-5 border-t border-[#1c1c1c]">
-                    <div class="max-w-xl">
-                        <label for="cf-tunnel-token-input" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 sm:gap-4 py-3 sm:py-4 border-b border-[#1c1c1c]">
+                    <div class="max-w-xl space-y-1 min-w-0">
+                        <label for="cf-tunnel-token-input" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold uppercase tracking-wider block">
                             Cloudflare Tunnel Token
                         </label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">
-                            Token dinamis dari Cloudflare Zero Trust (<code class="bg-[#171717] px-1.5 py-0.5 rounded text-neutral-300 text-xs">Networks -&gt; Tunnels -&gt; Add a Tunnel</code>). 
+                        <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400">
+                            Token dinamis dari Cloudflare Zero Trust (<code class="bg-[#171717] px-1.5 py-0.5 rounded text-neutral-300 text-[10px] xl:text-xs font-mono">Networks -&gt; Tunnels -&gt; Add a Tunnel</code>). 
                             <a href="https://one.dash.cloudflare.com/" target="_blank" rel="noopener noreferrer" class="text-neutral-400 hover:text-white underline font-semibold inline-flex items-center gap-1 ml-1">
                                 Buka Dashboard Cloudflare ↗
                             </a>
                         </p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Format token Cloudflare Zero Trust (maksimal 255 karakter)</p>
+                        <p class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 font-normal">Format token Cloudflare Zero Trust (maksimal 255 karakter)</p>
                     </div>
-                    <div class="flex items-center gap-3 w-full lg:w-auto">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full lg:w-auto">
                         <input type="password" id="cf-tunnel-token-input" placeholder="Masukkan token eyJh..."
-                            class="w-full lg:max-xl:w-80 xl:w-96 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 font-mono">
+                            class="w-full sm:w-72 xl:w-80 2xl:w-96 min-w-0 px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#050505] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-neutral-500 font-mono">
                         <button onclick="Settings.saveCloudflareToken()"
-                            class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors shrink-0">
+                            class="w-full sm:w-auto px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors shrink-0 active:scale-95 shadow-sm text-center">
                             Simpan Token
                         </button>
                     </div>
                 </div>
 
                 <!-- Section 2: Daemon Autostart Toggle -->
-                <div class="flex items-center justify-between gap-4 pt-5 border-t border-[#1c1c1c]">
-                    <div>
-                        <label for="cf-tunnel-toggle" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">
+                <div class="flex items-center justify-between gap-3 sm:gap-4 pt-1 sm:pt-2">
+                    <div class="space-y-0.5 min-w-0">
+                        <label for="cf-tunnel-toggle" class="text-xs lg:text-xs xl:text-sm 2xl:text-base text-neutral-300 font-semibold uppercase tracking-wider block">
                             Status Daemon Cloudflare Tunnel
                         </label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">
-                            Aktifkan untuk menjalankan biner <code class="bg-[#171717] px-1.5 py-0.5 rounded text-neutral-300 text-xs">cloudflared</code> di latar belakang server secara otomatis
+                        <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400">
+                            Aktifkan untuk menjalankan biner <code class="bg-[#171717] px-1.5 py-0.5 rounded text-neutral-300 text-[10px] xl:text-xs font-mono">cloudflared</code> di latar belakang server secara otomatis
                         </p>
                     </div>
                     <label class="relative inline-flex items-center cursor-pointer shrink-0" for="cf-tunnel-toggle">
                         <input type="checkbox" id="cf-tunnel-toggle" class="sr-only peer" onchange="Settings.toggleCloudflareTunnel(this.checked)">
-                        <div class="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
+                        <div class="w-10 h-5 sm:w-11 sm:h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                     </label>
                 </div>
             </div>
         </div>
 
         <!-- ==================== SUB-TAB: AUTO SCHEDULER ==================== -->
-        <div id="subtab-scheduler" class="subtab-content hidden space-y-6">
-            <!-- Card: Auto Backup -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">⏱ Backup Otomatis</h3>
-                <div class="flex items-center justify-between">
-                    <div>
-                        <label for="scheduler-backup-value" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Interval
-                            Backup Database</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Backup otomatis database per interval
-                            waktu yang ditentukan</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Minimal 1 satuan interval</p>
+        <!-- Subtab: Penjadwalan Otomatis (Auto Scheduler) -->
+        <div id="subtab-scheduler" class="subtab-content hidden space-y-2 sm:space-y-2.5 lg:space-y-3">
+            <!-- Header Banner Compact (Zero-Truncate) -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5">
+                <div class="flex items-center justify-between gap-2.5 sm:gap-3">
+                    <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
+                            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <div class="min-w-0">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider whitespace-nowrap">
+                                    Penjadwalan Otomatis
+                                </h3>
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] sm:text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                    <span class="hidden sm:inline">SCHEDULER </span>AKTIF
+                                </span>
+                            </div>
+                            <p class="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5 leading-tight">
+                                Eksekusi tugas latar belakang otomatis (Backup database, pembersihan log, &amp; screenshot client).
+                            </p>
+                        </div>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <input type="number" id="scheduler-backup-value"
-                            class="w-24 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 text-center focus:outline-none focus:border-neutral-500"
-                            value="60" step="1" min="1">
-                        <label for="scheduler-backup-unit" class="sr-only">Satuan Interval Backup Database</label>
-                        <select id="scheduler-backup-unit"
-                            class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
-                            <option value="detik">Detik</option>
-                            <option value="menit" selected>Menit</option>
-                            <option value="jam">Jam</option>
-                            <option value="hari">Hari</option>
-                        </select>
-                    </div>
+
+                    <button type="button" id="btn-save-scheduler" onclick="Settings.saveSchedulerConfig()"
+                        class="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-[0.98] shrink-0">
+                        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
+                        </svg>
+                        <span class="hidden sm:inline">Simpan &amp; Terapkan</span><span class="sm:hidden">Simpan</span>
+                    </button>
                 </div>
-                <p id="scheduler-backup-preview" class="text-[10px] lg:max-xl:text-[10px] xl:text-sm text-neutral-500 mt-2 italic">Backup
-                    otomatis setiap <strong class="text-neutral-300">60 Menit</strong></p>
             </div>
 
-            <!-- Card: Auto Cleanup Log -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider mb-4">🗑 Pembersihan Log Otomatis</h3>
-                <div class="flex items-center justify-between">
-                    <div>
-                        <label for="scheduler-cleanup-value" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Interval &amp;
-                            Umur Log</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Hapus otomatis log aktivitas yang lebih
-                            lama dari periode tertentu</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Minimal 1 satuan umur log</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="number" id="scheduler-cleanup-value"
-                            class="w-24 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 text-center focus:outline-none focus:border-neutral-500"
-                            value="30" step="1" min="1">
-                        <label for="scheduler-cleanup-unit" class="sr-only">Satuan Interval Pembersihan Log</label>
-                        <select id="scheduler-cleanup-unit"
-                            class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500">
-                            <option value="jam">Jam</option>
-                            <option value="hari" selected>Hari</option>
-                            <option value="minggu">Minggu</option>
-                        </select>
-                    </div>
-                </div>
-                <p id="scheduler-cleanup-preview" class="text-[10px] lg:max-xl:text-[10px] xl:text-sm text-neutral-500 mt-2 italic">Hapus log
-                    lebih dari <strong class="text-neutral-300">30 Hari</strong></p>
-            </div>
-
-            <!-- Card: Auto Screenshot -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">📷 Screenshot Otomatis</h3>
-                    <label class="relative inline-flex items-center cursor-pointer" for="scheduler-screenshot-enabled">
-                        <input type="checkbox" id="scheduler-screenshot-enabled" class="sr-only peer">
-                        <div class="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-500"></div>
-                        <span class="ml-3 text-xs lg:max-xl:text-xs xl:text-sm font-medium text-neutral-400">Aktifkan</span>
-                    </label>
-                </div>
-                
-                <div class="flex items-center justify-between opacity-50 transition-opacity" id="scheduler-screenshot-config">
-                    <div>
-                        <label for="scheduler-screenshot-value" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider block">Interval
-                            Screenshot</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Perintah screenshot akan dikirim ke PC aktif per interval waktu</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Minimal 1 satuan interval</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <input type="number" id="scheduler-screenshot-value" disabled
-                            class="w-24 px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 text-center focus:outline-none focus:border-neutral-500 disabled:opacity-50"
-                            value="60" step="1" min="1">
-                        <label for="scheduler-screenshot-unit" class="sr-only">Satuan Interval Screenshot</label>
-                        <select id="scheduler-screenshot-unit" disabled
-                            class="px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 disabled:opacity-50">
-                            <option value="detik" selected>Detik</option>
-                            <option value="menit">Menit</option>
-                            <option value="jam">Jam</option>
-                        </select>
-                    </div>
-                </div>
-                <p id="scheduler-screenshot-preview" class="text-[10px] lg:max-xl:text-[10px] xl:text-sm text-neutral-500 mt-2 italic">Screenshot
-                    otomatis setiap <strong class="text-neutral-300">60 Detik</strong> (Nonaktif)</p>
-            </div>
-
-            <!-- Tombol Simpan -->
-            <div class="flex justify-end">
-                <button onclick="Settings.saveSchedulerConfig()"
-                    class="px-4 lg:max-xl:px-5 xl:px-6 py-2.5 lg:max-xl:py-2.5 xl:py-3 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors flex items-center gap-2">
-                    💾 Simpan &amp; Restart Scheduler
+            <!-- Mobile Segmented Tab Switcher (< 768px) -->
+            <div class="flex md:hidden p-1 bg-[#080808] border border-[#1f1f1f] rounded-lg">
+                <button type="button" id="sched-mobile-pill-backup" onclick="Settings.switchSchedulerMobileView('backup')"
+                    class="flex-1 py-1.5 px-2 text-[10px] sm:text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 bg-neutral-200 text-black shadow-sm">
+                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                    </svg>
+                    <span>Backup DB</span>
+                </button>
+                <button type="button" id="sched-mobile-pill-cleanup" onclick="Settings.switchSchedulerMobileView('cleanup')"
+                    class="flex-1 py-1.5 px-2 text-[10px] sm:text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 text-neutral-400 hover:text-neutral-200">
+                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    <span>Pembersihan Log</span>
+                </button>
+                <button type="button" id="sched-mobile-pill-screenshot" onclick="Settings.switchSchedulerMobileView('screenshot')"
+                    class="flex-1 py-1.5 px-2 text-[10px] sm:text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1 text-neutral-400 hover:text-neutral-200">
+                    <svg class="w-3 h-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <span>Screenshot</span>
                 </button>
             </div>
-        </div>
 
+            <!-- 3-Column Responsive Grid on md+ / Single-Card on Mobile -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3 lg:gap-3.5 items-stretch">
+                <!-- Card 1: Backup Database Otomatis -->
+                <div id="sched-col-backup" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between space-y-2 sm:space-y-2.5">
+                    <div class="space-y-1.5 sm:space-y-2">
+                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-1.5 sm:pb-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300 shrink-0">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="text-[11px] sm:text-xs font-bold text-neutral-200 uppercase tracking-wider">Backup Otomatis</h4>
+                                    <span class="text-[9px] text-neutral-500 block">Database warnet.db</span>
+                                </div>
+                            </div>
+                            <span class="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">Aktif</span>
+                        </div>
+
+                        <!-- Combined Input Group -->
+                        <div class="space-y-1">
+                            <label class="text-[9px] sm:text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">Interval Waktu</label>
+                            <div class="flex items-center gap-1 bg-[#050505] border border-[#1c1c1c] rounded p-0.5 sm:p-1 focus-within:border-neutral-500">
+                                <input type="number" id="scheduler-backup-value"
+                                    class="w-full bg-transparent px-1.5 py-0.5 text-xs font-mono font-bold text-neutral-100 text-center focus:outline-none"
+                                    value="1" step="1" min="1">
+                                <select id="scheduler-backup-unit"
+                                    class="bg-[#141414] border border-[#262626] rounded px-1.5 py-0.5 text-[10px] sm:text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 font-medium">
+                                    <option value="jam">Jam</option>
+                                    <option value="hari" selected>Hari</option>
+                                    <option value="minggu">Minggu</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Preset Pills (Grid Simetris) -->
+                        <div class="space-y-1">
+                            <span class="text-[9px] text-neutral-500 font-semibold uppercase tracking-wider block">Preset Cepat:</span>
+                            <div id="scheduler-backup-pills" class="grid grid-cols-4 sm:grid-cols-2 xl:grid-cols-4 gap-1 sm:gap-1.5">
+                                <button type="button" onclick="Settings.setBackupPreset(6, 'jam')" data-val="6" data-unit="jam"
+                                    class="sched-backup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
+                                    6 Jam
+                                </button>
+                                <button type="button" onclick="Settings.setBackupPreset(12, 'jam')" data-val="12" data-unit="jam"
+                                    class="sched-backup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
+                                    12 Jam
+                                </button>
+                                <button type="button" onclick="Settings.setBackupPreset(1, 'hari')" data-val="1" data-unit="hari"
+                                    class="sched-backup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-white text-black border-white font-bold text-center transition-all">
+                                    1 Hari
+                                </button>
+                                <button type="button" onclick="Settings.setBackupPreset(7, 'hari')" data-val="7" data-unit="hari"
+                                    class="sched-backup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
+                                    7 Hari
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Preview -->
+                    <div class="pt-1.5 border-t border-[#171717]">
+                        <p id="scheduler-backup-preview" class="text-[10px] sm:text-[11px] text-neutral-400 leading-tight">
+                            Backup otomatis setiap <strong class="text-neutral-200">1 Hari</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card 2: Pembersihan Log Otomatis -->
+                <div id="sched-col-cleanup" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between space-y-2 sm:space-y-2.5 hidden md:flex">
+                    <div class="space-y-1.5 sm:space-y-2">
+                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-1.5 sm:pb-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300 shrink-0">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="text-[11px] sm:text-xs font-bold text-neutral-200 uppercase tracking-wider">Pembersihan Log</h4>
+                                    <span class="text-[9px] text-neutral-500 block">Log operasional &amp; audit</span>
+                                </div>
+                            </div>
+                            <span class="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">Aktif</span>
+                        </div>
+
+                        <!-- Combined Input Group -->
+                        <div class="space-y-1">
+                            <label class="text-[9px] sm:text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">Batas Usia Log</label>
+                            <div class="flex items-center gap-1 bg-[#050505] border border-[#1c1c1c] rounded p-0.5 sm:p-1 focus-within:border-neutral-500">
+                                <input type="number" id="scheduler-cleanup-value"
+                                    class="w-full bg-transparent px-1.5 py-0.5 text-xs font-mono font-bold text-neutral-100 text-center focus:outline-none"
+                                    value="30" step="1" min="1">
+                                <select id="scheduler-cleanup-unit"
+                                    class="bg-[#141414] border border-[#262626] rounded px-1.5 py-0.5 text-[10px] sm:text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 font-medium">
+                                    <option value="hari" selected>Hari</option>
+                                    <option value="minggu">Minggu</option>
+                                    <option value="bulan">Bulan</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Preset Pills (Grid Simetris) -->
+                        <div class="space-y-1">
+                            <span class="text-[9px] text-neutral-500 font-semibold uppercase tracking-wider block">Preset Cepat:</span>
+                            <div id="scheduler-cleanup-pills" class="grid grid-cols-4 sm:grid-cols-2 xl:grid-cols-4 gap-1 sm:gap-1.5">
+                                <button type="button" onclick="Settings.setCleanupPreset(30, 'hari')" data-val="30" data-unit="hari"
+                                    class="sched-cleanup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-white text-black border-white font-bold text-center transition-all">
+                                    30 Hari
+                                </button>
+                                <button type="button" onclick="Settings.setCleanupPreset(60, 'hari')" data-val="60" data-unit="hari"
+                                    class="sched-cleanup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
+                                    60 Hari
+                                </button>
+                                <button type="button" onclick="Settings.setCleanupPreset(90, 'hari')" data-val="90" data-unit="hari"
+                                    class="sched-cleanup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
+                                    90 Hari
+                                </button>
+                                <button type="button" onclick="Settings.setCleanupPreset(180, 'hari')" data-val="180" data-unit="hari"
+                                    class="sched-cleanup-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
+                                    180 Hari
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Preview -->
+                    <div class="pt-1.5 border-t border-[#171717]">
+                        <p id="scheduler-cleanup-preview" class="text-[10px] sm:text-[11px] text-neutral-400 leading-tight">
+                            Hapus log lebih dari <strong class="text-neutral-200">30 Hari</strong>.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Card 3: Screenshot Client Otomatis -->
+                <div id="sched-col-screenshot" class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5 flex flex-col justify-between space-y-2 sm:space-y-2.5 hidden md:flex">
+                    <div class="space-y-1.5 sm:space-y-2">
+                        <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-1.5 sm:pb-2 gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300 shrink-0">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="text-[11px] sm:text-xs font-bold text-neutral-200 uppercase tracking-wider">Screenshot Client</h4>
+                                    <span class="text-[9px] text-neutral-500 block">Capture layar PC aktif</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <span id="scheduler-screenshot-status" class="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-neutral-900 text-neutral-500 border border-neutral-800">Nonaktif</span>
+                                <label class="relative inline-flex items-center cursor-pointer select-none">
+                                    <input type="checkbox" id="scheduler-screenshot-enabled" class="sr-only peer">
+                                    <div class="w-7 h-3.5 sm:w-8 sm:h-4 bg-[#222] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[1px] sm:after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Config Wrapper with Toggle-opacity -->
+                        <div id="scheduler-screenshot-config" class="space-y-1.5 sm:space-y-2 opacity-50 transition-opacity">
+                            <!-- Combined Input Group -->
+                            <div class="space-y-1">
+                                <label class="text-[9px] sm:text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">Interval Pengambilan</label>
+                                <div class="flex items-center gap-1 bg-[#050505] border border-[#1c1c1c] rounded p-0.5 sm:p-1 focus-within:border-neutral-500">
+                                    <input type="number" id="scheduler-screenshot-value" disabled
+                                        class="w-full bg-transparent px-1.5 py-0.5 text-xs font-mono font-bold text-neutral-100 text-center focus:outline-none disabled:text-neutral-500"
+                                        value="60" step="1" min="1">
+                                    <select id="scheduler-screenshot-unit" disabled
+                                        class="bg-[#141414] border border-[#262626] rounded px-1.5 py-0.5 text-[10px] sm:text-xs text-neutral-300 focus:outline-none focus:border-neutral-500 font-medium disabled:text-neutral-500">
+                                        <option value="detik" selected>Detik</option>
+                                        <option value="menit">Menit</option>
+                                        <option value="jam">Jam</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Preset Pills (Grid Simetris) -->
+                            <div class="space-y-1">
+                                <span class="text-[9px] text-neutral-500 font-semibold uppercase tracking-wider block">Preset Cepat:</span>
+                                <div id="scheduler-screenshot-pills" class="grid grid-cols-4 sm:grid-cols-2 xl:grid-cols-4 gap-1 sm:gap-1.5">
+                                    <button type="button" onclick="Settings.setScreenshotPreset(15, 'detik')" data-val="15" data-unit="detik"
+                                        class="sched-screenshot-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
+                                        15 Detik
+                                    </button>
+                                    <button type="button" onclick="Settings.setScreenshotPreset(30, 'detik')" data-val="30" data-unit="detik"
+                                        class="sched-screenshot-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
+                                        30 Detik
+                                    </button>
+                                    <button type="button" onclick="Settings.setScreenshotPreset(60, 'detik')" data-val="60" data-unit="detik"
+                                        class="sched-screenshot-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-white text-black border-white font-bold text-center transition-all">
+                                        60 Detik
+                                    </button>
+                                    <button type="button" onclick="Settings.setScreenshotPreset(5, 'menit')" data-val="5" data-unit="menit"
+                                        class="sched-screenshot-pill px-1.5 py-1 rounded text-[9px] sm:text-[10px] font-semibold border bg-[#141414] text-neutral-400 border-[#222] hover:bg-[#1a1a1a] text-center transition-all">
+                                        5 Menit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Preview -->
+                    <div class="pt-1.5 border-t border-[#171717]">
+                        <p id="scheduler-screenshot-preview" class="text-[10px] sm:text-[11px] text-neutral-400 leading-tight">
+                            Screenshot otomatis setiap <strong class="text-neutral-200">60 Detik</strong> (Nonaktif).
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status eksekusi terakhir (in-memory, hilang saat restart) -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded px-2.5 sm:px-3 py-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span class="text-[9px] sm:text-[10px] text-neutral-500 uppercase font-bold tracking-wider shrink-0">Eksekusi Terakhir</span>
+                <span id="scheduler-last-runs" class="text-[10px] sm:text-[11px] font-mono text-neutral-400">Memuat...</span>
+            </div>
+        </div>
         <!-- ==================== SUB-TAB: MIGRASI & UPDATE ==================== -->
         {% include "kasir/settings/migration.html" %}
 
         <!-- ==================== SUB-TAB: CLOUD BACKUP ==================== -->
-        <div id="subtab-cloud_backup" class="subtab-content hidden space-y-6">
+        <div id="subtab-cloud_backup" class="subtab-content hidden space-y-3 sm:space-y-4 xl:space-y-5">
             <!-- Card: Database & Cloud Backup Settings -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-6 space-y-6">
-                <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-4">
-                    <div class="flex items-center gap-4">
-                        <div
-                            class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
-                            <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5 space-y-3 sm:space-y-4 xl:space-y-5">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 pb-3 border-b border-[#1c1c1c]">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 xl:w-10 xl:h-10 2xl:w-11 2xl:h-11 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
+                            <svg class="w-4 h-4 xl:w-5 xl:h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4">
                                 </path>
                             </svg>
                         </div>
-                        <div>
-                            <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">
+                        <div class="min-w-0">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider truncate sm:whitespace-normal">
                                 Database &amp; Cloud Backup</h3>
-                            <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Kelola pencadangan otomatis ke penyimpanan lokal dan cloud eksternal</p>
+                            <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5">Kelola pencadangan otomatis ke penyimpanan lokal dan cloud eksternal</p>
                         </div>
                     </div>
                     <button onclick="Settings.triggerBackupNow()"
-                        class="px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors">
+                        class="w-full sm:w-auto px-3 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-sm 2xl:text-base font-bold rounded transition-colors active:scale-95 shadow-sm shrink-0 text-center">
                         Backup Sekarang
                     </button>
                 </div>
 
-                <!-- CONFIG: PROVIDERS -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Discord Webhook -->
-                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-4 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span
-                                class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-200 uppercase tracking-wider">Discord Webhook</span>
-                            <label class="relative inline-flex items-center cursor-pointer" for="backup-discord-enabled">
+                <!-- CONFIG: PROVIDERS (1-Column on HP & Tablet, 2-Column on XL+) -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-2.5 sm:gap-3 xl:gap-4">
+                    <!-- Discord Webhook (Utama & Aktif) -->
+                    <div class="bg-[#050505] border border-emerald-500/20 rounded p-3 sm:p-3.5 xl:p-4 space-y-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="text-xs lg:text-xs xl:text-sm 2xl:text-base font-bold text-neutral-200 uppercase tracking-wider truncate">Discord Webhook</span>
+                                <span class="px-2 py-0.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shrink-0">Aktif / Utama</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0" for="backup-discord-enabled">
                                 <input type="checkbox" id="backup-discord-enabled" class="sr-only peer"
                                     onchange="Settings.saveBackupToggle('backup_discord_enabled', this)">
                                 <div
-                                    class="w-9 h-5 bg-[#171717] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-neutral-400 after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-neutral-200 peer-checked:after:bg-black">
+                                    class="w-9 h-5 bg-[#171717] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-neutral-400 after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500 peer-checked:after:bg-white">
                                 </div>
                             </label>
                         </div>
-                        <div class="space-y-2">
-                            <label for="backup-discord-url" class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-semibold block">Webhook URL</label>
+                        <div class="space-y-1.5">
+                            <label for="backup-discord-url" class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 uppercase font-semibold block">Webhook URL</label>
                             <input type="password" id="backup-discord-url"
-                                class="w-full px-3 py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
+                                class="w-full px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
                                 placeholder="https://discord.com/api/webhooks/...">
-                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 font-normal font-sans">Format: https://discord.com/api/webhooks/...</p>
+                            <p class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 font-normal font-sans">Format: https://discord.com/api/webhooks/...</p>
                         </div>
-                        <div class="flex justify-between gap-2 pt-2 border-t border-[#1c1c1c]/30">
+                        <div class="flex flex-col sm:flex-row justify-between gap-2 pt-2 border-t border-[#1c1c1c]/40">
                             <button onclick="Settings.testProviderConnection('discord')"
-                                class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-semibold rounded transition-colors">Test Connection</button>
+                                class="w-full sm:w-auto px-2.5 py-1.5 xl:px-3 xl:py-1.5 2xl:py-2 2xl:px-3.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs xl:text-xs 2xl:text-sm font-semibold rounded transition-colors active:scale-95 text-center">Test Connection</button>
                             <button onclick="Settings.saveProviderConfig('discord')"
-                                class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold rounded transition-colors">Simpan</button>
+                                class="w-full sm:w-auto px-3 py-1.5 xl:px-3.5 xl:py-1.5 2xl:py-2 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 shadow-sm text-center">Simpan</button>
                         </div>
                     </div>
 
-                    <!-- WebDAV Nextcloud (Disabled / Pengembangan) -->
+                    <!-- WebDAV Nextcloud (Nonaktif / Eksperimental) -->
                     <div
-                        class="bg-[#050505] border border-[#1c1c1c] rounded p-4 space-y-4 opacity-40 pointer-events-none select-none">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center gap-2">
-                                <span
-                                    class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-200 uppercase tracking-wider">Nextcloud (WebDAV)</span>
-                                <span
-                                    class="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-amber-500 font-mono font-semibold uppercase tracking-normal">Pengembangan</span>
+                        class="bg-[#050505] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 space-y-3 opacity-50 select-none">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="text-xs lg:text-xs xl:text-sm 2xl:text-base font-bold text-neutral-400 uppercase tracking-wider truncate">Nextcloud (WebDAV)</span>
+                                <span class="px-2 py-0.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700 shrink-0">Eksperimental / Nonaktif</span>
                             </div>
-                            <label class="relative inline-flex items-center cursor-not-allowed" for="backup-webdav-enabled">
+                            <label class="relative inline-flex items-center cursor-not-allowed shrink-0" for="backup-webdav-enabled">
                                 <input type="checkbox" id="backup-webdav-enabled" class="sr-only peer"
                                     onchange="Settings.saveBackupToggle('backup_webdav_enabled', this)" disabled>
                                 <div
-                                    class="w-9 h-5 bg-[#171717] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-neutral-400 after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-neutral-200 peer-checked:after:bg-black">
+                                    class="w-9 h-5 bg-[#171717] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-neutral-600 after:border-neutral-500 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-neutral-700">
                                 </div>
                             </label>
                         </div>
-                        <div class="space-y-2">
-                            <label for="backup-webdav-url" class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-semibold block">WebDAV URL</label>
+                        <div class="space-y-1.5">
+                            <label for="backup-webdav-url" class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-500 uppercase font-semibold block">WebDAV URL</label>
                             <input type="text" id="backup-webdav-url"
-                                class="w-full px-3 py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 cursor-not-allowed"
+                                class="w-full px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-400 focus:outline-none cursor-not-allowed"
                                 placeholder="https://nextcloud.com/remote.php/dav/files/user/Backup/" disabled>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div class="space-y-1">
-                                <label for="backup-webdav-user" class="text-[9px] text-neutral-500 uppercase font-semibold block">Username</label>
+                                <label for="backup-webdav-user" class="text-[9px] sm:text-[10px] xl:text-xs text-neutral-500 uppercase font-semibold block">Username</label>
                                 <input type="text" id="backup-webdav-user"
-                                    class="w-full px-2 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 cursor-not-allowed"
+                                    class="w-full px-2.5 py-1.5 xl:py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs xl:text-sm text-neutral-400 focus:outline-none cursor-not-allowed"
                                     placeholder="Username" disabled>
                             </div>
                             <div class="space-y-1">
-                                <label for="backup-webdav-pass" class="text-[9px] text-neutral-500 uppercase font-semibold block">App Password</label>
+                                <label for="backup-webdav-pass" class="text-[9px] sm:text-[10px] xl:text-xs text-neutral-500 uppercase font-semibold block">App Password</label>
                                 <input type="password" id="backup-webdav-pass"
-                                    class="w-full px-2 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500 cursor-not-allowed"
+                                    class="w-full px-2.5 py-1.5 xl:py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs xl:text-sm text-neutral-400 focus:outline-none cursor-not-allowed"
                                     placeholder="••••••••" disabled>
                             </div>
                         </div>
-                        <div class="flex justify-between gap-2 pt-1 border-t border-[#1c1c1c]/30">
+                        <div class="flex flex-col sm:flex-row justify-between gap-2 pt-1 border-t border-[#1c1c1c]/30">
                             <button onclick="Settings.testProviderConnection('webdav')"
-                                class="px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-500 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-semibold rounded cursor-not-allowed"
+                                class="w-full sm:w-auto px-2.5 py-1.5 xl:px-3 xl:py-1.5 bg-[#171717] border border-[#262626] text-neutral-500 text-xs xl:text-xs 2xl:text-sm font-semibold rounded cursor-not-allowed text-center"
                                 disabled>Test Connection</button>
                             <button onclick="Settings.saveProviderConfig('webdav')"
-                                class="px-3 py-1.5 bg-[#171717] border border-[#262626] text-neutral-500 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold rounded cursor-not-allowed"
+                                class="w-full sm:w-auto px-3 py-1.5 xl:px-3.5 xl:py-1.5 bg-[#171717] border border-[#262626] text-neutral-500 text-xs xl:text-xs 2xl:text-sm font-bold rounded cursor-not-allowed text-center"
                                 disabled>Simpan</button>
                         </div>
                     </div>
 
-                    <!-- Google Drive -->
-                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-4 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span
-                                class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-200 uppercase tracking-wider">Google Drive</span>
-                            <label class="relative inline-flex items-center cursor-pointer" for="backup-gdrive-enabled">
+                    <!-- Google Drive (Nonaktif / Eksperimental) -->
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 space-y-3 opacity-60">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="text-xs lg:text-xs xl:text-sm 2xl:text-base font-bold text-neutral-300 uppercase tracking-wider truncate">Google Drive</span>
+                                <span class="px-2 py-0.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700 shrink-0">Eksperimental / Nonaktif</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0" for="backup-gdrive-enabled">
                                 <input type="checkbox" id="backup-gdrive-enabled" class="sr-only peer"
                                     onchange="Settings.saveBackupToggle('backup_gdrive_enabled', this)">
                                 <div
@@ -709,46 +1114,49 @@
                                 </div>
                             </label>
                         </div>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                             <div class="space-y-1">
-                                <label for="backup-gdrive-client-id" class="text-[9px] text-neutral-500 uppercase font-semibold block">Client ID</label>
+                                <label for="backup-gdrive-client-id" class="text-[9px] sm:text-[10px] xl:text-xs text-neutral-400 uppercase font-semibold block">Client ID</label>
                                 <input type="password" id="backup-gdrive-client-id"
-                                    class="w-full px-2 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
+                                    class="w-full px-2.5 py-1.5 xl:py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs xl:text-sm text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
                                     placeholder="••••••••">
                             </div>
                             <div class="space-y-1">
-                                <label for="backup-gdrive-client-secret" class="text-[9px] text-neutral-500 uppercase font-semibold block">Client Secret</label>
+                                <label for="backup-gdrive-client-secret" class="text-[9px] sm:text-[10px] xl:text-xs text-neutral-400 uppercase font-semibold block">Client Secret</label>
                                 <input type="password" id="backup-gdrive-client-secret"
-                                    class="w-full px-2 py-1.5 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs text-neutral-200 focus:outline-none focus:border-neutral-500"
+                                    class="w-full px-2.5 py-1.5 xl:py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs xl:text-sm text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
                                     placeholder="••••••••">
                             </div>
                         </div>
-                        <div class="space-y-2">
-                            <label for="backup-gdrive-refresh-token" class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-semibold block">Refresh Token</label>
+                        <div class="space-y-1.5">
+                            <label for="backup-gdrive-refresh-token" class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 uppercase font-semibold block">Refresh Token</label>
                             <input type="password" id="backup-gdrive-refresh-token"
-                                class="w-full px-3 py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
+                                class="w-full px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
                                 placeholder="••••••••">
                         </div>
-                        <div class="space-y-2">
-                            <label for="backup-gdrive-folder-id" class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-semibold block">Folder ID (Opsional)</label>
+                        <div class="space-y-1.5">
+                            <label for="backup-gdrive-folder-id" class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 uppercase font-semibold block">Folder ID (Opsional)</label>
                             <input type="text" id="backup-gdrive-folder-id"
-                                class="w-full px-3 py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
+                                class="w-full px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500"
                                 placeholder="Google Drive Folder ID">
-                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 font-normal font-sans">ID folder target dari URL Google Drive</p>
+                            <p class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 font-normal font-sans">ID folder target dari URL Google Drive</p>
                         </div>
-                        <div class="flex justify-between gap-2 pt-2 border-t border-[#1c1c1c]/30">
+                        <div class="flex flex-col sm:flex-row justify-between gap-2 pt-2 border-t border-[#1c1c1c]/30">
                             <button onclick="Settings.testProviderConnection('gdrive')"
-                                class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-semibold rounded transition-colors">Test Connection</button>
+                                class="w-full sm:w-auto px-2.5 py-1.5 xl:px-3 xl:py-1.5 2xl:py-2 2xl:px-3.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs xl:text-xs 2xl:text-sm font-semibold rounded transition-colors active:scale-95 text-center">Test Connection</button>
                             <button onclick="Settings.saveProviderConfig('gdrive')"
-                                class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold rounded transition-colors">Simpan</button>
+                                class="w-full sm:w-auto px-3 py-1.5 xl:px-3.5 xl:py-1.5 2xl:py-2 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 shadow-sm text-center">Simpan</button>
                         </div>
                     </div>
 
-                    <!-- NAS Network Folder -->
-                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-4 space-y-4">
-                        <div class="flex items-center justify-between">
-                            <span class="text-xs lg:max-xl:text-xs xl:text-base font-bold text-neutral-200 uppercase tracking-wider">NAS / Jaringan Lokal</span>
-                            <label class="relative inline-flex items-center cursor-pointer" for="backup-nas-enabled">
+                    <!-- NAS Network Folder (Nonaktif / Eksperimental) -->
+                    <div class="bg-[#050505] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 space-y-3 opacity-60">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="text-xs lg:text-xs xl:text-sm 2xl:text-base font-bold text-neutral-300 uppercase tracking-wider truncate">NAS / Jaringan Lokal</span>
+                                <span class="px-2 py-0.5 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-semibold bg-neutral-800 text-neutral-400 border border-neutral-700 shrink-0">Eksperimental / Nonaktif</span>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0" for="backup-nas-enabled">
                                 <input type="checkbox" id="backup-nas-enabled" class="sr-only peer"
                                     onchange="Settings.saveBackupToggle('backup_nas_enabled', this)">
                                 <div
@@ -756,18 +1164,18 @@
                                 </div>
                             </label>
                         </div>
-                        <div class="space-y-2">
-                            <label for="backup-nas-path" class="text-[10px] lg:max-xl:text-[10px] xl:text-xs text-neutral-500 uppercase font-semibold block">Path Jaringan Lokal / Folder Bersama</label>
+                        <div class="space-y-1.5">
+                            <label for="backup-nas-path" class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 uppercase font-semibold block">Path Jaringan Lokal / Folder Bersama</label>
                             <input type="text" id="backup-nas-path"
-                                class="w-full px-3 py-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
-                                placeholder="Contoh: \\192.168.1.100\SharedBackup\ atau D:\BackupWarnet\">
-                            <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 font-normal font-sans">Path folder UNC atau direktori lokal (contoh: \\\\server\\backup)</p>
+                                class="w-full px-2.5 py-1.5 xl:py-2 2xl:py-2.5 2xl:px-3.5 bg-[#0c0c0c] border border-[#1c1c1c] rounded text-xs xl:text-sm 2xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-mono"
+                                placeholder="Contoh: \192.168.1.100\SharedBackup\ atau D:\BackupWarnet">
+                            <p class="text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 font-normal font-sans">Path folder UNC atau direktori lokal (contoh: \\server\backup)</p>
                         </div>
-                        <div class="flex justify-between gap-2 pt-2 border-t border-[#1c1c1c]/30">
+                        <div class="flex flex-col sm:flex-row justify-between gap-2 pt-2 border-t border-[#1c1c1c]/30">
                             <button onclick="Settings.testProviderConnection('nas')"
-                                class="px-3 py-1.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-[10px] lg:max-xl:text-[10px] xl:text-xs font-semibold rounded transition-colors">Test Connection</button>
+                                class="w-full sm:w-auto px-2.5 py-1.5 xl:px-3 xl:py-1.5 2xl:py-2 2xl:px-3.5 bg-[#171717] hover:bg-[#222] border border-[#262626] text-neutral-300 text-xs xl:text-xs 2xl:text-sm font-semibold rounded transition-colors active:scale-95 text-center">Test Connection</button>
                             <button onclick="Settings.saveProviderConfig('nas')"
-                                class="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-black text-[10px] lg:max-xl:text-[10px] xl:text-xs font-bold rounded transition-colors">Simpan</button>
+                                class="w-full sm:w-auto px-3 py-1.5 xl:px-3.5 xl:py-1.5 2xl:py-2 2xl:px-4 bg-neutral-100 hover:bg-neutral-200 text-black text-xs xl:text-xs 2xl:text-sm font-bold rounded transition-colors active:scale-95 shadow-sm text-center">Simpan</button>
                         </div>
                     </div>
                 </div>
@@ -775,28 +1183,38 @@
         </div>
 
         <!-- ==================== SUB-TAB: BERKAS BACKUP LOKAL ==================== -->
-        <div id="subtab-local_backup" class="subtab-content hidden space-y-6">
+        <div id="subtab-local_backup" class="subtab-content hidden space-y-3 xl:space-y-4">
             <!-- Card: Local Backup List -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 space-y-4">
-                <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">Berkas Cadangan Lokal (Maks 5 File Teratas)</h3>
-                <div class="overflow-x-auto w-full">
-                    <table class="w-full text-left border-collapse block lg:table">
-                        <thead class="hidden lg:table-header-group">
-                            <tr
-                                class="border-b border-[#1c1c1c] text-neutral-500 text-[10px] lg:max-xl:text-[10px] xl:text-xs uppercase font-bold">
-                                <th class="pb-2">Nama Berkas</th>
-                                <th class="pb-2">Tanggal Dibuat</th>
-                                <th class="pb-2">Ukuran</th>
-                                <th class="pb-2 text-right">Aksi</th>
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 xl:p-4 2xl:p-5 space-y-3 xl:space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4 pb-2 border-b border-[#1c1c1c]">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-9 h-9 xl:w-10 xl:h-10 2xl:w-11 2xl:h-11 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0 text-neutral-300 text-base xl:text-lg 2xl:text-xl">💾</div>
+                        <div class="min-w-0">
+                            <h3 class="text-xs lg:text-sm xl:text-base 2xl:text-lg font-bold text-neutral-200 uppercase tracking-wider truncate sm:whitespace-normal">Berkas Cadangan Lokal</h3>
+                            <p class="text-[10px] sm:text-xs xl:text-xs 2xl:text-sm text-neutral-400 mt-0.5">Daftar arsip database lokal terkompresi (.tar.gz / .zip) di server</p>
+                        </div>
+                    </div>
+                    <span class="px-2 sm:px-2.5 py-0.5 xl:py-1 rounded text-[9px] sm:text-[10px] xl:text-xs 2xl:text-sm font-mono text-neutral-400 bg-[#171717] border border-[#262626] w-fit shrink-0">Maks 5 File Teratas</span>
+                </div>
+                
+                <!-- Table Container: Direct display on desktop, zero horizontal scrollbar on mobile -->
+                <div class="overflow-x-hidden md:overflow-x-auto border border-[#1c1c1c] rounded-lg bg-[#050505] w-full">
+                    <table class="w-full text-left border-collapse table-auto">
+                        <thead class="sticky top-0 bg-[#0c0c0c] z-10 border-b border-[#1c1c1c]">
+                            <tr class="text-neutral-400 text-[10px] sm:text-xs xl:text-xs 2xl:text-sm uppercase font-bold tracking-wider">
+                                <th class="py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 w-auto">Nama Berkas</th>
+                                <th class="hidden md:table-cell py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 w-auto whitespace-nowrap">Tanggal Dibuat</th>
+                                <th class="hidden md:table-cell py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 w-auto whitespace-nowrap">Ukuran</th>
+                                <th class="py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 w-auto text-right whitespace-nowrap">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="backup-files-table-body" class="text-neutral-300 text-xs lg:max-xl:text-xs xl:text-base font-mono block lg:table-row-group divide-y divide-[#2a2a2a] lg:divide-transparent">
-                            {% for _ in range(4) %}
-                            <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-3 lg:p-0">
-                                <td class="py-3 px-3"><div class="h-3.5 bg-[#262626] rounded w-48"></div></td>
-                                <td class="py-3 px-3"><div class="h-3 bg-[#202020] rounded w-16"></div></td>
-                                <td class="py-3 px-3"><div class="h-3 bg-[#1e1e1e] rounded w-28"></div></td>
-                                <td class="py-3 px-3 text-right"><div class="h-7 w-20 bg-[#202020] rounded ml-auto"></div></td>
+                        <tbody id="backup-files-table-body" class="text-neutral-300 text-xs xl:text-sm 2xl:text-base font-mono divide-y divide-[#1c1c1c]">
+                            {% for _ in range(5) %}
+                            <tr class="border-b border-[#1c1c1c]">
+                                <td class="py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4"><div class="h-4 bg-[#262626] rounded w-36 sm:w-64"></div><div class="md:hidden h-2.5 bg-[#1e1e1e] rounded w-24 mt-1.5"></div></td>
+                                <td class="hidden md:table-cell py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4"><div class="h-3.5 bg-[#202020] rounded w-28 sm:w-36"></div></td>
+                                <td class="hidden md:table-cell py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4"><div class="h-3.5 bg-[#1e1e1e] rounded w-16 sm:w-20"></div></td>
+                                <td class="py-2 sm:py-2.5 xl:py-3 px-2 sm:px-2.5 xl:px-4 text-right"><div class="h-6 sm:h-7 w-14 sm:w-36 bg-[#202020] rounded ml-auto"></div></td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -807,46 +1225,205 @@
 
         <!-- ==================== SUB-TAB: PEMBERSIHAN DATABASE ==================== -->
         {% if session.get('kasir_role') == 'admin' or session.get('role') == 'admin' %}
-        <div id="subtab-db_cleanup" class="subtab-content hidden space-y-6">
-            <!-- Card Maintenance Database & Data Retention (Admin Only) -->
-            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-4 sm:p-6 space-y-4 sm:space-y-6">
-                <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-4">
-                    <div class="flex items-center gap-3 sm:gap-4">
-                        <div
-                            class="w-10 h-10 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
-                            <svg class="w-5 h-5 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                </path>
-                            </svg>
+        <!-- Subtab: Pembersihan Database (Admin Only) -->
+        <div id="subtab-db_cleanup" class="subtab-content hidden space-y-2 sm:space-y-2.5 lg:space-y-3">
+            <!-- Mobile Segmented Tab Switcher (< 768px) -->
+            <div class="flex md:hidden p-1 bg-[#080808] border border-[#1f1f1f] rounded-lg">
+                <button type="button" id="db-mobile-pill-action" onclick="Settings.switchDbCleanupMobileView('action')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 bg-neutral-200 text-black shadow-sm">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    <span>Pembersihan</span>
+                </button>
+                <button type="button" id="db-mobile-pill-safety" onclick="Settings.switchDbCleanupMobileView('safety')"
+                    class="flex-1 py-1.5 px-3 text-xs font-bold rounded-md transition-all flex items-center justify-center gap-1.5 text-neutral-400 hover:text-neutral-200">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                    <span>Keamanan Data</span>
+                </button>
+            </div>
+
+            <!-- 2-Column Responsive Grid on md+ -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 items-start">
+                
+                <!-- Kolom Kiri: Header, 3 Stat Chips, Action Card Retensi -->
+                <div id="db-col-action" class="space-y-2.5 sm:space-y-3">
+                    
+                    <!-- Header Banner -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-2.5 sm:p-3 lg:p-3.5">
+                        <div class="flex items-center justify-between gap-2.5">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded bg-[#171717] border border-[#262626] flex items-center justify-center shrink-0">
+                                    <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <div class="min-w-0">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">
+                                            Pembersihan Database
+                                        </h3>
+                                        <span class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
+                                            VACUUM
+                                        </span>
+                                    </div>
+                                    <p class="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5 leading-tight">
+                                        Bersihkan histori lama untuk kompresi fisik file SQLite server.
+                                    </p>
+                                </div>
+                            </div>
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-[#171717] border border-[#262626] text-[9px] sm:text-[10px] text-emerald-400 font-medium shrink-0">
+                                <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                                </svg>
+                                <span class="hidden sm:inline">Saldo</span> Aman 100%
+                            </span>
                         </div>
+                    </div>
+
+                    <!-- 2-Tier Stat Cards (Zero-Truncate) -->
+                    <div class="space-y-1.5 sm:space-y-2">
+                        <!-- Tier 1: Ukuran DB & Histori Aktif (Grid 2 Kolom) -->
+                        <div class="grid grid-cols-2 gap-1.5 sm:gap-2">
+                            <!-- Card 1: Ukuran Database -->
+                            <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2 sm:p-2.5 flex flex-col justify-between">
+                                <div class="flex items-center justify-between gap-1">
+                                    <span class="text-[9px] sm:text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Ukuran Database</span>
+                                    <span id="db-stat-status" class="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">Optimal</span>
+                                </div>
+                                <div class="mt-1">
+                                    <span id="db-stat-size" class="text-xs sm:text-sm lg:text-base font-bold font-mono text-neutral-200 block">-</span>
+                                </div>
+                                <span class="text-[8px] sm:text-[9px] text-neutral-500 block mt-0.5">Berkas: instance/warnet.db</span>
+                            </div>
+
+                            <!-- Card 2: Histori Aktif -->
+                            <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2 sm:p-2.5 flex flex-col justify-between">
+                                <div class="flex items-center justify-between gap-1">
+                                    <span class="text-[9px] sm:text-[10px] text-neutral-500 uppercase font-bold tracking-wider">Histori Aktif</span>
+                                    <span class="px-1.5 py-0.2 rounded text-[8px] sm:text-[9px] font-mono text-neutral-400 bg-neutral-900 border border-neutral-800 shrink-0">4 Tabel</span>
+                                </div>
+                                <div class="mt-1 flex items-baseline gap-1">
+                                    <span id="db-stat-history-count" class="text-xs sm:text-sm lg:text-base font-bold font-mono text-neutral-200">-</span>
+                                    <span class="text-[9px] sm:text-[10px] text-neutral-400 font-sans">baris data</span>
+                                </div>
+                                <span class="text-[8px] sm:text-[9px] text-neutral-500 block mt-0.5">Sesi, log, telemetri</span>
+                            </div>
+                        </div>
+
+                        <!-- Tier 2: Cadangan & Arsip Terakhir (Full Width Card) -->
+                        <div id="db-stat-archive-card" class="bg-[#050505] border border-[#1c1c1c] rounded p-2 sm:p-2.5 flex items-center justify-between gap-2" title="Arsip cadangan otomatis pra-pembersihan">
+                            <div class="min-w-0">
+                                <span class="text-[9px] sm:text-[10px] text-neutral-500 uppercase font-bold tracking-wider block">Cadangan &amp; Arsip Terakhir</span>
+                                <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                                    <span id="db-stat-last-archive" class="text-[11px] sm:text-xs font-bold font-mono text-neutral-200">-</span>
+                                    <span id="db-stat-last-archive-sub" class="text-[9px] sm:text-[10px] text-neutral-400 font-mono">-</span>
+                                </div>
+                            </div>
+                            <div class="w-7 h-7 rounded bg-[#121212] border border-[#222] flex items-center justify-center shrink-0 text-neutral-400">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 012-2h10a2 2 0 012 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Card: Pembersihan Histori & Optimasi VACUUM -->
+                    <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 lg:p-4 space-y-2.5 sm:space-y-3">
+                        <div class="border-b border-[#1c1c1c] pb-2 sm:pb-2.5">
+                            <h4 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">
+                                Konfigurasi Retensi Histori
+                            </h4>
+                            <p class="text-[10px] sm:text-[11px] text-neutral-400 mt-0.5 leading-tight">
+                                Tentukan batas umur data histori yang ingin dibersihkan. Cadangan otomatis dibuat sebelum pembersihan.
+                            </p>
+                        </div>
+
+                        <!-- Retention Pills Selector: 2x2 grid on mobile, 4 in 1 row on sm+ -->
                         <div>
-                            <h3 class="text-xs lg:max-xl:text-lg xl:text-[22px] font-bold text-neutral-200 uppercase tracking-wider">
-                                Pembersihan Histori Database</h3>
-                            <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Bersihkan riwayat transaksi &amp; log bermain lama untuk menghemat penyimpanan server. Saldo member &amp; data utama tetap aman 100%.</p>
+                            <label class="text-[9px] sm:text-[10px] text-neutral-400 uppercase font-bold tracking-wider block mb-1.5">
+                                Hapus Histori Yang Lebih Tua Dari:
+                            </label>
+                            <div id="db-retention-pills" class="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
+                                <button type="button" onclick="Settings.selectRetentionMonths(1)" data-months="1"
+                                    class="db-retention-pill px-2.5 py-1.5 rounded text-[10px] sm:text-xs font-semibold border transition-all text-center bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]">
+                                    1 Bulan
+                                </button>
+                                <button type="button" onclick="Settings.selectRetentionMonths(3)" data-months="3"
+                                    class="db-retention-pill px-2.5 py-1.5 rounded text-[10px] sm:text-xs font-semibold border transition-all text-center bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]">
+                                    3 Bulan
+                                </button>
+                                <button type="button" onclick="Settings.selectRetentionMonths(6)" data-months="6"
+                                    class="db-retention-pill px-2.5 py-1.5 rounded text-[10px] sm:text-xs font-semibold border transition-all text-center bg-white text-black border-white shadow-sm font-bold">
+                                    6 Bulan <span class="hidden xl:inline">(Rekomendasi)</span>
+                                </button>
+                                <button type="button" onclick="Settings.selectRetentionMonths(12)" data-months="12"
+                                    class="db-retention-pill px-2.5 py-1.5 rounded text-[10px] sm:text-xs font-semibold border transition-all text-center bg-[#171717] text-neutral-300 border-[#262626] hover:bg-[#222]">
+                                    1 Tahun
+                                </button>
+                            </div>
+                            <input type="hidden" id="db-retention-months" value="6">
+                        </div>
+
+                        <!-- Cutoff Notice & Action Button -->
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2 border-t border-[#1c1c1c]">
+                            <div class="flex items-center gap-1.5 text-[10px] sm:text-[11px] text-neutral-400">
+                                <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>Data sebelum <strong id="db-cutoff-date" class="text-neutral-200 underline underline-offset-2 font-mono">-</strong> dihapus.</span>
+                            </div>
+
+                            <button type="button" id="btn-db-maintenance" onclick="Settings.executeDbMaintenance()"
+                                class="w-full sm:w-auto px-3.5 py-2 bg-neutral-100 hover:bg-white text-black text-xs font-bold rounded flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-[0.98] shrink-0">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                </svg>
+                                <span>Backup &amp; Bersihkan Sekarang</span>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                    <div>
-                        <label for="db-retention-months" class="text-xs lg:max-xl:text-sm xl:text-[22px] text-neutral-400 uppercase font-bold tracking-wider mb-1 block">Hapus Histori Yang Lebih Tua Dari</label>
-                        <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 mt-1">Pilih rentang waktu riwayat lama yang ingin dibersihkan dari server</p>
-                        <p class="text-[9px] lg:max-xl:text-[10px] xl:text-xs 2xl:text-sm text-neutral-500 mt-0.5 font-normal font-sans">Pilihan 1, 3, 6, atau 12 bulan</p>
+                <!-- Kolom Kanan: Safety Matrix Card (Transparansi Perlindungan Data) -->
+                <div id="db-col-safety" class="space-y-2.5 sm:space-y-3 hidden md:block">
+                    <!-- Box 1: Data Dijamin 100% Aman -->
+                    <div class="bg-[#0c0c0c] border border-emerald-950/40 rounded p-3 sm:p-3.5 lg:p-4 space-y-2">
+                        <div class="flex items-center gap-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                            </svg>
+                            <span>Data Aman &amp; Tidak Dihapus</span>
+                        </div>
+                        <ul class="text-[10px] sm:text-[11px] text-neutral-400 space-y-1.5 list-disc pl-4 leading-relaxed">
+                            <li><strong class="text-neutral-200">Saldo &amp; Akun Member:</strong> Saldo rupiah, nomor telepon, dan status member 100% utuh.</li>
+                            <li><strong class="text-neutral-200">Akun Pengguna &amp; Kasir:</strong> Username, password, dan level hak akses aman.</li>
+                            <li><strong class="text-neutral-200">Paket Billing &amp; Tarif:</strong> Konfigurasi harga per jam, paket promo, dan grup PC.</li>
+                            <li><strong class="text-neutral-200">Master Menu Kantin:</strong> Daftar makanan/minuman dan stok F&amp;B tetap terjaga.</li>
+                        </ul>
                     </div>
-                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
-                        <select id="db-retention-months" class="w-full sm:w-auto px-3 py-2 bg-[#050505] border border-[#1c1c1c] rounded text-xs lg:max-xl:text-xs xl:text-base text-neutral-200 focus:outline-none focus:border-neutral-500 font-medium">
-                            <option value="1">1 Bulan</option>
-                            <option value="3">3 Bulan</option>
-                            <option value="6" selected>6 Bulan (Rekomendasi)</option>
-                            <option value="12">1 Tahun</option>
-                        </select>
-                        <button onclick="Settings.executeDbMaintenance()"
-                            class="w-full sm:w-auto justify-center px-3 lg:max-xl:px-3.5 xl:px-4 py-2 lg:max-xl:py-2.5 xl:py-2.5 bg-neutral-100 hover:bg-neutral-200 text-black text-xs lg:max-xl:text-xs xl:text-base font-bold rounded transition-colors whitespace-nowrap flex items-center">
-                            Backup &amp; Bersihkan Sekarang
-                        </button>
+
+                    <!-- Box 2: Data Histori Yang Dibersihkan -->
+                    <div class="bg-[#0c0c0c] border border-amber-950/40 rounded p-3 sm:p-3.5 lg:p-4 space-y-2">
+                        <div class="flex items-center gap-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                            </svg>
+                            <span>Histori Yang Akan Dibersihkan</span>
+                        </div>
+                        <ul class="text-[10px] sm:text-[11px] text-neutral-400 space-y-1.5 list-disc pl-4 leading-relaxed">
+                            <li><strong class="text-neutral-200">Telemetri Proses PC:</strong> Log aplikasi berjalan client yang lewat dari retensi.</li>
+                            <li><strong class="text-neutral-200">Log Uptime PC:</strong> Catatan waktu aktif komputer lama yang sudah dianalisis.</li>
+                            <li><strong class="text-neutral-200">Riwayat Sesi Selesai:</strong> Catatan sesi bermain lama yang sudah ditutup kasir.</li>
+                            <li><strong class="text-neutral-200">Riwayat Transaksi Lama:</strong> Nota billing &amp; pesanan kantin yang telah lewat batas.</li>
+                        </ul>
                     </div>
                 </div>
+
             </div>
         </div>
         {% endif %}
@@ -855,4 +1432,4 @@
 </div>
 
 
-
+

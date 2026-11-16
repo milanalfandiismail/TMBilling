@@ -1,4 +1,4 @@
-# app/repositories/member_repository.py
+﻿# app/repositories/member_repository.py
 
 """Repository untuk entitas Member.
 
@@ -8,6 +8,7 @@ termasuk autentikasi, manajemen saldo waktu, dan refund otomatis.
 
 from app.models import db
 from app.models import Member
+from sqlalchemy.orm import joinedload, selectinload
 
 
 class MemberRepository:
@@ -24,9 +25,12 @@ class MemberRepository:
         return Member.query.order_by(Member.username).all()
 
     @staticmethod
-    def get_paginated(search_query=None, page=1, per_page=5, grup_id=None, sort_by="grup_id", order="asc"):
+    def get_paginated(search_query=None, page=1, per_page=5, grup_id=None, sort_by="grup_id", order="asc", aktif_only=True):
         """Mengambil member dengan filter pencarian, pengurutan, dan pagination."""
-        query = Member.query
+        query = Member.query.options(
+            joinedload(Member.grup),
+            selectinload(Member.sesi_list),
+        )
         if search_query:
             query = query.filter(
                 (Member.username.ilike(f"%{search_query}%")) |
@@ -35,6 +39,9 @@ class MemberRepository:
         
         if grup_id:
             query = query.filter(Member.grup_id == grup_id)
+
+        if aktif_only:
+            query = query.filter(Member.aktif.is_(True))
         
         order_dir = db.asc if (order or "asc").lower() == "asc" else db.desc
         
@@ -81,14 +88,27 @@ class MemberRepository:
             return query.order_by(fallback_order, Member.username.asc()).paginate(page=page, per_page=per_page, error_out=False)
 
     @staticmethod
+    def counts_by_grup(search_query=None, aktif_only=True):
+        """Jumlah member per grup_id untuk filter yang sama dengan daftar."""
+        query = db.session.query(Member.grup_id, db.func.count(Member.id))
+        if search_query:
+            query = query.filter(
+                (Member.username.ilike(f"%{search_query}%")) |
+                (Member.nama_lengkap.ilike(f"%{search_query}%"))
+            )
+        if aktif_only:
+            query = query.filter(Member.aktif.is_(True))
+        return {grup_id: total for grup_id, total in query.group_by(Member.grup_id).all()}
+
+    @staticmethod
     def get_all_aktif():
         """Mengambil semua member dengan status aktif saja."""
         return Member.query.filter_by(aktif=True).all()
 
     @staticmethod
     def get_by_id(member_id):
-        """Mengambil member berdasarkan ID (404 jika tidak ditemukan)."""
-        return Member.query.get_or_404(member_id)
+        """Mengambil member berdasarkan ID, None jika tidak ditemukan."""
+        return db.session.get(Member, member_id)
 
     @staticmethod
     def get_by_username(username):
@@ -105,26 +125,6 @@ class MemberRepository:
     def find_by_username(username):
         """Mencari username tanpa filter status (untuk validasi registrasi)."""
         return Member.query.filter_by(username=username).first()
-
-
-    # =========================================================================
-    # 3. MANAJEMEN SALDO WAKTU (BALANCE MANAGEMENT)
-    # =========================================================================
-    # Fokus: Logika khusus untuk menambah atau mengubah sisa waktu bermain.
-
-    @staticmethod
-    def tambah_saldo_menit(member_id, tambahan_menit):
-        """Menambahkan saldo waktu ke akun member (Refund/Recovery)."""
-        member = Member.query.get(member_id)
-        if member:
-            member.waktu_tersimpan += tambahan_menit
-            return True
-        return False
-
-    @staticmethod
-    def update_waktu(member, waktu_baru):
-        """Update total waktu tersimpan member (Tanpa Commit)."""
-        member.waktu_tersimpan = waktu_baru
 
 
     # =========================================================================

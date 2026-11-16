@@ -16,17 +16,27 @@ branch_labels = None
 depends_on = None
 
 
-def upgrade():
-    with op.batch_alter_table('transaksi', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('operator', sa.String(length=100), nullable=True))
+def _columns(table):
+    inspector = sa.inspect(op.get_bind())
+    if not inspector.has_table(table):
+        return None
+    return {c["name"] for c in inspector.get_columns(table)}
 
-    with op.batch_alter_table('transaksi_menu', schema=None) as batch_op:
-        batch_op.add_column(sa.Column('operator', sa.String(length=100), nullable=True))
+
+def upgrade():
+    # DB hasil db.create_all() sudah punya kolom operator, jadi add_column harus dijaga.
+    for table in ("transaksi", "transaksi_menu"):
+        cols = _columns(table)
+        if cols is None or "operator" in cols:
+            continue
+        with op.batch_alter_table(table, schema=None) as batch_op:
+            batch_op.add_column(sa.Column('operator', sa.String(length=100), nullable=True))
 
 
 def downgrade():
-    with op.batch_alter_table('transaksi_menu', schema=None) as batch_op:
-        batch_op.drop_column('operator')
-
-    with op.batch_alter_table('transaksi', schema=None) as batch_op:
-        batch_op.drop_column('operator')
+    for table in ("transaksi_menu", "transaksi"):
+        cols = _columns(table)
+        if cols is None or "operator" not in cols:
+            continue
+        with op.batch_alter_table(table, schema=None) as batch_op:
+            batch_op.drop_column('operator')

@@ -1,0 +1,212 @@
+"""Seeder data awal untuk E2E Sandbox testing.
+
+Skrip ini mengisi database sandbox terisolasi secara idempotent:
+- Akun Superadmin ('admin' / 'admin123') & Kasir ('kasir1' / 'kasir123')
+- 3 Grup PC (reguler, vip, vvip)
+- 5 Unit PC (PC-01 s.d. PC-05)
+- 4 Paket Billing (1 Jam, 2 Jam, 3 Jam, Paket Malam)
+- 5 Item Menu FnB
+- 3 Member terdaftar
+- Data tepi: grup tanpa PC, paket 1 menit, menu stok kosong, member kadaluarsa, 2 transaksi hari ini
+- Konfigurasi Settings dasar
+"""
+
+from datetime import datetime, timedelta
+import json
+from app.models import db, User, Grup, PC, Paket, MenuItem, Member, Settings, HardwareMonitor, Transaksi, now_local
+
+
+def seed_sandbox(app):
+    """Mengisi database sandbox dengan data pengujian secara idempotent."""
+    with app.app_context():
+        db.create_all()
+
+        # 1. Admin & Kasir
+        admin = User.query.filter_by(username="admin").first()
+        if not admin:
+            admin = User(username="admin", nama_lengkap="Administrator E2E", role="admin", aktif=True)
+            db.session.add(admin)
+        else:
+            admin.nama_lengkap = "Administrator E2E"
+            admin.role = "admin"
+            admin.aktif = True
+        admin.set_password("admin123")
+
+        kasir = User.query.filter_by(username="kasir1").first()
+        if not kasir:
+            kasir = User(username="kasir1", nama_lengkap="Kasir Pagi E2E", role="kasir", aktif=True)
+            db.session.add(kasir)
+        else:
+            kasir.nama_lengkap = "Kasir Pagi E2E"
+            kasir.role = "kasir"
+            kasir.aktif = True
+        kasir.set_password("kasir123")
+        db.session.commit()
+
+        # 2. Grup PC
+        def get_or_create_grup(nama, warna, ket):
+            g = Grup.query.filter_by(nama=nama).first()
+            if not g:
+                g = Grup(nama=nama, warna=warna, keterangan=ket)
+                db.session.add(g)
+                db.session.commit()
+            return g
+
+        g_reg = get_or_create_grup("reguler", "#3b82f6", "Area Reguler 60Hz")
+        g_vip = get_or_create_grup("vip", "#ec4899", "Area VIP 144Hz")
+        g_vvip = get_or_create_grup("vvip", "#a855f7", "Area VVIP 240Hz")
+
+        # 3. Unit PC
+        for i in range(1, 6):
+            kode = f"PC-0{i}"
+            pc = PC.query.filter_by(kode=kode).first()
+            if not pc:
+                pc = PC(
+                    kode=kode,
+                    nama=f"Meja 0{i}",
+                    ip_address=f"192.168.1.{10+i}",
+                    mac_address=f"00:11:22:33:44:0{i}",
+                    grup_id=g_reg.id,
+                    aktif=True,
+                    pos_x=50 + (i * 90),
+                    pos_y=100
+                )
+                db.session.add(pc)
+        db.session.commit()
+
+        # 4. Paket Billing
+        pakets = [
+            ("1 Jam Reguler", 60, 5000),
+            ("2 Jam Reguler", 120, 9000),
+            ("3 Jam Reguler", 180, 13000),
+            ("Paket Malam", 360, 20000)
+        ]
+        for nama, durasi, harga in pakets:
+            p = Paket.query.filter_by(nama=nama).first()
+            if not p:
+                p = Paket(nama=nama, durasi_menit=durasi, harga=harga, grup_id=g_reg.id, aktif=True)
+                db.session.add(p)
+        db.session.commit()
+
+        # 5. Menu FnB Kantin
+        menus = [
+            ("Indomie Goreng", 10000, 20),
+            ("Kopi Good Day", 6000, 30),
+            ("Aqua Botol 600ml", 4000, 50),
+            ("French Fries", 12000, 15),
+            ("Teh Botol", 5000, 25)
+        ]
+        for nama, harga, stok in menus:
+            m = MenuItem.query.filter_by(nama=nama).first()
+            if not m:
+                m = MenuItem(nama=nama, harga=harga, stok=stok, is_active=True)
+                db.session.add(m)
+        db.session.commit()
+
+        # 6. Member
+        members_data = [
+            ("member1", "Budi Santoso", "budi@example.com", "081211112222", g_reg.id, 120),
+            ("member2", "Siti Rahma", "siti@example.com", "081233334444", g_vip.id, 60),
+            ("member3", "Andi Wijaya", "andi@example.com", "081255556666", g_reg.id, 0),
+        ]
+        for uname, nama, email, hp, gid, menit in members_data:
+            mem = Member.query.filter_by(username=uname).first()
+            if not mem:
+                mem = Member(
+                    username=uname,
+                    nama_lengkap=nama,
+                    email=email,
+                    no_hp=hp,
+                    grup_id=gid,
+                    waktu_tersimpan=menit,
+                    kadaluarsa_pada=datetime.utcnow() + timedelta(days=30),
+                    aktif=True
+                )
+                mem.set_password("pass123")
+                db.session.add(mem)
+        db.session.commit()
+
+        # 7. Konfigurasi Awal
+        config_keys = {
+            "warnet_name": "TMBilling Arena Pro",
+            "blackout_grace_minutes": "15",
+            "timezone": "Asia/Jakarta",
+            "vnc_password": "TMVncSecret123"
+        }
+        for k, v in config_keys.items():
+            s = Settings.query.filter_by(key=k).first()
+            if not s:
+                s = Settings(key=k, value=v)
+                db.session.add(s)
+            else:
+                s.value = v
+        db.session.commit()
+
+        # 8. Hardware Baseline untuk PC-01
+        pc1 = PC.query.filter_by(kode="PC-01").first()
+        if pc1:
+            hw = HardwareMonitor.query.filter_by(pc_id=pc1.id).first()
+            specs_json = json.dumps({
+                "cpu": "Intel Core i5-12400F",
+                "gpu": "NVIDIA GeForce RTX 3060",
+                "ram": "16 GB DDR4",
+                "motherboard": "ASUS TUF GAMING B660M-PLUS"
+            })
+            if not hw:
+                hw = HardwareMonitor(
+                    pc_id=pc1.id,
+                    cpu_name="Intel Core i5-12400F",
+                    gpu_name="NVIDIA GeForce RTX 3060",
+                    total_ram="16 GB",
+                    motherboard="ASUS TUF GAMING B660M-PLUS",
+                    hardware_current_specs=specs_json,
+                    hardware_baseline=specs_json
+                )
+                db.session.add(hw)
+            else:
+                hw.hardware_current_specs = specs_json
+                if not hw.hardware_baseline:
+                    hw.hardware_baseline = specs_json
+            db.session.commit()
+
+        # 9. Data tepi untuk suite E2E (idempotent, tidak mengasumsikan baris lain)
+        #    - grup tanpa PC: uji tampilan denah/grup kosong
+        #    - paket 1 menit: uji sesi super pendek tanpa menunggu lama
+        #    - menu stok 0: uji POS menolak penjualan stok habis
+        #    - member kadaluarsa: uji validasi masa aktif
+        #    - 2 transaksi hari ini: uji laporan & rekap kasir (total 10000 + 5000)
+        get_or_create_grup("vvip2", "#22c55e", "Area VVIP cadangan tanpa PC")
+
+        if not Paket.query.filter_by(nama="Uji 1 Menit").first():
+            db.session.add(
+                Paket(nama="Uji 1 Menit", durasi_menit=1, harga=1000, grup_id=g_reg.id, aktif=True)
+            )
+
+        if not MenuItem.query.filter_by(nama="Stok Kosong Uji").first():
+            db.session.add(MenuItem(nama="Stok Kosong Uji", harga=3000, stok=0, is_active=True))
+
+        if not Member.query.filter_by(username="member_expired").first():
+            member_expired = Member(
+                username="member_expired",
+                nama_lengkap="Member Kadaluarsa E2E",
+                email="expired@example.com",
+                grup_id=g_reg.id,
+                waktu_tersimpan=30,
+                kadaluarsa_pada=now_local() - timedelta(days=1),
+                aktif=True,
+            )
+            member_expired.set_password("pass123")
+            db.session.add(member_expired)
+
+        for no_nota, jumlah in (("E2E-SEED-001", 10000), ("E2E-SEED-002", 5000)):
+            if not Transaksi.query.filter_by(no_nota=no_nota).first():
+                db.session.add(
+                    Transaksi(
+                        jenis="beli_paket_guest",
+                        jumlah=jumlah,
+                        no_nota=no_nota,
+                        keterangan="Data seed E2E laporan hari ini",
+                        dibuat_pada=now_local(),
+                    )
+                )
+        db.session.commit()

@@ -8,6 +8,7 @@ termasuk identifikasi berbasis IP dan MAC address.
 
 from app.models import db
 from app.models import PC
+from sqlalchemy.orm import joinedload
 
 
 class PCRepository:
@@ -21,7 +22,7 @@ class PCRepository:
     @staticmethod
     def get_all(aktif_only=False, grup_id=None, search_query=None):
         """Mengambil daftar PC dengan sorting grup dan kode, serta filter opsional."""
-        query = PC.query
+        query = PC.query.options(joinedload(PC.grup), joinedload(PC.hardware))
         if aktif_only:
             query = query.filter_by(aktif=True)
         if grup_id:
@@ -35,9 +36,14 @@ class PCRepository:
         return query.order_by(PC.grup_id, PC.kode).all()
 
     @staticmethod
+    def get_all_light():
+        """PC + grup saja (tanpa hardware) untuk endpoint status ringan."""
+        return PC.query.options(joinedload(PC.grup)).order_by(PC.grup_id, PC.kode).all()
+
+    @staticmethod
     def get_paginated(aktif_only=False, grup_id=None, page=1, per_page=12, search_query=None):
         """Mengambil daftar PC terpaginasi dengan filter opsional."""
-        query = PC.query
+        query = PC.query.options(joinedload(PC.grup), joinedload(PC.hardware))
         if aktif_only:
             query = query.filter_by(aktif=True)
         if grup_id:
@@ -63,12 +69,12 @@ class PCRepository:
     @staticmethod
     def get_by_ip(ip_address):
         """Mengambil PC aktif berdasarkan alamat IP."""
-        return PC.query.filter_by(ip_address=ip_address, aktif=True).first()
+        return PC.query.options(joinedload(PC.grup)).filter_by(ip_address=ip_address, aktif=True).first()
 
     @staticmethod
     def get_by_ip_and_mac(ip_address, mac_address):
         """Autentikasi kombinasi IP dan MAC untuk client C#."""
-        return PC.query.filter_by(
+        return PC.query.options(joinedload(PC.grup)).filter_by(
             ip_address=ip_address, 
             mac_address=mac_address, 
             aktif=True
@@ -93,12 +99,12 @@ class PCRepository:
     @staticmethod
     def find_by_ip(ip):
         """Mencari IP tanpa filter status."""
-        return PC.query.filter_by(ip_address=ip).first()
+        return PC.query.options(joinedload(PC.grup)).filter_by(ip_address=ip).first()
 
     @staticmethod
     def find_by_mac(mac):
         """Mencari MAC tanpa filter status."""
-        return PC.query.filter_by(mac_address=mac).first()
+        return PC.query.options(joinedload(PC.grup)).filter_by(mac_address=mac).first()
 
     @staticmethod
     def find_ip_exclude(ip, exclude_id):
@@ -120,11 +126,6 @@ class PCRepository:
     def save(pc):
         """Menambahkan atau update unit PC (Tanpa Commit)."""
         db.session.add(pc)
-
-    @staticmethod
-    def save_batch(pc_list):
-        """Bulk insert/update (Tanpa Commit)."""
-        db.session.add_all(pc_list)
 
     @staticmethod
     def delete(pc):

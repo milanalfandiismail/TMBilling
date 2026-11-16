@@ -1,4 +1,4 @@
-# app/services/member_service.py
+﻿# app/services/member_service.py
 
 """Service untuk manajemen member/pelanggan warnet.
 
@@ -16,11 +16,13 @@ from app.repositories import SesiRepository
 from app.repositories import GrupRepository
 from app.repositories import TransaksiRepository
 from app.services.transaksi.transaksi_service import TransaksiService
+from app.services.write_lock import WRITE_LOCK, with_write_lock
+from app.services import idempotency
 from app.utils.logger import write_log
 from app.models import db, now_local
 from app.models.mikrotik.mikrotik import MikroTikConfig
 from app.utils.mikrotik_api import MikroTikAPIClient
-import threading
+from concurrent.futures import ThreadPoolExecutor
 from app.utils.validators import (
     validate_username,
     validate_password,
@@ -28,8 +30,11 @@ from app.utils.validators import (
     validate_email_format,
     validate_string_length,
     validate_integer_range,
-    validate_choice
+    validate_choice,
+    validate_payment_method
 )
+
+_MIKROTIK_EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="mikrotik")
 
 class MemberService:
     """Service untuk business logic member/pelanggan warnet.
@@ -59,24 +64,31 @@ class MemberService:
         if not host or not username:
             return
 
+        # Baca scalar di thread pemanggil: session ORM milik request tidak aman dari worker.
+        member_username = member.username
+
         def task():
+            client = None
             try:
                 client = MikroTikAPIClient(host, username, mikrotik_password, port)
                 if client.login():
                     if action == "add":
-                        client.add_user(member.username, password or member.username, profile)
+                        client.add_user(member_username, password or member_username, profile)
                     elif action == "update" and password:
-                        user = client.get_user(member.username)
+                        user = client.get_user(member_username)
                         if user and '.id' in user:
                             client.set_user_password(user['.id'], password)
                     elif action == "delete":
-                        user = client.get_user(member.username)
+                        user = client.get_user(member_username)
                         if user and '.id' in user:
                             client.remove_user(user['.id'])
             except Exception as e:
-                write_log("MIKROTIK_ERROR", f"Gagal {action} user {member.username}: {str(e)}")
+                write_log("MIKROTIK_ERROR", f"Gagal {action} user {member_username}: {str(e)}")
+            finally:
+                if client:
+                    client.close()
 
-        threading.Thread(target=task, daemon=True).start()
+        _MIKROTIK_EXECUTOR.submit(task)
 
     @staticmethod
     def get_all():
@@ -84,7 +96,7 @@ class MemberService:
         return MemberRepository.get_all()
 
     @staticmethod
-    def get_paginated_members(search_query=None, page=1, per_page=5, grup_id=None, sort_by="grup_id", order="asc"):
+    def get_paginated_members(search_query=None, page=1, per_page=5, grup_id=None, sort_by="grup_id", order="asc", aktif_only=True):
         """Mengambil member dengan pagination, search filter, dan pengurutan."""
         grup_id_parsed = None
         if grup_id:
@@ -103,7 +115,8 @@ class MemberService:
             per_page,
             grup_id=grup_id_parsed,
             sort_by=sort_by,
-            order=order
+            order=order,
+            aktif_only=aktif_only
         )
         return {
             "members": [m.to_dict() for m in pagination.items],
@@ -112,15 +125,17 @@ class MemberService:
             "current_page": pagination.page,
             "per_page": pagination.per_page,
             "has_next": pagination.has_next,
-            "has_prev": pagination.has_prev
+            "has_prev": pagination.has_prev,
+            "grup_counts": {str(k): v for k, v in MemberRepository.counts_by_grup(search_query, aktif_only).items() if k is not None}
         }
 
     @staticmethod
     def get_by_id(member_id):
         """Mengambil satu member berdasarkan ID (404 jika tidak ditemukan)."""
         member = MemberRepository.get_by_id(member_id)
-        if member and member.cek_kadaluarsa():
-            db.session.commit()
+        if member:
+            member.cek_kadaluarsa()
+        # shortcut: expiry dipersist saat write berikutnya; scheduler boleh memanggil commit terpisah.
         return member
 
     @staticmethod
@@ -129,13 +144,16 @@ class MemberService:
         return MemberRepository.get_by_username(username)
 
     @staticmethod
+    @with_write_lock
     def create(data, operator="system"):
         """Buat akun member baru dengan validasi grup & username unik."""
         username = validate_username(data.get("username", ""), min_len=3, max_len=30, lowercase_only=True)
         if MemberRepository.find_by_username(username):
             raise ValueError("Username sudah ada")
 
-        password = validate_password(data.get("password", "123456"), min_len=4, max_len=16)
+        if not data.get("password"):
+            raise ValueError("Password wajib diisi")
+        password = validate_password(data["password"], min_len=4, max_len=16)
         nama_lengkap = validate_string_length(data.get("nama_lengkap", ""), min_len=0, max_len=100, field_name="Nama lengkap", required=False)
         no_hp = validate_phone_number(data.get("no_hp"))
         email = validate_email_format(data.get("email"))
@@ -173,6 +191,7 @@ class MemberService:
         return member
 
     @staticmethod
+    @with_write_lock
     def update(member_id, data, operator="system"):
         """Perbarui profil member (nama, email, grup)."""
         member = MemberRepository.get_by_id(member_id)
@@ -194,14 +213,17 @@ class MemberService:
         if "no_hp" in data:
             member.no_hp = validate_phone_number(data.get("no_hp"))
         
+        password = None
         # Update password jika disediakan
         if "password" in data and data["password"]:
             password = validate_password(data["password"], min_len=4, max_len=16)
             member.set_password(password)
-            # Sinkronisasi ke MikroTik hanya jika password berubah
-            MemberService._sync_mikrotik("update", member, password)
-        
+
         db.session.commit()
+
+        # Sinkronisasi ke MikroTik hanya jika password berubah, setelah data tersimpan
+        if password:
+            MemberService._sync_mikrotik("update", member, password)
         
         detail_member = {
             "username": member.username,
@@ -215,9 +237,47 @@ class MemberService:
         return member
 
     @staticmethod
-    def delete(member_id, operator="system"):
-        """Hapus member secara permanen (Hanya jika tidak sedang main)."""
+    @with_write_lock
+    def archive(member_id, operator="system"):
+        """Nonaktifkan member tanpa menghapus riwayat sesi/transaksi."""
         member = MemberRepository.get_by_id(member_id)
+        if not member:
+            raise ValueError("Member tidak ditemukan")
+        if SesiRepository.get_aktif_by_member(member.id):
+            raise ValueError("Member sedang bermain, tidak bisa diarsipkan")
+        if not member.aktif:
+            return True
+        member.aktif = False
+        db.session.commit()
+        write_log("ARSIP_MEMBER", f"Member:{member.username} diarsipkan", user=operator,
+                  detail_json={"username": member.username, "member_id": member_id})
+        return True
+
+    @staticmethod
+    @with_write_lock
+    def restore(member_id, operator="system"):
+        """Pulihkan member dari arsip agar bisa bermain/menambah saldo lagi."""
+        member = MemberRepository.get_by_id(member_id)
+        if not member:
+            raise ValueError("Member tidak ditemukan")
+        if member.aktif:
+            raise ValueError("Member tidak dalam arsip")
+
+        member.aktif = True
+        db.session.commit()
+        write_log("RESTORE_MEMBER", f"Member:{member.username} dipulihkan dari arsip", user=operator,
+                  detail_json={"username": member.username, "member_id": member_id})
+        return True
+
+    @staticmethod
+    def delete(member_id, operator="system"):
+        """Hapus member permanen; riwayat sesi/transaksi dilepas, bukan dihapus."""
+        from app.models import Sesi, Transaksi
+        from app.services.write_lock import WRITE_LOCK
+
+        member = MemberRepository.get_by_id(member_id)
+        if not member:
+            raise ValueError("Member tidak ditemukan")
         if SesiRepository.get_aktif_by_member(member.id):
             raise ValueError("Member sedang bermain, tidak bisa dihapus")
         
@@ -238,8 +298,15 @@ class MemberService:
                 self.username = username
         dummy_member = DummyMember(username)
 
-        db.session.delete(member)
-        db.session.commit()
+        try:
+            with WRITE_LOCK:
+                Sesi.query.filter_by(member_id=member.id).update({"member_id": None}, synchronize_session=False)
+                Transaksi.query.filter_by(member_id=member.id).update({"member_id": None}, synchronize_session=False)
+                db.session.delete(member)
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
         
         write_log("DELETE_MEMBER", f"Member:{username} dihapus", user=operator, detail_json=detail_member)
         
@@ -257,15 +324,54 @@ class MemberService:
     @staticmethod
     def tambah_waktu(member_id, paket, operator="system", qty=1, metode_pembayaran="Tunai"):
         """Tambah waktu member & suntik Nota Transaksi (TM)."""
+        with WRITE_LOCK:
+            member, _transaksi, details = MemberService._tambah_waktu_locked(
+                member_id, paket, operator, qty, metode_pembayaran, commit=True
+            )
+            MemberService._write_topup_logs(member, details, operator)
+            return member
+
+    @staticmethod
+    def tambah_waktu_batch(member_id, selections, operator="system", metode_pembayaran="Tunai", client_request_id=None):
+        """Tambah beberapa paket sekaligus; satu commit, rollback penuh bila satu item gagal."""
+        if not idempotency.claim(client_request_id):
+            raise ValueError("Permintaan ini sudah diproses")
+        with WRITE_LOCK:
+            members = []
+            logs = []
+            try:
+                for paket, qty in selections:
+                    member, _transaksi, details = MemberService._tambah_waktu_locked(
+                        member_id, paket, operator, qty, metode_pembayaran, commit=False
+                    )
+                    members.append(member)
+                    logs.append(details)
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                raise
+            for member, details in zip(members, logs):
+                MemberService._write_topup_logs(member, details, operator)
+            return members[-1] if members else MemberRepository.get_by_id(member_id)
+
+    @staticmethod
+    def _write_topup_logs(member, topup_details, operator):
+        write_log("TAMBAH_WAKTU", f"Member:{member.username} | +{topup_details['durasi_menit']}m", user=operator, detail_json=topup_details)
+        write_log("TRANSAKSI", f"Nota:{topup_details['no_nota']} | Member:{member.username} | +{topup_details['durasi_menit']}m | Rp {topup_details['total_harga']}", user=operator, detail_json=topup_details)
+
+    @staticmethod
+    def _tambah_waktu_locked(member_id, paket, operator="system", qty=1, metode_pembayaran="Tunai", commit=True):
         qty = validate_integer_range(qty, 1, 100, field_name="Kuantitas paket")
-        metode_pembayaran = validate_choice(
-            metode_pembayaran or "Tunai",
-            ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
-            field_name="Metode pembayaran",
-            case_sensitive=False
-        )
+        metode_pembayaran = validate_payment_method(metode_pembayaran)
 
         member = MemberRepository.get_by_id(member_id)
+        if not member:
+            raise ValueError("Member tidak ditemukan")
+        if not paket:
+            raise ValueError("Paket tidak ditemukan")
+        if not paket.aktif:
+            raise ValueError("Paket tidak aktif")
+        member.cek_kadaluarsa()
         if SesiRepository.get_aktif_by_member(member.id):
             raise ValueError("Member sedang bermain. Gunakan tombol '+Waktu' di dashboard PC.")
         
@@ -288,7 +394,10 @@ class MemberService:
             operator=operator
         )
         db.session.add(transaksi)
-        db.session.commit()
+        if commit:
+            db.session.commit()
+        else:
+            db.session.flush()
         
         topup_details = {
             "username": member.username,
@@ -300,9 +409,7 @@ class MemberService:
             "no_nota": transaksi.no_nota,
             "metode_pembayaran": metode_pembayaran
         }
-        write_log("TAMBAH_WAKTU", f"Member:{member.username} | +{paket.durasi_menit * qty}m", user=operator, detail_json=topup_details)
-        write_log("TRANSAKSI", f"Nota:{transaksi.no_nota} | Member:{member.username} | +{paket.durasi_menit * qty}m | Rp {paket.harga * qty}", user=operator, detail_json=topup_details)
-        return member
+        return member, transaksi, topup_details
 
 
     # =========================================================================
@@ -313,13 +420,25 @@ class MemberService:
     @staticmethod
     def refund_paket(member_id, transaksi_id, operator="system"):
         """Batalkan pembelian paket & potong saldo waktu member."""
+        with WRITE_LOCK:
+            return MemberService._refund_paket_locked(member_id, transaksi_id, operator)
+
+    @staticmethod
+    def _refund_paket_locked(member_id, transaksi_id, operator="system"):
         member = MemberRepository.get_by_id(member_id)
+        if not member:
+            raise ValueError("Member tidak ditemukan")
 
         transaksi = TransaksiRepository.get_by_id(transaksi_id)
         if not transaksi or transaksi.member_id != member.id or transaksi.is_refunded:
             raise ValueError("Transaksi tidak valid atau sudah direfund")
 
+        # Saldo yang sudah lewat masa aktif tidak boleh direfund
+        member.cek_kadaluarsa()
+
         durasi = transaksi.menit or (transaksi.paket.durasi_menit if transaksi.paket else 0)
+        if durasi <= 0:
+            raise ValueError("Durasi paket tidak valid untuk refund")
         
         if member.waktu_tersimpan <= 0:
             raise ValueError("Saldo waktu member sudah habis. Paket tidak dapat direfund.")
@@ -327,10 +446,14 @@ class MemberService:
         kadaluarsa_hari = transaksi.paket.kadaluarsa_hari if transaksi.paket else 0
         
         sebelum = member.waktu_tersimpan
+        # Refund penuh nilai transaksi; saldo menit dipotong sebanyak durasi paket
         waktu_baru = max(0, sebelum - durasi)
+        refund_jumlah = -(transaksi.jumlah)
 
         member.waktu_tersimpan = waktu_baru
-        transaksi.is_refunded = True
+        if not TransaksiRepository.claim_refund(transaksi.id):
+            db.session.rollback()
+            raise ValueError("Transaksi tidak valid atau sudah direfund")
 
         # Sync dengan sesi aktif jika ada agar sisa waktu di PC langsung berkurang
         sesi = SesiRepository.get_aktif_by_member(member.id)
@@ -345,19 +468,20 @@ class MemberService:
         kadaluarsa_hari_total = kadaluarsa_hari * qty
         if kadaluarsa_hari_total > 0 and member.kadaluarsa_pada:
             kadaluarsa_baru = member.kadaluarsa_pada - timedelta(days=kadaluarsa_hari_total)
-            member.kadaluarsa_pada = kadaluarsa_baru if kadaluarsa_baru > now_local() else None
+            member.kadaluarsa_pada = max(kadaluarsa_baru, now_local())
 
         # INJECT NOTA REFUND TM
         transaksi_refund = Transaksi(
             member_id=member.id,
             paket_id=transaksi.paket_id,
             jenis="refund_paket",
-            jumlah=-(transaksi.jumlah),
+            jumlah=refund_jumlah,
             menit=-(durasi),
             keterangan=f"Refund paket '{transaksi.paket.nama if transaksi.paket else '?'}'",
             no_nota=TransaksiService.generate_nota(),
             user_id=TransaksiService.get_user_id(operator),
-            operator=operator
+            operator=operator,
+            metode_pembayaran=transaksi.metode_pembayaran or "Tunai"
         )
         db.session.add(transaksi_refund)
         db.session.commit()
@@ -399,8 +523,8 @@ class MemberService:
             return []
             
         # Update status kadaluarsa sebelum hitung saldo untuk refund
-        if member.cek_kadaluarsa():
-            db.session.commit()
+        member.cek_kadaluarsa()
+        # shortcut: expiry dipersist saat write berikutnya; jalur baca tidak commit.
             
         transaksi_list = TransaksiRepository.get_riwayat_paket_member(member_id)
         result = []

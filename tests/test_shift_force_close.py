@@ -63,3 +63,20 @@ def test_admin_force_close_shift(force_close_ctx):
     saved2 = ShiftRecord.query.get(shift2.id)
     assert saved2.status == "SELESAI"
     assert "Kasir pulang darurat" in saved2.catatan
+
+def test_force_close_gagal_summary_tidak_setengah_tersimpan(force_close_ctx, monkeypatch):
+    _, kasir, _, _ = force_close_ctx
+    shift = ShiftService.start_shift("kasir_fc", modal_awal=50000, operator="kasir_fc")
+
+    def gagal_summary(shift_id):
+        raise RuntimeError("summary gagal")
+
+    monkeypatch.setattr(ShiftService, "get_shift_summary", gagal_summary)
+
+    with pytest.raises(RuntimeError, match="summary gagal"):
+        ShiftService.force_close_shift(shift.id, admin_username="admin_fc")
+
+    db.session.expire_all()
+    saved = db.session.get(ShiftRecord, shift.id)
+    assert saved.status == "AKTIF"
+    assert saved.waktu_selesai is None

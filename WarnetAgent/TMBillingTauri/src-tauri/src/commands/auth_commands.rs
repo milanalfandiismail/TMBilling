@@ -38,7 +38,7 @@ pub async fn login_process(
 
                 // Jika login emergency offline (nama = SYSTEM atau status = system),
                 // set IS_EMERGENCY_MODE agar polling berjalan offline tanpa logout ke server
-                let is_emergency = res.nama.as_deref() == Some("SYSTEM") || res.status == "system";
+                let is_emergency = crate::utils::api::is_emergency_response(&res.status, res.nama.as_deref());
                 if is_emergency {
                     crate::state::IS_EMERGENCY_MODE.store(true, std::sync::atomic::Ordering::SeqCst);
                     // Notify server (opsional, tetap sukses walau gagal)

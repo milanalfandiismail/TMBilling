@@ -12,15 +12,17 @@ from app.models import db, PC, MaintenanceTicket
 from app.utils.timezone_utils import format_display
 from app.utils.logger import write_log
 from app.utils.validators import validate_choice, validate_string_length, validate_integer_range
+from app.services.write_lock import with_write_lock
 
 class MaintenanceService:
 
     @staticmethod
+    @with_write_lock
     def create_ticket(pc_id, reporter, kategori, prioritas, judul, deskripsi=None):
         """Buat tiket masalah baru.
         - Jika prioritas KRITIS -> PC dinonaktifkan otomatis.
         """
-        pc = PC.query.get(pc_id)
+        pc = db.session.get(PC, pc_id)
         if not pc:
             raise ValueError(f"PC dengan ID {pc_id} tidak ditemukan.")
 
@@ -39,6 +41,9 @@ class MaintenanceService:
             status="BARU"
         )
 
+        if prioritas_valid == "KRITIS":
+            pc.aktif = False
+
         db.session.add(ticket)
         db.session.commit()
         
@@ -55,6 +60,7 @@ class MaintenanceService:
     @staticmethod
     def get_tickets(status=None, pc_id=None, grup=None, limit=50):
         """Ambil list tiket perawatan untuk Dashboard Perawatan PC."""
+        limit = validate_integer_range(limit, 1, 500, "Limit tiket")
         query = MaintenanceTicket.query
         if pc_id:
             query = query.filter_by(pc_id=pc_id)
@@ -69,11 +75,12 @@ class MaintenanceService:
         return [t.to_dict() for t in tickets]
 
     @staticmethod
+    @with_write_lock
     def update_status(ticket_id, status, resolved_by=None, resolusi=None, biaya=0):
         """Update status perbaikan tiket.
         - Jika status SELESAI -> re-enable PC otomatis.
         """
-        ticket = MaintenanceTicket.query.get(ticket_id)
+        ticket = db.session.get(MaintenanceTicket, ticket_id)
         if not ticket:
             raise ValueError(f"Tiket dengan ID {ticket_id} tidak ditemukan.")
 
@@ -88,6 +95,16 @@ class MaintenanceService:
             ticket.resolved_by = resolved_by
             ticket.resolusi = resolusi_valid
             ticket.biaya = biaya_valid
+            # PC hanya dihidupkan bila tidak ada tiket KRITIS lain yang masih terbuka.
+            if ticket.pc:
+                kritis_terbuka = MaintenanceTicket.query.filter(
+                    MaintenanceTicket.pc_id == ticket.pc_id,
+                    MaintenanceTicket.id != ticket.id,
+                    MaintenanceTicket.prioritas == "KRITIS",
+                    MaintenanceTicket.status.in_(["BARU", "DIPROSES"]),
+                ).first()
+                if not kritis_terbuka:
+                    ticket.pc.aktif = True
         elif status_valid == "DITOLAK":
             ticket.resolusi = resolusi_valid
 
@@ -103,62 +120,57 @@ class MaintenanceService:
         return ticket.to_dict()
 
     @staticmethod
-    def get_report_data(start_date=None, end_date=None, pc_id=None, grup=None, kategori=None):
-        """Data laporan keuangan & analisis kerusakan."""
+    def _report_query(start_date=None, end_date=None, pc_id=None, grup=None, kategori=None):
+        """Query dasar tiket SELESAI sesuai filter laporan."""
         query = MaintenanceTicket.query.filter_by(status="SELESAI")
-        
+
         from app.utils.timezone_utils import get_local_date_range_utc
 
         if start_date and end_date and start_date == end_date:
-            try:
-                start_utc, end_utc = get_local_date_range_utc(start_date)
-                query = query.filter(MaintenanceTicket.resolved_at >= start_utc, MaintenanceTicket.resolved_at < end_utc)
-            except Exception:
-                pass
+            start_utc, end_utc = get_local_date_range_utc(start_date)
+            query = query.filter(MaintenanceTicket.resolved_at >= start_utc, MaintenanceTicket.resolved_at < end_utc)
         else:
             if start_date:
-                try:
-                    start_utc, _ = get_local_date_range_utc(start_date)
-                    query = query.filter(MaintenanceTicket.resolved_at >= start_utc)
-                except Exception:
-                    pass
+                start_utc, _ = get_local_date_range_utc(start_date)
+                query = query.filter(MaintenanceTicket.resolved_at >= start_utc)
             if end_date:
-                try:
-                    _, end_utc = get_local_date_range_utc(end_date)
-                    query = query.filter(MaintenanceTicket.resolved_at < end_utc)
-                except Exception:
-                    pass
+                _, end_utc = get_local_date_range_utc(end_date)
+                query = query.filter(MaintenanceTicket.resolved_at < end_utc)
         if pc_id:
             query = query.filter_by(pc_id=pc_id)
         elif grup:
             from app.models.grup.grup import Grup
             query = query.join(PC).join(Grup).filter(Grup.nama == grup)
-            
         if kategori:
             query = query.filter_by(kategori=kategori)
+        return query
 
-        tickets = query.order_by(MaintenanceTicket.resolved_at.desc()).all()
+    @staticmethod
+    def get_report_data(start_date=None, end_date=None, pc_id=None, grup=None, kategori=None, page=1, per_page=5):
+        """Ringkasan global + satu halaman tiket agar riwayat besar tidak dimuat sekaligus."""
+        query = MaintenanceService._report_query(start_date, end_date, pc_id, grup, kategori)
 
-        total_biaya = sum(t.biaya for t in tickets)
-        total_kasus = len(tickets)
+        total_kasus = query.count()
+        total_biaya = int(query.with_entities(func.coalesce(func.sum(MaintenanceTicket.biaya), 0)).scalar() or 0)
         rata_rata_biaya = int(total_biaya / total_kasus) if total_kasus > 0 else 0
 
-        # Breakdown kategori
         breakdown = {"HARDWARE": 0, "SOFTWARE": 0, "JARINGAN": 0, "LAINNYA": 0}
-        for t in tickets:
-            if t.kategori in breakdown:
-                breakdown[t.kategori] += 1
-            else:
-                breakdown[t.kategori] = breakdown.get(t.kategori, 0) + 1
+        for kategori_nama, jumlah in query.with_entities(
+            MaintenanceTicket.kategori, func.count(MaintenanceTicket.id)
+        ).group_by(MaintenanceTicket.kategori).all():
+            breakdown[kategori_nama] = breakdown.get(kategori_nama, 0) + jumlah
 
-        # Top 5 PC paling sering rusak
-        pc_counts = {}
-        for t in tickets:
-            pc_kode = t.pc.kode if t.pc else "N/A"
-            pc_counts[pc_kode] = pc_counts.get(pc_kode, 0) + 1
-        
-        top_pcs = sorted(pc_counts.items(), key=lambda x: x[1], reverse=True)[:5]
-        top_pcs_list = [{"pc_kode": k, "jumlah": v} for k, v in top_pcs]
+        pc_ids = query.with_entities(MaintenanceTicket.pc_id).subquery()
+        top_rows = db.session.query(
+            func.coalesce(PC.kode, "N/A"), func.count()
+        ).select_from(pc_ids).outerjoin(PC, PC.id == pc_ids.c.pc_id).group_by(
+            func.coalesce(PC.kode, "N/A")
+        ).order_by(func.count().desc()).limit(5).all()
+
+        page = max(1, int(page or 1))
+        pages = max(1, -(-total_kasus // per_page))
+        tickets = query.order_by(MaintenanceTicket.resolved_at.desc()) \
+            .offset((page - 1) * per_page).limit(per_page).all()
 
         return {
             "list_tiket": [t.to_dict() for t in tickets],
@@ -166,17 +178,36 @@ class MaintenanceService:
             "total_kasus": total_kasus,
             "rata_rata_biaya": rata_rata_biaya,
             "breakdown_kategori": breakdown,
-            "pc_paling_sering_rusak": top_pcs_list
+            "pc_paling_sering_rusak": [{"pc_kode": k, "jumlah": v} for k, v in top_rows],
+            "pagination": {"page": page, "per_page": per_page, "total": total_kasus, "pages": pages},
         }
 
     @staticmethod
+    @with_write_lock
     def delete_ticket(ticket_id):
         """Hapus tiket perawatan."""
-        ticket = MaintenanceTicket.query.get(ticket_id)
+        ticket = db.session.get(MaintenanceTicket, ticket_id)
         if not ticket:
             raise ValueError(f"Tiket dengan ID {ticket_id} tidak ditemukan.")
 
+        pc_id = ticket.pc_id
+        buka_kritis = ticket.prioritas == "KRITIS" and ticket.status in ("BARU", "DIPROSES")
+
         db.session.delete(ticket)
         db.session.commit()
+
+        # PC yang dinonaktifkan tiket KRITIS harus hidup lagi saat tiketnya dihapus.
+        if buka_kritis and pc_id:
+            kritis_lain = MaintenanceTicket.query.filter(
+                MaintenanceTicket.pc_id == pc_id,
+                MaintenanceTicket.prioritas == "KRITIS",
+                MaintenanceTicket.status.in_(["BARU", "DIPROSES"]),
+            ).first()
+            if not kritis_lain:
+                pc = db.session.get(PC, pc_id)
+                if pc:
+                    pc.aktif = True
+                    db.session.commit()
+
         write_log("HAPUS_TIKET", f"Tiket dihapus", user="system", detail_json={"ticket_id": ticket_id})
         return True

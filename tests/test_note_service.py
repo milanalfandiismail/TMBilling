@@ -191,4 +191,31 @@ def test_note_routes_unauthenticated(client):
     # Without session, should return 401
     res = client.get('/api/v1/kasir/notes')
     assert res.status_code == 401
-    assert res.get_json()['success'] is False
+    assert "login" in res.get_json()['error'].lower()
+
+def test_note_routes_reject_stale_session_user(client):
+    # Sesi lama milik user yang sudah dihapus/nonaktif harus ditolak login_required.
+    with client.session_transaction() as sess:
+        sess["kasir_id"] = 987654321
+        sess["kasir_username"] = "user_hantu"
+        sess["kasir_role"] = "kasir"
+    res = client.get('/api/v1/kasir/notes')
+    assert res.status_code == 401
+
+def test_notes_dir_honors_env_override(tmp_path, monkeypatch):
+    # Sandbox E2E memakai override ini agar tidak menulis ke catatan produksi.
+    target = tmp_path / "sandbox-notes"
+    monkeypatch.setenv("TM_NOTES_DIR", str(target))
+    assert NoteService.get_notes_dir() == os.path.realpath(str(target))
+    assert target.is_dir()
+
+
+def test_toggle_pin_gagal_simpan_melempar_error(app):
+    note = NoteService.create_note("Catatan Gagal Pin", "isi catatan")
+    pinned_path = NoteService._get_pinned_file_path()
+    os.makedirs(pinned_path)
+    try:
+        with pytest.raises(OSError):
+            NoteService.toggle_pin(note["filename"])
+    finally:
+        shutil.rmtree(pinned_path, ignore_errors=True)

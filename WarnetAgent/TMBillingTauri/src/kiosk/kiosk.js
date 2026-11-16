@@ -13,9 +13,8 @@ export const Kiosk = {
     /**
      * Initialize kiosk mode
      */
-    async init() {
+    init() {
         this.bindEvents();
-        await this.loadWarnetConfig();
     },
 
     /**
@@ -162,52 +161,71 @@ export const Kiosk = {
             qrisBtn?.classList.remove('text-[#86868b]', 'font-medium');
             loginBtn?.classList.remove('bg-white/10', 'text-white', 'font-semibold');
             loginBtn?.classList.add('text-[#86868b]', 'font-medium');
+            // Sekali refresh saat tab dibuka, supaya QRIS baru langsung terlihat.
+            document.dispatchEvent(new CustomEvent('tm:refresh-config'));
         }
     },
 
     /**
-     * Load warnet configuration from backend
+     * Terapkan konfigurasi dari loop pusat di main.js (tanpa fetch sendiri).
      */
-    async loadWarnetConfig() {
-        try {
-            const config = await Api.getWarnetConfig();
-            console.log("Warnet config loaded:", config);
+    applyConfig(config) {
+        if (!config) return;
+        const json = JSON.stringify(config);
+        if (json === this._lastConfigJson) return;
+        this._lastConfigJson = json;
 
-            AppState.setWarnetConfig(config);
+        AppState.setWarnetConfig(config);
 
-            // 1. Render Title
-            if (config.title) {
-                const titleEl = document.getElementById('kiosk-title');
-                if (titleEl) titleEl.innerText = config.title;
-            }
-
-            // 2. Render QRIS
-            const qrisImg = document.getElementById('kiosk-qris-img');
-            if (qrisImg) {
-                if (config.qris_url) {
-                    qrisImg.src = config.qris_url;
-                } else {
-                    qrisImg.style.display = 'none';
-                    const wrapper = qrisImg.parentElement;
-                    if (wrapper) {
-                        wrapper.innerHTML = `<div class="text-4xl font-black text-neutral-500 font-mono">?</div><div class="text-[9px] text-neutral-500 uppercase tracking-widest mt-2 font-bold">Offline</div>`;
-                    }
-                }
-            }
-
-            // 3. Render Announcement (Rules - CKEditor HTML)
-            AppState.announcementHtml = (config.announcement || '').trim();
-            this.initRulesUI();
-
-            // 4. Render Packages & Menus
-            AppState.allPackages = config.paket || [];
-            AppState.allMenus = config.menu || [];
-            this.initPackagesUI();
-
-        } catch (err) {
-            console.error("Gagal memuat konfigurasi warnet (Offline state):", err);
-            this.renderOfflineState();
+        // 1. Render Title
+        if (config.title) {
+            const titleEl = document.getElementById('kiosk-title');
+            if (titleEl && titleEl.innerText !== config.title) titleEl.innerText = config.title;
         }
+
+        // 2. Render QRIS
+        const qrisImg = document.getElementById('kiosk-qris-img');
+        const qrisFallback = document.getElementById('kiosk-qris-fallback');
+        if (qrisImg) {
+            if (config.qris_url) {
+                if (qrisImg.getAttribute('src') !== config.qris_url) {
+                    qrisImg.onerror = () => this._showQrisUnavailable();
+                    qrisImg.src = config.qris_url;
+                }
+                qrisImg.style.display = '';
+                if (qrisFallback) qrisFallback.classList.add('hidden');
+            } else {
+                // Jangan pertahankan QRIS lama saat gambar gagal diunduh (risiko salah bayar).
+                this._showQrisUnavailable();
+            }
+        }
+
+        // 3. Render Announcement (Rules - CKEditor HTML)
+        const announcement = (config.announcement || '').trim();
+        if (announcement !== AppState.announcementHtml) {
+            AppState.announcementHtml = announcement;
+            this.initRulesUI();
+        }
+
+        // 4. Render Packages & Menus
+        AppState.allPackages = config.paket || [];
+        AppState.allMenus = config.menu || [];
+        this.initPackagesUI();
+    },
+
+    _showQrisUnavailable() {
+        const qrisImg = document.getElementById('kiosk-qris-img');
+        const qrisFallback = document.getElementById('kiosk-qris-fallback');
+        if (qrisImg) qrisImg.style.display = 'none';
+        if (qrisFallback) qrisFallback.classList.remove('hidden');
+    },
+
+    /**
+     * Tampilkan status offline hanya bila belum ada konfigurasi sama sekali.
+     */
+    showOfflineIfEmpty() {
+        if (this._lastConfigJson) return;
+        this.renderOfflineState();
     },
 
     /**
@@ -275,37 +293,49 @@ export const Kiosk = {
 
         // Extract distinct groups
         const groups = [...new Set(AppState.allPackages.map(p => p.grup || 'Reguler'))];
+        const signature = groups.join('\u0000');
 
-        // Render tabs
-        const tabsContainer = document.getElementById('paket-tabs');
-        if (tabsContainer) {
-            tabsContainer.innerHTML = groups.map((g, idx) => `
+        // Tabs hanya dibangun ulang bila daftar grup berubah (pilihan & halaman tetap).
+        if (signature !== this._groupsSignature) {
+            this._groupsSignature = signature;
+            const tabsContainer = document.getElementById('paket-tabs');
+            if (tabsContainer) {
+                tabsContainer.innerHTML = groups.map((g, idx) => `
                 <button class="paket-tab-btn px-3.5 py-1.5 bg-white/5 border border-white/10 text-xs lg:text-sm font-bold rounded-xl hover:bg-white/10 hover:border-white/20 transition-all text-neutral-400 hover:text-white whitespace-nowrap uppercase" data-group="${g}">
                     ${g.toUpperCase()}
                 </button>
             `).join('');
 
-            // Add click listeners
-            const tabBtns = tabsContainer.querySelectorAll('.paket-tab-btn');
-            tabBtns.forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    tabBtns.forEach(b => {
-                        b.classList.remove('bg-white/15', 'text-white', 'border-accent', 'shadow-sm');
-                        b.classList.add('bg-white/5', 'border-white/10', 'text-neutral-400');
+                // Add click listeners
+                const tabBtns = tabsContainer.querySelectorAll('.paket-tab-btn');
+                tabBtns.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        tabBtns.forEach(b => {
+                            b.classList.remove('bg-white/15', 'text-white', 'border-accent', 'shadow-sm');
+                            b.classList.add('bg-white/5', 'border-white/10', 'text-neutral-400');
+                        });
+                        btn.classList.add('bg-white/15', 'text-white', 'border-accent', 'shadow-sm');
+                        btn.classList.remove('bg-white/5', 'border-white/10', 'text-neutral-400');
+                        AppState.selectedGroup = btn.getAttribute('data-group');
+                        AppState.currentPackagePage = 1;
+                        this.renderPackages();
                     });
-                    btn.classList.add('bg-white/15', 'text-white', 'border-accent', 'shadow-sm');
-                    btn.classList.remove('bg-white/5', 'border-white/10', 'text-neutral-400');
-                    AppState.selectedGroup = btn.getAttribute('data-group');
-                    AppState.currentPackagePage = 1;
-                    this.renderPackages();
                 });
-            });
 
-            // Select first group by default
-            if (tabBtns.length > 0) {
-                tabBtns[0].click();
+                if (!groups.includes(AppState.selectedGroup)) {
+                    AppState.selectedGroup = groups[0];
+                    AppState.currentPackagePage = 1;
+                }
             }
         }
+
+        // Aktifkan tombol grup terpilih (tanpa reset halaman).
+        document.querySelectorAll('#paket-tabs .paket-tab-btn').forEach(btn => {
+            if (btn.getAttribute('data-group') === AppState.selectedGroup) {
+                btn.classList.add('bg-white/15', 'text-white', 'border-accent', 'shadow-sm');
+                btn.classList.remove('bg-white/5', 'border-white/10', 'text-neutral-400');
+            }
+        });
 
         // Setup pagination button listeners
         const prevBtn = document.getElementById('paket-prev-btn');
@@ -329,6 +359,8 @@ export const Kiosk = {
             });
             nextBtn.hasListener = true;
         }
+
+        this.renderPackages();
     },
 
     /**
@@ -338,6 +370,10 @@ export const Kiosk = {
         const filtered = AppState.allPackages.filter(p => (p.grup || 'Reguler') === AppState.selectedGroup);
         const itemsPerPage = ITEMS_PER_PAGE;
         AppState.totalPackagePages = Math.ceil(filtered.length / itemsPerPage) || 1;
+        // Jaga halaman tetap valid setelah daftar paket berubah.
+        if (AppState.currentPackagePage > AppState.totalPackagePages) {
+            AppState.currentPackagePage = AppState.totalPackagePages;
+        }
 
         const startIdx = (AppState.currentPackagePage - 1) * itemsPerPage;
         const endIdx = startIdx + itemsPerPage;

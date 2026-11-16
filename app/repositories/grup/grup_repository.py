@@ -19,14 +19,17 @@ class GrupRepository:
     # Fokus: Mengambil data grup berdasarkan ID atau mengambil seluruh daftar.
 
     @staticmethod
-    def get_all():
+    def get_all(aktif_only=True):
         """Mengambil semua grup yang tersedia."""
-        return Grup.query.order_by(Grup.id.asc()).all()
+        query = Grup.query
+        if aktif_only:
+            query = query.filter_by(aktif=True)
+        return query.order_by(Grup.id.asc()).all()
 
     @staticmethod
     def get_by_id(id):
         """Mengambil grup berdasarkan ID (Primary Key)."""
-        return Grup.query.get(id)
+        return db.session.get(Grup, id)
 
 
     # =========================================================================

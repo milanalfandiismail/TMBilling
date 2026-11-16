@@ -82,26 +82,6 @@ def get_display_tz(tz_name=None):
         return ZoneInfo(DEFAULT_TZ)
 
 
-def ensure_utc(dt):
-    """Memastikan datetime dalam format UTC naive.
-    
-    Jika dt aware (ada tzinfo), konversi ke UTC lalu strip.
-    Jika dt naive, asumsikan sudah UTC (setelah migrasi berjalan).
-    Data existing (WIB) harus di-migrasi dulu lewat script terpisah.
-    
-    Args:
-        dt (datetime): Datetime yang akan di-ensure.
-    
-    Returns:
-        datetime: Naive datetime dalam UTC.
-    """
-    if dt is None:
-        return None
-    if dt.tzinfo is not None:
-        return dt.astimezone(UTC).replace(tzinfo=None)
-    return dt  # sudah UTC naive (data baru atau sudah di-migrasi)
-
-
 def display_in_tz(dt, tz_name=None):
     """Konversi UTC (naive) datetime ke timezone display.
     
@@ -136,6 +116,11 @@ def format_display(dt, tz_name=None, fmt="%d/%m/%Y %H:%M"):
     local = display_in_tz(dt, tz_name)
     tz_label = get_tz_short_name(tz_name)
     return f"{local.strftime(fmt)} {tz_label}"
+
+
+def format_local_now(fmt="%Y-%m-%d %H:%M:%S", tz_name=None):
+    """Jam sekarang dalam zona tampilan (tanpa label), untuk struk, log, dan nama berkas."""
+    return display_in_tz(now_utc(), tz_name).strftime(fmt)
 
 
 def get_tz_short_name(tz_name=None):
@@ -236,3 +221,11 @@ def convert_utc_datetimes_to_distinct_dates(utc_datetimes, tz_name=None):
         dates_set.add(local_dt.date().isoformat())
     return sorted(list(dates_set), reverse=True)
 
+
+def local_date_modifier(tz_name=None):
+    """Modifier SQLite untuk menggeser UTC ke tanggal lokal.
+
+    shortcut: zona DST tidak didukung, Indonesia tidak memakainya.
+    """
+    offset = get_display_tz(tz_name).utcoffset(datetime.now())
+    return f"{int(offset.total_seconds() // 3600):+d} hours"

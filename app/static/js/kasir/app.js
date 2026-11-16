@@ -21,25 +21,48 @@ const App = {
         // Dynamic interval heartbeat untuk Dashboard, Seluruh Tab, dan In-Place Modal Sync
         this.startDashboardPolling();
 
+        // Page Visibility API: kurangi frekuensi polling saat browser minimize / tab background (anti resource thrashing)
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                this.startDashboardPolling(10000); // 10 detik saat tab tersembunyi
+            } else {
+                this.startDashboardPolling(); // restore normal
+                if (this.currentTab === 'dash' || this.currentTab === 'dashboard') {
+                    if (typeof Dashboard !== 'undefined') Dashboard.load(true);
+                }
+            }
+        });
+
         // Session polling sudah di api.js (startSessionCheck)
     },
 
-    startDashboardPolling() {
+    startDashboardPolling(customInterval = null) {
         if (this._dashboardTimer) {
             clearInterval(this._dashboardTimer);
             this._dashboardTimer = null;
         }
-        const interval = (typeof Dashboard !== 'undefined' && Dashboard.getRefreshInterval) ? Dashboard.getRefreshInterval() : 1000;
-        this._dashboardTimer = setInterval(() => {
-            // 1. Shift sync (ikut ritme interval pilihan dashboard)
-            if (typeof Shift !== 'undefined') Shift.load(false);
+        const interval = customInterval || ((typeof Dashboard !== 'undefined' && Dashboard.getRefreshInterval) ? Dashboard.getRefreshInterval() : 1000);
+        let lastShiftCheck = 0;
+        let lastStaticCheck = 0;
 
-            // 2. Live Modal Sync (In-place update tanpa perlu keluar dari modal)
-            if (typeof DashboardDetailModal !== 'undefined' && DashboardDetailModal.syncLive) {
-                DashboardDetailModal.syncLive();
+        this._dashboardTimer = setInterval(() => {
+            const now = Date.now();
+
+            // 1. Shift sync: di-throttle ke 60 detik (instan saat aksi buka/tutup shift)
+            if (now - lastShiftCheck >= 60000) {
+                lastShiftCheck = now;
+                if (typeof Shift !== 'undefined') Shift.load(false);
             }
-            if (typeof TambahModal !== 'undefined' && TambahModal.syncLive) {
-                TambahModal.syncLive();
+
+            // 2. Tab-specific live polling:
+            // Tab live berjalan setiap tick (1-2s): dashboard, dash, monitor, server_statistic, screenshot
+            // Tab statis di-throttle ke 60 detik saat dibiarkan aktif
+            const isLiveTab = ['dashboard', 'dash', 'monitor', 'server_statistic', 'screenshot'].includes(this.currentTab);
+            if (!isLiveTab) {
+                if (now - lastStaticCheck < 60000) {
+                    return;
+                }
+                lastStaticCheck = now;
             }
 
             // 3. Tab-specific live polling (In-place & Silent, state-preserving across all tabs)
@@ -118,9 +141,6 @@ const App = {
                 case 'analytics':
                     if (typeof OwnerAnalytics !== 'undefined' && typeof OwnerAnalytics.refreshLive === 'function') OwnerAnalytics.refreshLive();
                     break;
-                case 'plugins':
-                    if (typeof PluginsModule !== 'undefined' && typeof PluginsModule.refreshLive === 'function') PluginsModule.refreshLive();
-                    break;
                 case 'mikrotik':
                     if (typeof MikrotikModule !== 'undefined' && typeof MikrotikModule.refreshLive === 'function') MikrotikModule.refreshLive();
                     break;
@@ -129,11 +149,6 @@ const App = {
                     break;
                 case 'server_statistic':
                     if (typeof ServerMonitor !== 'undefined' && typeof ServerMonitor.refreshLive === 'function') ServerMonitor.refreshLive();
-                    break;
-                case 'branch':
-                case 'branch_inbound':
-                case 'branch_kasir':
-                    if (typeof BranchManager !== 'undefined' && typeof BranchManager.refreshLive === 'function') BranchManager.refreshLive();
                     break;
                 case 'settings':
                 case 'settings_general':
@@ -168,6 +183,7 @@ const App = {
             const userInfo = document.getElementById('user-info');
             if (userInfo && result.username) {
                 const displayName = result.nama_lengkap || result.username;
+                // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
                 userInfo.innerHTML = `
                     <div class="w-9 h-9 rounded bg-neutral-100 flex items-center justify-center text-sm font-bold text-[#050505] shrink-0">
                         ${displayName.charAt(0).toUpperCase()}
@@ -219,10 +235,10 @@ const App = {
             'game', 'game_management',
             'user', 'shift_history', 'user_logs', 'log',
             'server_statistic', 'monitor', 'hardware_checker', 'uptime', 'maintenance', 'screenshot', 'remote_server',
-            'settings', 'settings_general', 'settings_branch', 'settings_payment', 'settings_kiosk', 'settings_tv', 
+            'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
             'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',
-            'mikrotik', 'analytics', 'plugins', 'plugin-spa', 'fileexplorer', 'branch', 'branch_inbound', 'branch_kasir'
+            'mikrotik', 'analytics'
         ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
             Toast.error('Akses Ditolak: Hanya untuk Admin!');
@@ -231,26 +247,6 @@ const App = {
             subTab = null;
         }
 
-        // Jika sedang mengontrol cabang remote, proteksi seluruh tab server lokal, staff, utilitas & pengaturan
-        if (typeof BranchManager !== 'undefined' && BranchManager.activeBranchId && BranchManager.activeBranchId !== '0') {
-            const remoteRestrictedTabs = [
-                'branch', 'branch_inbound', 'branch_kasir', 'fileexplorer', 'tutorials',
-                'user', 'shift_history', 'user_logs',
-                'hardware_checker', 'remote_server', 'catatan', 'blackout',
-                'mikrotik', 'log', 'plugins', 'plugin-spa',
-                'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv',
-                'whitelist_ip', 'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup',
-                'settings_db_cleanup', 'settings_scheduler', 'settings_migration'
-            ];
-            if (remoteRestrictedTabs.includes(tab) || mainTab === 'settings') {
-                if (window.Toast) {
-                    window.Toast.show('Menu ini hanya dapat dikonfigurasi pada Cabang Lokal', 'info');
-                }
-                tab = 'dash';
-                mainTab = 'dash';
-                subTab = null;
-            }
-        }
 
         document.querySelectorAll('.tab-btn').forEach(btn => {
             const onClick = btn.getAttribute('onclick') || '';
@@ -311,7 +307,7 @@ const App = {
     updatePageTitle(tab) {
         const titles = {
             dash: 'Dashboard', pc: 'Unit PC', paket: 'Paket', member: 'Member',
-            grup: 'Grup', game: 'Kelola Game & Aplikasi', game_management: 'Kelola Game & Aplikasi', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
+            grup: 'Grup', arsip: 'Data Diarsipkan', game: 'Kelola Game & Aplikasi', game_management: 'Kelola Game & Aplikasi', laporan: 'Laporan Omzet Billing', laporan_menu: 'Laporan Omzet Kantin / F&B', log: 'Log Aktivitas Sistem',
             monitor: 'Hardware Monitor', hardware_checker: 'Hardware Checker', maintenance: 'Perawatan PC', laporan_maintenance: 'Laporan Perawatan', blackout: 'Pemulihan Mati Lampu', screenshot: 'Screenshot Monitor',
             uptime: 'Uptime Tracker',
             user: 'Kelola User', shift_history: 'Riwayat Serah Terima Shift', user_logs: 'Log & Audit Staff', settings: 'Pengaturan', struk: 'Riwayat',
@@ -329,11 +325,7 @@ const App = {
             tutorials: 'Dokumentasi & Tutorial',
             analytics: 'Analytics Owner',
             plugins: 'Plugins & Ekstensi',
-            mikrotik: 'MikroTik Hotspot',
-            fileexplorer: 'File Explorer',
-            branch: 'Multi Cabang: Koneksi Cabang',
-            branch_inbound: 'Multi Cabang: List Koneksi Cabang',
-            branch_kasir: 'Multi Cabang: Akun Kasir Cabang'
+            mikrotik: 'MikroTik Hotspot'
         };
 
         const titleEl = document.getElementById('page-title');
@@ -347,6 +339,16 @@ const App = {
             Modal.close();
         }
         if (tab.startsWith('settings_') || tab === 'whitelist_ip') {
+            if (tab === 'settings_tv') {
+                if (typeof Settings !== 'undefined') {
+                    await Settings.load(true);
+                    Settings.switchSubTab('kiosk');
+                    if (typeof Settings.switchKioskPill === 'function') {
+                        Settings.switchKioskPill('tv');
+                    }
+                }
+                return;
+            }
             const sub = tab === 'whitelist_ip' ? 'whitelist_ip' : tab.replace('settings_', '');
             if (typeof Settings !== 'undefined') {
                 await Settings.load(true);
@@ -380,6 +382,7 @@ const App = {
             case 'uptime': if (typeof UptimeTracker !== 'undefined') await UptimeTracker.init(); break;
             case 'blackout': await Blackout.load(); break;
             case 'user': if (typeof User !== 'undefined') await User.load(); break;
+            case 'arsip': if (typeof Arsip !== 'undefined') await Arsip.load(); break;
             case 'shift_history':
                 if (typeof Shift !== 'undefined') {
                     await Shift.loadHistoryKasirList();
@@ -394,45 +397,15 @@ const App = {
             case 'tournament': if (typeof Tournament !== 'undefined') await Tournament.load(); break;
             case 'catatan': if (typeof Catatan !== 'undefined') await Catatan.loadNotes(); break;
             case 'analytics': if (typeof OwnerAnalytics !== 'undefined') await OwnerAnalytics.load(); break;
-            case 'plugins': if (typeof PluginsModule !== 'undefined') PluginsModule.init(); break;
             case 'mikrotik': if (typeof MikrotikModule !== 'undefined') MikrotikModule.init(); break;
             case 'tutorials': if (typeof Tutorials !== 'undefined') await Tutorials.load(); break;
-            case 'fileexplorer': if (typeof FileExplorer !== 'undefined') await FileExplorer.load(); break;
             case 'remote_server': if (typeof VNCClient !== 'undefined') await VNCClient.load(); break;
-            case 'branch':
-                if (typeof BranchManager !== 'undefined') {
-                    await BranchManager.loadMyBranchKey();
-                    await BranchManager.loadBranches();
-                    BranchManager.renderBranchesSettingsTable();
-                }
-                break;
-            case 'branch_inbound':
-                if (typeof BranchManager !== 'undefined') {
-                    await BranchManager.loadInboundBranches();
-                }
-                break;
-            case 'branch_kasir':
-                if (typeof BranchManager !== 'undefined') {
-                    await BranchManager.loadRemoteOperators();
-                }
-                break;
+
         }
     },
  
     showTab(tab) { this.switchTab(tab); },
 
-    openPluginSPA(url, title) {
-        this.switchTab('plugin-spa');
-        const iframe = document.getElementById('plugin-spa-iframe');
-        if (iframe) {
-            iframe.src = url;
-        } else {
-            console.error('[TMBilling Plugin] Element #plugin-spa-iframe not found!');
-        }
-        const titleEl = document.getElementById('page-title');
-        if (titleEl) titleEl.innerText = title;
-    },
- 
     async logout() {
         Modal.confirm('Yakin ingin logout?', async () => {
             try {
@@ -487,11 +460,8 @@ window.UptimeTracker = typeof UptimeTracker !== 'undefined' ? UptimeTracker : un
 window.Shift = typeof Shift !== 'undefined' ? Shift : undefined;
 window.Struk = typeof Struk !== 'undefined' ? Struk : undefined;
 window.Settings = typeof Settings !== 'undefined' ? Settings : undefined;
-window.PluginsModule = typeof PluginsModule !== 'undefined' ? PluginsModule : undefined;
 window.MikrotikModule = typeof MikrotikModule !== 'undefined' ? MikrotikModule : undefined;
 window.Tutorials = typeof Tutorials !== 'undefined' ? Tutorials : undefined;
-window.FileExplorer = typeof FileExplorer !== 'undefined' ? FileExplorer : undefined;
 window.VNCClient = typeof VNCClient !== 'undefined' ? VNCClient : undefined;
 window.VNCSession = typeof VNCSession !== 'undefined' ? VNCSession : undefined;
-window.BranchManager = typeof BranchManager !== 'undefined' ? BranchManager : undefined;
 window.Catatan = typeof Catatan !== 'undefined' ? Catatan : undefined;

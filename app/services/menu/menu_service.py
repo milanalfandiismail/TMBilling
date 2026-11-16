@@ -6,15 +6,30 @@ Modul ini mengelola CRUD katalog makanan/minuman dan proses checkout transaksi F
 """
 
 from datetime import datetime
+import secrets
 from app.models import db
 from app.models import MenuItem, TransaksiMenu, MenuStockLog
 from app.repositories import MenuRepository
 from app.repositories import UserRepository
+from app.services import idempotency
 from app.utils.logger import write_log
-from app.utils.validators import validate_string_length, validate_integer_range, validate_choice
+from app.utils.validators import validate_string_length, validate_integer_range, validate_choice, validate_payment_method
+from app.services.write_lock import with_write_lock
+
+GAMBAR_PATH_PREFIX = "/static/uploads/menu/"
+
 
 class MenuService:
     """Service class untuk memproses data Menu dan Transaksinya."""
+
+    @staticmethod
+    def _validate_gambar_path(path):
+        if path is None or str(path).strip() == "":
+            return None
+        nilai = str(path).strip()
+        if not nilai.startswith(GAMBAR_PATH_PREFIX):
+            raise ValueError("Path gambar menu tidak valid")
+        return nilai
 
     @staticmethod
     def get_all_menu():
@@ -22,11 +37,7 @@ class MenuService:
         return MenuRepository.get_all()
 
     @staticmethod
-    def get_menu_by_id(menu_id):
-        """Mengambil menu berdasarkan ID."""
-        return MenuRepository.get_by_id(menu_id)
-
-    @staticmethod
+    @with_write_lock
     def create_menu(data, operator="system"):
         """Membuat menu baru, atau me-restore menu arsip dengan nama yang sama.
 
@@ -35,6 +46,7 @@ class MenuService:
         histori transaksi lama tetap konsisten dan kasir tidak perlu
         'hapus permanen' dulu sebelum buat menu dengan nama sama.
         """
+        gambar_path = MenuService._validate_gambar_path(data.get("gambar_path"))
         try:
             nama = validate_string_length(data.get("nama", ""), min_len=2, max_len=100, field_name="Nama menu", required=True)
             harga = validate_integer_range(data.get("harga", 0), 0, 1_000_000_000, "Harga menu")
@@ -51,8 +63,8 @@ class MenuService:
                 archived_dup.is_active = True
                 archived_dup.harga = harga
                 archived_dup.stok = stok
-                if data.get("gambar_path"):
-                    archived_dup.gambar_path = data["gambar_path"]
+                if gambar_path:
+                    archived_dup.gambar_path = gambar_path
                 db.session.commit()
                 detail_restore = {
                     "nama": nama,
@@ -72,7 +84,7 @@ class MenuService:
                 nama=nama,
                 harga=harga,
                 stok=stok,
-                gambar_path=data.get("gambar_path")
+                gambar_path=gambar_path
             )
             MenuRepository.save(menu)
             db.session.commit()
@@ -106,10 +118,11 @@ class MenuService:
             filepath = os.path.join(root_dir, "static", "uploads", "menu", filename)
             if os.path.exists(filepath):
                 os.remove(filepath)
-        except Exception:
+        except Exception:  # noqa: silent - pembersihan best-effort; kegagalan tidak mengubah hasil operasi
             pass
 
     @staticmethod
+    @with_write_lock
     def update_menu(menu_id, data, operator="system"):
         """Mengupdate data menu di katalog."""
         try:
@@ -135,7 +148,7 @@ class MenuService:
             if "stok" in data:
                 menu.stok = validate_integer_range(data["stok"], -1, 1_000_000, "Stok menu")
             if "gambar_path" in data:
-                new_gambar = data["gambar_path"]
+                new_gambar = MenuService._validate_gambar_path(data["gambar_path"])
                 # Hapus file gambar lama jika gambar diubah atau dihapus (None / path berbeda)
                 if menu.gambar_path and menu.gambar_path != new_gambar:
                     MenuService._delete_image_file(menu.gambar_path)
@@ -155,6 +168,7 @@ class MenuService:
             raise e
 
     @staticmethod
+    @with_write_lock
     def tambah_stok(menu_id, jumlah_tambah, operator="system", catatan=None):
         """Menambahkan stok item menu dan mencatat log aktivitas audit secara rinci."""
         try:
@@ -245,14 +259,16 @@ class MenuService:
     def get_archived_menu():
         """Mengambil semua menu yang diarsipkan beserta jumlah transaksi historisnya."""
         menus = MenuRepository.get_archived()
+        counts = MenuRepository.count_transaksi_grouped()
         result = []
         for m in menus:
             data = m.to_dict()
-            data["transaksi_count"] = MenuRepository.count_transaksi_by_menu(m.id)
+            data["transaksi_count"] = counts.get(m.id, 0)
             result.append(data)
         return result
 
     @staticmethod
+    @with_write_lock
     def restore_menu(menu_id, operator="system"):
         """Memulihkan menu dari arsip kembali ke katalog aktif."""
         try:
@@ -286,6 +302,7 @@ class MenuService:
             raise e
 
     @staticmethod
+    @with_write_lock
     def delete_menu(menu_id, operator="system"):
         """Mengarsipkan menu dari katalog (soft-delete).
         
@@ -321,6 +338,7 @@ class MenuService:
             raise e
 
     @staticmethod
+    @with_write_lock
     def hard_delete_menu(menu_id, operator="system"):
         """Menghapus menu permanen BERSAMA seluruh transaksi F&B terkait.
 
@@ -358,21 +376,22 @@ class MenuService:
 
     @staticmethod
     def generate_nota_menu():
-        """Generate nomor nota transaksi menu unik dengan format TMM-YYYYMMDD-NNN."""
+        """Generate nomor nota transaksi menu unik dengan format TMM-YYYYMMDD-NNN-hex6."""
         from app.utils.timezone_utils import display_in_tz, now_utc
+        from app.models import TransaksiMenu
         today_local = display_in_tz(now_utc())
         date_str = today_local.strftime('%Y%m%d')
         prefix = f"TMM-{date_str}-"
         
-        # Cari total transaksi hari ini untuk penomoran
-        # Menggunakan pencarian prefix agar kebal terhadap isu timezone
-        count_today = MenuRepository.count_transactions_by_prefix(prefix)
-        new_num = count_today + 1
-        return f"{prefix}{str(new_num).zfill(3)}"
+        new_num = MenuRepository.get_max_nota_seq(date_str) + 1
+
+        return f"{prefix}{str(new_num).zfill(3)}-{secrets.token_hex(3)}"
 
     @staticmethod
-    def checkout_menu_order(cart_items, pc_kode, kasir_username, operator="system", tunai=0, kembalian=0, metode_pembayaran="Tunai"):
+    @with_write_lock
+    def checkout_menu_order(cart_items, pc_kode, kasir_username, operator="system", tunai=0, kembalian=0, metode_pembayaran="Tunai", client_request_id=None):
         """Memproses transaksi pembelian F&B terpisah dari billing PC."""
+        claimed = False
         try:
             if not cart_items or not isinstance(cart_items, list):
                 raise ValueError("Daftar belanjaan kosong atau tidak valid")
@@ -380,20 +399,12 @@ class MenuService:
             base_kasir_username = kasir_username.split(" (")[0].strip() if " (" in kasir_username else kasir_username
             kasir = UserRepository.get_by_username(base_kasir_username)
             if not kasir:
-                kasir = UserRepository.get_first_admin()
-            if not kasir:
                 raise ValueError("Kasir tidak valid")
 
             real_operator = operator if (operator and operator != "system") else kasir_username
 
-            from app.utils.timezone_utils import display_in_tz, now_utc
-            today_local = display_in_tz(now_utc())
-            date_str = today_local.strftime('%Y%m%d')
-            prefix = f"TMM-{date_str}-"
-            count_today = MenuRepository.count_transactions_by_prefix(prefix)
-            
             # Buat satu nomor nota untuk seluruh item dalam keranjang
-            no_nota = f"{prefix}{str(count_today + 1).zfill(3)}"
+            no_nota = MenuService.generate_nota_menu()
 
             # Hitung total belanja dan validasi item
             parsed_items = []
@@ -417,20 +428,20 @@ class MenuService:
             if not parsed_items:
                 raise ValueError("Daftar pesanan tidak boleh kosong")
 
-            metode_pembayaran = validate_choice(
-                metode_pembayaran or "Tunai",
-                ["Tunai", "QRIS", "Transfer", "Transfer Bank", "Deposit"],
-                field_name="Metode pembayaran",
-                case_sensitive=False
-            )
+            metode_pembayaran = validate_payment_method(metode_pembayaran)
 
             # Validasi Pembayaran Tunai
             tunai_val = validate_integer_range(tunai or 0, min_val=0, max_val=1_000_000_000, field_name="Uang tunai")
             kembalian_val = 0
-            if metode_pembayaran == "Tunai" and tunai_val > 0:
+            if metode_pembayaran == "Tunai":
                 if tunai_val < total_tagihan:
                     raise ValueError(f"Uang tunai (Rp {tunai_val:,}) kurang dari total tagihan (Rp {total_tagihan:,})".replace(",", "."))
                 kembalian_val = tunai_val - total_tagihan
+
+            # Klaim idempotensi setelah validasi: request yang ditolak tidak membakar kunci retry.
+            claimed = idempotency.claim(client_request_id)
+            if not claimed:
+                raise ValueError("Permintaan ini sudah diproses")
 
             transaksi_list = []
 
@@ -439,17 +450,17 @@ class MenuService:
                 jumlah = p_item["jumlah"]
                 subtotal = p_item["subtotal"]
 
-                # Kurangi stok jika tidak unlimited (stok >= 0)
-                if menu.stok >= 0:
-                    menu.stok -= jumlah
+                # Kurangi stok atomik; keputusan cukup/tidak ada di UPDATE ... WHERE stok >= jumlah
+                if not MenuRepository.decrement_stok_if_available(menu, jumlah):
+                    raise ValueError(f"Stok '{menu.nama}' tidak mencukupi")
 
                 transaksi = TransaksiMenu(
                     no_nota=no_nota,
-                    menu_id=menu.id,
+                    menu=menu,
                     jumlah=jumlah,
                     total_harga=subtotal,
                     pc_kode=pc_kode if pc_kode else None,
-                    kasir_id=kasir.id,
+                    kasir=kasir,
                     operator=real_operator,
                     tunai=tunai_val if tunai_val else None,
                     kembalian=kembalian_val if tunai_val else None,
@@ -458,10 +469,12 @@ class MenuService:
                 MenuRepository.save(transaksi)
                 transaksi_list.append(transaksi)
 
-            db.session.commit()
-            
-            for t in transaksi_list:
-                order_details = {
+            # Serialisasi sebelum commit: setelah commit objek expired dan setiap akses
+            # relasi memicu SELECT ulang per item.
+            db.session.flush()
+            hasil = [t.to_dict() for t in transaksi_list]
+            detail_log = [
+                {
                     "no_nota": no_nota,
                     "nama_menu": t.menu.nama,
                     "jumlah_qty": t.jumlah,
@@ -471,14 +484,21 @@ class MenuService:
                     "tunai": tunai_val if tunai_val else None,
                     "kembalian": kembalian_val if tunai_val else None
                 }
-                write_log("TRANSAKSI_MENU", f"Penjualan {t.menu.nama} x{t.jumlah} (Total: Rp{t.total_harga:,}) sukses via {no_nota}", user=operator, detail_json=order_details)
+                for t in transaksi_list
+            ]
 
-            return [t.to_dict() for t in transaksi_list]
+            db.session.commit()
+
+            # Setelah commit objek expired: pesan log disusun dari detail, bukan dari atribut ORM.
+            for detail in detail_log:
+                write_log("TRANSAKSI_MENU", f"Penjualan {detail['nama_menu']} x{detail['jumlah_qty']} (Total: Rp{detail['total_harga']:,}) sukses via {no_nota}", user=operator, detail_json=detail)
+
+            return hasil
+
         except Exception as e:
             db.session.rollback()
+            # Hanya request pemegang kunci yang melepasnya; penolakan duplikat tidak.
+            if claimed:
+                idempotency.release(client_request_id)
             raise e
 
-    @staticmethod
-    def get_all_transactions():
-        """Mengambil seluruh riwayat transaksi menu."""
-        return MenuRepository.get_transaksi_all()

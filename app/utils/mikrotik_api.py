@@ -124,11 +124,17 @@ class MikroTikAPIClient:
             
         raise Exception(f"MikroTik Login failed: {res}")
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
     def close(self):
         if self.sock:
             try:
                 self.sock.close()
-            except Exception:
+            except Exception:  # noqa: silent - pembersihan best-effort; kegagalan tidak mengubah hasil operasi
                 pass
         self.sock = None
 

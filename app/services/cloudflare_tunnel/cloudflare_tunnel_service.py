@@ -23,6 +23,46 @@ class CloudflareTunnelService:
     BIN_PATH = os.path.join(BIN_DIR, "cloudflared.exe")
     DOWNLOAD_URL = "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
 
+    PID_PATH = os.path.join(BIN_DIR, "cloudflared.pid")
+
+    @classmethod
+    def _read_pid(cls):
+        try:
+            with open(cls.PID_PATH, "r", encoding="utf-8") as f:
+                return int(f.read().strip())
+        except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
+            return None
+
+    @classmethod
+    def _stop_pid(cls, pid):
+        """Hentikan cloudflared sisa restart; abaikan PID yang sudah dipakai proses lain."""
+        if not pid or os.name != "nt":
+            return
+        try:
+            hasil = subprocess.run(
+                ["tasklist", "/FI", f"PID eq {pid}", "/NH"],
+                capture_output=True, text=True, timeout=5,
+            ).stdout
+        except Exception as e:
+            logger.warning(f"Gagal memeriksa pid cloudflared {pid}: {e}")
+            return
+        if "cloudflared" not in hasil.lower():
+            return
+        try:
+            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True, timeout=5)
+            logger.info(f"[CloudflareTunnel] Proses cloudflared sisa (pid {pid}) dihentikan.")
+        except Exception as e:
+            logger.warning(f"Gagal menghentikan cloudflared pid {pid}: {e}")
+
+    @classmethod
+    def _cleanup_orphan(cls):
+        cls._stop_pid(cls._read_pid())
+        try:
+            os.remove(cls.PID_PATH)
+        except OSError:
+            pass
+
+
     @classmethod
     def ensure_binary(cls):
         """Memastikan bin/cloudflared.exe tersedia & utuh (>45MB). Jika terpotong/belum ada, unduh dari rilis resmi."""
@@ -34,7 +74,7 @@ class CloudflareTunnelService:
             logger.warning("[CloudflareTunnel] File cloudflared.exe terpotong/rusak. Mengunduh ulang...")
             try:
                 os.remove(cls.BIN_PATH)
-            except Exception:
+            except Exception:  # noqa: silent - pembersihan best-effort; kegagalan tidak mengubah hasil operasi
                 pass
 
         try:
@@ -50,7 +90,7 @@ class CloudflareTunnelService:
             }
 
             req = urllib.request.Request(cls.DOWNLOAD_URL, headers={'User-Agent': 'Mozilla/5.0'})
-            res = urllib.request.urlopen(req)
+            res = urllib.request.urlopen(req, timeout=30)
             total = int(res.headers.get('Content-Length', 0))
             cls._download_status["total_bytes"] = total
 
@@ -130,6 +170,7 @@ class CloudflareTunnelService:
             if cls._process is not None and cls._process.poll() is None:
                 return True, "Cloudflare Tunnel sudah berjalan"
 
+            cls._cleanup_orphan()
             token = SettingsService.get("cloudflare_tunnel_token", "").strip()
             if not token:
                 return False, "Cloudflare Tunnel Token belum dikonfigurasi"
@@ -173,21 +214,45 @@ class CloudflareTunnelService:
     def _do_start_process(cls, token):
         try:
             cmd = [cls.BIN_PATH, "tunnel", "--no-autoupdate", "run", "--token", token]
+            log_dir = os.path.join(os.path.dirname(cls.BIN_PATH), "logs")
+            os.makedirs(log_dir, exist_ok=True)
+            log_file_path = os.path.join(log_dir, "cloudflared.log")
+            if os.path.exists(log_file_path) and os.path.getsize(log_file_path) > 5 * 1024 * 1024:
+                try:
+                    old_log = log_file_path + ".old"
+                    if os.path.exists(old_log):
+                        os.remove(old_log)
+                    os.rename(log_file_path, old_log)
+                except Exception as rot_e:
+                    logger.warning(f"Gagal rotasi cloudflared.log: {rot_e}")
+
+            log_file = open(log_file_path, "a", encoding="utf-8")
             cls._process = subprocess.Popen(
                 cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stdout=log_file,
+                stderr=log_file,
                 creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0
             )
             import time
             time.sleep(1.0)
             if cls._process.poll() is not None:
-                _, err = cls._process.communicate()
-                err_str = err.decode('utf-8', errors='ignore').strip()
+                err_str = ""
+                try:
+                    with open(log_file_path, "r", encoding="utf-8", errors="ignore") as f:
+                        lines = f.readlines()
+                        err_str = "".join(lines[-15:]).strip()
+                except Exception:  # noqa: silent - berkas/state tidak terbaca -> nilai default; jalur utama tetap jalan
+                    pass
                 if "token is not valid" in err_str.lower() or "invalid tunnel token" in err_str.lower():
                     return False, "Token Cloudflare Tunnel tidak valid."
-                return False, f"Proses tunnel gagal start: {err_str}"
+                return False, f"Proses tunnel gagal start: {err_str or 'Unknown error'}"
             
+            try:
+                with open(cls.PID_PATH, "w", encoding="utf-8") as f:
+                    f.write(str(cls._process.pid))
+            except Exception as e:
+                logger.warning(f"Gagal menyimpan pid cloudflared: {e}")
+
             SettingsService.set("cloudflare_tunnel_enabled", "true")
             return True, "Cloudflare Tunnel berhasil dijalankan"
         except Exception as e:
@@ -198,6 +263,7 @@ class CloudflareTunnelService:
         """Menghentikan daemon cloudflared."""
         with cls._lock:
             SettingsService.set("cloudflare_tunnel_enabled", "false")
+            berhenti = False
             if cls._process is not None and cls._process.poll() is None:
                 try:
                     cls._process.terminate()
@@ -205,12 +271,13 @@ class CloudflareTunnelService:
                 except Exception:
                     try:
                         cls._process.kill()
-                    except Exception:
+                    except Exception:  # noqa: silent - pembersihan best-effort; kegagalan tidak mengubah hasil operasi
                         pass
-                cls._process = None
-                return True, "Cloudflare Tunnel dihentikan"
+                berhenti = True
             cls._process = None
-            return True, "Cloudflare Tunnel sudah nonaktif"
+            cls._cleanup_orphan()
+            pesan = "Cloudflare Tunnel dihentikan" if berhenti else "Cloudflare Tunnel sudah nonaktif"
+            return True, pesan
 
     @classmethod
     def init_app(cls, app):

@@ -21,7 +21,7 @@ class TournamentRepository:
     @staticmethod
     def get_by_id(t_id):
         """Ambil turnamen berdasarkan ID."""
-        return Turnamen.query.get(t_id)
+        return db.session.get(Turnamen, t_id)
 
     @staticmethod
     def get_by_nama(nama):
@@ -31,12 +31,12 @@ class TournamentRepository:
     @staticmethod
     def get_stage_by_id(stage_id):
         """Ambil stage/tahap turnamen berdasarkan ID."""
-        return TurnamenTahap.query.get(stage_id)
+        return db.session.get(TurnamenTahap, stage_id)
 
     @staticmethod
     def get_match_by_id(match_id):
         """Ambil match/pertandingan berdasarkan ID."""
-        return TurnamenMatch.query.get(match_id)
+        return db.session.get(TurnamenMatch, match_id)
 
     @staticmethod
     def get_matches_by_stage(stage_id):
@@ -46,11 +46,6 @@ class TournamentRepository:
         ).all()
 
     @staticmethod
-    def get_matches_by_stage_and_round(stage_id, round_number):
-        """Ambil match pada stage dan round tertentu."""
-        return TurnamenMatch.query.filter_by(tahap_id=stage_id, round_number=round_number).all()
-
-    @staticmethod
     def get_incomplete_matches_in_round(stage_id, round_number):
         """Ambil match yang belum ada pemenangnya pada round tertentu."""
         return TurnamenMatch.query.filter_by(
@@ -58,9 +53,12 @@ class TournamentRepository:
         ).filter(TurnamenMatch.pemenang_id.is_none()).all()
 
     @staticmethod
-    def get_teams_by_ids(team_ids):
-        """Ambil daftar tim berdasarkan ID."""
-        return TurnamenTim.query.filter(TurnamenTim.id.in_(team_ids)).all()
+    def get_teams_by_ids(team_ids, turnamen_id=None):
+        """Ambil daftar tim berdasarkan ID, opsional dibatasi ke satu turnamen."""
+        query = TurnamenTim.query.filter(TurnamenTim.id.in_(team_ids))
+        if turnamen_id is not None:
+            query = query.filter(TurnamenTim.turnamen_id == turnamen_id)
+        return query.all()
 
     @staticmethod
     def save(entity):

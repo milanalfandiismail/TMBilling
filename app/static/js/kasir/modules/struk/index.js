@@ -281,6 +281,7 @@ const Struk = {
             const pagContainer = document.getElementById('struk-pagination');
             if (pagContainer) {
                 if (res.pages > 1) {
+                    // xss-reviewed: hanya angka dan kelas CSS dari state internal
                     pagContainer.innerHTML = `
                         <div class="flex items-center justify-between py-1.5 px-2.5 bg-[#050505] border border-[#1c1c1c] rounded">
                             <button onclick="Struk.changePage(${res.page - 1})" class="px-2.5 py-1 bg-[#171717] border border-[#262626] hover:bg-neutral-100 hover:text-black text-neutral-300 text-xs font-bold rounded transition-colors ${!res.has_prev ? 'opacity-30 cursor-not-allowed' : ''}" ${!res.has_prev ? 'disabled' : ''}>&larr;</button>

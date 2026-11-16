@@ -5,6 +5,7 @@ Flow: path filter → token check → auth exemption → enabled check → IP ch
 """
 
 from flask import request, session as flask_session, redirect, jsonify
+import hmac
 from app.services.ip_whitelist.ip_whitelist_service import IpWhitelistService
 from app.utils.logger import write_log
 
@@ -30,7 +31,7 @@ def check_ip_whitelist():
     if IpWhitelistService.is_enabled():
         url_token = request.args.get('token', '')
         current_token = IpWhitelistService.get_token()
-        if url_token and url_token == current_token:
+        if url_token and current_token and hmac.compare_digest(url_token, current_token):
             flask_session['ip_wh_authenticated'] = True
             flask_session['ip_wh_token_version'] = IpWhitelistService.get_token_version()
             clean_url = request.base_url  # URL without ?token=...
@@ -46,14 +47,7 @@ def check_ip_whitelist():
        or request.path == '/api/v1/kasir/settings/uninstall-token/client':
         return None
 
-    auth_header = request.headers.get("Authorization", "")
-    if auth_header.startswith("Bearer "):
-        token = auth_header.split(" ", 1)[1].strip()
-        import secrets
-        from app.services.settings.settings_service import SettingsService
-        local_key = SettingsService.get_or_create_branch_api_key()
-        if local_key and secrets.compare_digest(token, local_key):
-            return None
+
 
     # =========================================================================
     # STEP 2: Whitelist OFF? Allow everything
@@ -62,10 +56,19 @@ def check_ip_whitelist():
         return None
 
     # =========================================================================
-    # STEP 3: Admin role or session authenticated via bypass token?
+    # STEP 3: Admin role (divalidasi ulang ke database) atau session bypass token?
     # =========================================================================
     if flask_session.get('kasir_role') == 'admin':
-        return None
+        from app.repositories import UserRepository
+        user = UserRepository.get_by_id(flask_session.get('kasir_id'))
+        if user and user.aktif and user.role == 'admin':
+            return None
+        if user and user.aktif:
+            # Role berubah setelah login: pakai role terbaru, jangan beri bypass admin.
+            flask_session['kasir_role'] = user.role
+        else:
+            flask_session.clear()
+            flask_session.modified = True
 
     auth_flag = flask_session.get('ip_wh_authenticated')
     token_ver = flask_session.get('ip_wh_token_version')

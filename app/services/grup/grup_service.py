@@ -1,4 +1,4 @@
-# app/services/grup_service.py
+﻿# app/services/grup_service.py
 
 """Service untuk manajemen grup/kategori.
 
@@ -8,8 +8,9 @@ penghapusan (tidak bisa hapus grup yang masih punya relasi).
 
 import re
 from app.models import db
-from app.models import Grup
+from app.models import Grup, Member, Paket, PC, Sesi
 from app.repositories import GrupRepository
+from app.services.write_lock import WRITE_LOCK, with_write_lock
 from app.utils.logger import write_log
 from app.utils.validators import validate_hex_color, validate_string_length
 
@@ -31,11 +32,50 @@ class GrupService:
         return cleaned
 
     @staticmethod
-    def get_all():
+    def get_all(aktif_only=True):
         """Ambil semua grup melalui repository."""
-        return GrupRepository.get_all()
+        return GrupRepository.get_all(aktif_only=aktif_only)
 
     @staticmethod
+    def archive(grup_id, operator="system"):
+        """Arsipkan grup beserta PC, paket, dan member miliknya."""
+        grup = GrupRepository.get_by_id(grup_id)
+        if not grup:
+            raise ValueError("Grup tidak ditemukan")
+        if not grup.aktif:
+            raise ValueError("Grup tidak dalam arsip")
+        with WRITE_LOCK:
+            sesi_aktif = Sesi.query.join(PC, Sesi.pc_id == PC.id).filter(
+                PC.grup_id == grup.id, Sesi.status == "aktif"
+            ).count()
+            if sesi_aktif:
+                raise ValueError("Masih ada sesi aktif di grup ini")
+            n_pc = PC.query.filter_by(grup_id=grup.id, aktif=True).update({"aktif": False})
+            n_paket = Paket.query.filter_by(grup_id=grup.id, aktif=True).update({"aktif": False})
+            n_member = Member.query.filter_by(grup_id=grup.id, aktif=True).update({"aktif": False})
+            grup.aktif = False
+            db.session.commit()
+        write_log("ARSIP_GRUP", f"Grup {grup.nama} diarsipkan", user=operator, detail_json={
+            "nama_grup": grup.nama, "pc": n_pc, "paket": n_paket, "member": n_member
+        })
+        return grup
+
+    @staticmethod
+    def restore(grup_id, operator="system"):
+        """Pulihkan grup dari arsip."""
+        grup = GrupRepository.get_by_id(grup_id)
+        if not grup:
+            raise ValueError("Grup tidak ditemukan")
+        if grup.aktif:
+            raise ValueError("Grup tidak dalam arsip")
+        with WRITE_LOCK:
+            grup.aktif = True
+            db.session.commit()
+        write_log("RESTORE_GRUP", f"Grup {grup.nama} dipulihkan dari arsip", user=operator, detail_json={"nama_grup": grup.nama})
+        return grup
+
+    @staticmethod
+    @with_write_lock
     def create(data, operator="system"):
         """Buat grup baru dengan validasi keunikan nama."""
         nama = GrupService._validate_nama_grup(data.get("nama", ""))
@@ -69,6 +109,7 @@ class GrupService:
     # Fokus: Menjamin integritas data dengan menolak penghapusan grup yang masih terikat.
 
     @staticmethod
+    @with_write_lock
     def delete(grup_id, operator="system"):
         """Hapus grup dengan validasi relasi (Member, PC, dan Paket)."""
         grup = GrupRepository.get_by_id(grup_id)
@@ -95,6 +136,7 @@ class GrupService:
         return True
 
     @staticmethod
+    @with_write_lock
     def update(grup_id, data, operator="system"):
         """Update data grup dengan validasi keunikan nama."""
         grup = GrupRepository.get_by_id(grup_id)

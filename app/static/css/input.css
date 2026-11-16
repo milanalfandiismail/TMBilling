@@ -1,8 +1,55 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss" source(none);
+@source "../../templates/**/*.html";
+@source "../js/**/*.js";
+@config "../../../tailwind.config.js";
 
 @layer base {
+    html {
+        color-scheme: dark;
+    }
+    * {
+        scrollbar-width: thin;
+        scrollbar-color: #333 transparent;
+    }
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: #0a0a0a;
+    }
+    ::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #4a4a4a;
+    }
+    ::-webkit-scrollbar-corner {
+        background: #0a0a0a;
+    }
+
+    /* Tailwind v4 defaults: border currentColor, no button cursor, placeholder 50% currentColor. */
+    *,
+    ::before,
+    ::after,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, #e5e7eb);
+    }
+    button:not(:disabled),
+    [role="button"]:not(:disabled) {
+        cursor: pointer;
+    }
+    ::placeholder {
+        color: var(--color-gray-400, #9ca3af);
+        opacity: 1;
+    }
+
+    body {
+        font-family: 'Segoe UI', Inter, -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
     /* Hide number input spinners globally across all browsers */
     input[type="number"]::-webkit-inner-spin-button,
     input[type="number"]::-webkit-outer-spin-button {
@@ -158,6 +205,13 @@
 }
 
 @layer components {
+    /* Semua tab non-dashboard memakai lebar konten yang sama dan terpusat. */
+    #main-scroll > .tab-content:not(#tab-dash) {
+        width: 100%;
+        max-width: 80rem;
+        margin-inline: auto;
+    }
+
     /* CKEditor 5 & Rich Content Styling */
     .ck-content ol, .prose ol {
         list-style-type: decimal !important;
@@ -312,20 +366,76 @@
 }
 
 /* =========================================================================
-   Global Remote Branch Read-Only Protection Rules (Root Level - Non-Purged)
+   Hardware Checker Table Fit (Desktop)
    ========================================================================= */
-[data-branch-mode="remote"] .remote-hide-action,
-body[data-branch-mode="remote"] .remote-hide-action {
-    display: none !important;
+/* Kolom yang disembunyikan tidak dihitung; total kolom terlihat = 100%. */
+@media (min-width: 1024px) {
+    #hardware-checker-container table {
+        table-layout: fixed;
+    }
+    #hardware-checker-container th,
+    #hardware-checker-container td {
+        min-width: 0;
+    }
+    #hardware-checker-container th:nth-child(1) { width: 18%; }
+    #hardware-checker-container th:nth-child(3) { width: 28%; }
+    #hardware-checker-container th:nth-child(7) { width: 11%; }
+    #hardware-checker-container th:nth-child(10) { width: 22%; }
+    #hardware-checker-container th:nth-child(11) { width: 21%; }
+}
+@media (min-width: 1536px) {
+    #hardware-checker-container th:nth-child(1) { width: 9%; }
+    #hardware-checker-container th:nth-child(2) { width: 9%; }
+    #hardware-checker-container th:nth-child(4) { width: 12%; }
+    #hardware-checker-container th:nth-child(5) { width: 13%; }
+    #hardware-checker-container th:nth-child(6) { width: 12%; }
+    #hardware-checker-container th:nth-child(8) { width: 8%; }
+    #hardware-checker-container th:nth-child(9) { width: 8%; }
+    #hardware-checker-container th:nth-child(10) { width: 13%; white-space: normal; }
+    #hardware-checker-container th:nth-child(11) { width: 16%; }
 }
 
-[data-branch-mode="remote"] .remote-readonly-disabled,
-body[data-branch-mode="remote"] .remote-readonly-disabled {
-    pointer-events: none !important;
-    opacity: 0.5 !important;
-    cursor: not-allowed !important;
+
+/* =========================================================================
+   Settings Kiosk CKEditor Internal Scroll Height Constraint (Responsive)
+   ========================================================================= */
+#kiosk-view-announcement .ck-editor__editable_inline {
+    min-height: 200px !important;
+    max-height: 280px !important;
+    overflow-y: auto !important;
 }
 
+@media (min-width: 768px) {
+    #kiosk-view-announcement .ck-editor__editable_inline {
+        min-height: 260px !important;
+        max-height: 360px !important;
+    }
+}
 
+@media (min-width: 1024px) {
+    #kiosk-view-announcement .ck-editor__editable_inline {
+        min-height: 320px !important;
+        max-height: 420px !important;
+    }
+}
 
+@media (min-width: 1280px) {
+    #kiosk-view-announcement .ck-editor__editable_inline {
+        min-height: 460px !important;
+        max-height: 560px !important;
+    }
+}
 
+@media (min-width: 1536px) {
+    #kiosk-view-announcement .ck-editor__editable_inline {
+        min-height: 540px !important;
+        max-height: 660px !important;
+    }
+}
+
+@media (min-height: 950px) and (min-width: 1280px) {
+    #kiosk-view-announcement .ck-editor__editable_inline {
+        min-height: 560px !important;
+        max-height: 680px !important;
+    }
+}

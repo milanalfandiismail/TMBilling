@@ -14,8 +14,11 @@ def get_public_games():
         tipe = request.args.get("tipe")
         q = request.args.get("q")
         if q: q = q.strip()
-            
-        games = GameService.get_all(aktif_only=True, category=category, tipe=tipe, search_query=q)
+        limit = request.args.get("limit", type=int)
+        offset = request.args.get("offset", type=int) or 0
+
+        games = GameService.get_all(aktif_only=True, category=category, tipe=tipe,
+                                    search_query=q, limit=limit, offset=offset)
         return jsonify({
             "success": True,
             "data": [g.to_dict() for g in games]

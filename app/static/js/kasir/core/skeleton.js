@@ -15,7 +15,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="skeleton-pc-card bg-[#141414] border border-transparent rounded-xl p-2 lg:p-2 xl:p-2.5 2xl:p-3 min-h-[96px] lg:min-h-[102px] xl:min-h-[108px] 2xl:min-h-[120px] flex flex-col justify-between animate-pulse select-none">
+                <div class="skeleton-pc-card bg-[#141414] border border-transparent rounded-xl p-2 lg:p-2 xl:p-2.5 2xl:p-3 min-h-[96px] lg:min-h-[102px] xl:min-h-[108px] 2xl:min-h-[120px] flex flex-col justify-between select-none">
                     <!-- Row 1: PC Code & Status Dot -->
                     <div class="flex items-center justify-between gap-2">
                         <div class="h-3.5 bg-[#262626] rounded w-12"></div>
@@ -47,7 +47,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between animate-pulse min-h-[220px]">
+                <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded-xl p-2 sm:p-2.5 flex flex-col justify-between min-h-[220px]">
                     <div class="w-full aspect-[4/3] rounded-lg border border-[#1f1f1f] bg-[#161616] mb-2 flex items-center justify-center">
                         <svg class="w-6 h-6 text-[#262626]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     </div>
@@ -75,7 +75,7 @@ const Skeleton = {
         let rowsHtml = '';
         for (let i = 0; i < count; i++) {
             rowsHtml += `
-                <tr class="animate-pulse">
+                <tr class="">
                     <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left">
                         <div class="flex items-center gap-2">
                             <div class="w-7 h-7 sm:w-8 sm:h-8 2xl:w-9 2xl:h-9 rounded bg-[#1c1c1c] shrink-0"></div>
@@ -139,7 +139,7 @@ const Skeleton = {
         let desktopHtml = '';
         for (let i = 0; i < rows; i++) {
             mobileHtml += `
-                <tr class="md:hidden animate-pulse border-b border-[#1c1c1c]">
+                <tr class="md:hidden border-b border-[#1c1c1c]">
                     <!-- Mobile: 3 Kolom Fluid -->
                     <td class="px-2 py-2">
                         <div class="h-2.5 bg-[#262626] rounded w-16 mb-1"></div>
@@ -155,7 +155,7 @@ const Skeleton = {
                 </tr>
             `;
             desktopHtml += `
-                <tr class="hidden md:table-row animate-pulse border-b border-[#1c1c1c]">
+                <tr class="hidden md:table-row border-b border-[#1c1c1c]">
                     <!-- Desktop: 8 Kolom Lengkap -->
                     <td class="px-2 py-2 font-mono text-center">
                         <div class="h-3 bg-[#1e1e1e] rounded w-6 mx-auto"></div>
@@ -198,7 +198,7 @@ const Skeleton = {
         let desktopHtml = '';
         for (let i = 0; i < rows; i++) {
             mobileHtml += `
-                <tr class="md:hidden animate-pulse border-b border-[#1c1c1c]">
+                <tr class="md:hidden border-b border-[#1c1c1c]">
                     <td class="px-2 py-2">
                         <div class="flex items-center gap-2">
                             <div class="w-8 h-11 bg-[#1e1e1e] rounded flex-shrink-0"></div>
@@ -218,7 +218,7 @@ const Skeleton = {
                 </tr>
             `;
             desktopHtml += `
-                <tr class="hidden md:table-row animate-pulse border-b border-[#1c1c1c]">
+                <tr class="hidden md:table-row border-b border-[#1c1c1c]">
                     <td class="px-2.5 py-2">
                         <div class="flex items-center gap-3">
                             <div class="w-8 h-11 bg-[#1e1e1e] rounded flex-shrink-0"></div>
@@ -254,7 +254,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="bg-[#0c0c0c] border border-[#262626] rounded p-4 relative animate-pulse">
+                <div class="bg-[#0c0c0c] border border-[#262626] rounded p-4 relative">
                     <div class="flex items-start gap-3">
                         <div class="w-10 h-10 rounded bg-[#171717] border border-[#262626] shrink-0"></div>
                         <div class="flex-1 min-w-0 space-y-2">
@@ -292,7 +292,7 @@ const Skeleton = {
         let rowsHtml = '';
         for (let r = 0; r < count; r++) {
             rowsHtml += `
-                <tr class="animate-pulse">
+                <tr class="">
                     <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-3 text-left">
                         <div class="h-3 2xl:h-4 bg-[#1e1e1e] rounded w-28 sm:w-36 2xl:w-48"></div>
                     </td>
@@ -340,7 +340,7 @@ const Skeleton = {
         let cardsHtml = '';
         for (let c = 0; c < count; c++) {
             cardsHtml += `
-                <div class="bg-[#0c0c0c] border border-[#262626] rounded p-2.5 sm:p-3 2xl:p-3.5 relative flex flex-col justify-between min-h-[82px] sm:min-h-[88px] 2xl:min-h-[98px] animate-pulse">
+                <div class="bg-[#0c0c0c] border border-[#262626] rounded p-2.5 sm:p-3 2xl:p-3.5 relative flex flex-col justify-between min-h-[82px] sm:min-h-[88px] 2xl:min-h-[98px]">
                     <div class="flex items-center justify-between gap-1.5">
                         <div class="flex items-center gap-1.5 flex-1">
                             <div class="w-3.5 h-3.5 bg-[#262626] rounded shrink-0"></div>
@@ -378,7 +378,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5 animate-pulse flex flex-col justify-between h-[180px]">
+                <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5 flex flex-col justify-between h-[180px]">
                     <div class="space-y-2">
                         <div class="flex justify-between items-center">
                             <div class="h-4 bg-[#262626] rounded w-36"></div>
@@ -402,7 +402,7 @@ const Skeleton = {
      */
     tournamentBracket() {
         return `
-            <div class="p-6 space-y-6 animate-pulse">
+            <div class="p-6 space-y-6">
                 <div class="flex gap-4 border-b border-[#1c1c1c] pb-3">
                     <div class="h-8 w-24 bg-[#202020] rounded-lg"></div>
                     <div class="h-8 w-24 bg-[#1a1a1a] rounded-lg"></div>
@@ -433,7 +433,7 @@ const Skeleton = {
      */
     laporanBilling(rows = 5) {
         let summaryCards = `
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2.5 animate-pulse">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2.5">
                 <div class="bg-[#111] border border-[#222] p-2.5 rounded-lg space-y-1.5">
                     <div class="h-2 bg-[#202020] rounded w-20"></div>
                     <div class="h-4 bg-[#262626] rounded w-24"></div>
@@ -456,7 +456,7 @@ const Skeleton = {
         let rowsHtml = '';
         for (let i = 0; i < rows; i++) {
             rowsHtml += `
-                <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-2.5 lg:p-0">
+                <tr class="border-b border-[#1c1c1c] flex flex-col lg:table-row p-2.5 lg:p-0">
                     <td class="px-3 xl:px-4 py-2 text-left"><div class="h-2.5 bg-[#1e1e1e] rounded w-20"></div></td>
                     <td class="px-3 xl:px-4 py-2 text-left"><div class="h-3 bg-[#262626] rounded w-24"></div></td>
                     <td class="px-3 xl:px-4 py-2 text-left"><div class="h-2.5 bg-[#202020] rounded w-16"></div></td>
@@ -472,7 +472,7 @@ const Skeleton = {
         return `
             ${summaryCards}
             <div class="space-y-2">
-                <div class="h-3.5 bg-[#202020] rounded w-36 mb-2 animate-pulse"></div>
+                <div class="h-3.5 bg-[#202020] rounded w-36 mb-2"></div>
                 <table class="w-full text-xs xl:text-sm block lg:table">
                     <thead class="hidden lg:table-header-group">
                         <tr class="border-b border-[#262626] text-neutral-400 text-[10px] xl:text-xs uppercase tracking-wider">
@@ -500,7 +500,7 @@ const Skeleton = {
      */
     laporanMenu(rows = 5) {
         let summaryCards = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2.5 animate-pulse">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2.5">
                 <div class="bg-[#111] border border-[#222] p-2.5 rounded-lg space-y-1.5">
                     <div class="h-2 bg-[#202020] rounded w-32"></div>
                     <div class="h-4 bg-[#262626] rounded w-36"></div>
@@ -515,7 +515,7 @@ const Skeleton = {
         let rowsHtml = '';
         for (let i = 0; i < rows; i++) {
             rowsHtml += `
-                <tr class="border-b border-[#1c1c1c] animate-pulse flex flex-col lg:table-row p-2.5 lg:p-0">
+                <tr class="border-b border-[#1c1c1c] flex flex-col lg:table-row p-2.5 lg:p-0">
                     <td class="px-3 xl:px-4 py-2 text-left"><div class="h-2.5 bg-[#1e1e1e] rounded w-20"></div></td>
                     <td class="px-3 xl:px-4 py-2 text-left"><div class="h-3 bg-[#262626] rounded w-24"></div></td>
                     <td class="px-3 xl:px-4 py-2 text-left"><div class="h-3 bg-[#262626] rounded w-32"></div></td>
@@ -562,7 +562,7 @@ const Skeleton = {
         let rowsHtml = '';
         for (let i = 0; i < rows; i++) {
             rowsHtml += `
-                <tr class="animate-pulse">
+                <tr class="">
                     <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center"><div class="h-3 bg-[#1e1e1e] rounded w-6 mx-auto"></div></td>
                     <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left"><div class="h-3.5 bg-[#262626] rounded w-28 sm:w-36"></div></td>
                     <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-36 sm:w-48"></div></td>
@@ -594,7 +594,7 @@ const Skeleton = {
         let rowsHtml = '';
         for (let i = 0; i < rows; i++) {
             rowsHtml += `
-                <tr class="animate-pulse">
+                <tr class="">
                     <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left"><div class="h-3.5 bg-[#262626] rounded w-28 sm:w-36"></div></td>
                     <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-center"><div class="h-3 bg-[#1e1e1e] rounded w-16 mx-auto"></div></td>
                     <td class="px-2.5 sm:px-3 2xl:px-4 py-2 2xl:py-2.5 text-left"><div class="h-3 bg-[#1e1e1e] rounded w-24"></div></td>
@@ -634,7 +634,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] rounded-lg overflow-hidden animate-pulse">
+                <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] rounded-lg overflow-hidden">
                     <div class="p-1.5 px-2 border-b border-[#1c1c1c] flex justify-between items-center bg-[#171717]">
                         <div class="h-3 bg-[#262626] rounded w-12"></div>
                         <div class="h-4 w-4 bg-[#202020] rounded"></div>
@@ -662,7 +662,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="p-3 bg-[#111] border border-[#1c1c1c] rounded-lg animate-pulse space-y-2">
+                <div class="p-3 bg-[#111] border border-[#1c1c1c] rounded-lg space-y-2">
                     <div class="flex justify-between items-center">
                         <div class="h-3.5 bg-[#262626] rounded w-32"></div>
                         <div class="h-2.5 bg-[#1e1e1e] rounded w-12"></div>
@@ -682,7 +682,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="p-2 sm:p-2.5 bg-[#111] border border-[#1c1c1c] rounded animate-pulse space-y-1.5">
+                <div class="p-2 sm:p-2.5 bg-[#111] border border-[#1c1c1c] rounded space-y-1.5">
                     <div class="flex justify-between items-center">
                         <div class="h-3 bg-[#262626] rounded w-20"></div>
                         <div class="h-3 bg-[#202020] rounded w-14"></div>
@@ -702,7 +702,7 @@ const Skeleton = {
      */
     strukThermal() {
         return `
-            <div class="max-w-[320px] mx-auto bg-[#0a0a0a] border border-[#222] p-5 rounded-lg animate-pulse space-y-3">
+            <div class="max-w-[320px] mx-auto bg-[#0a0a0a] border border-[#222] p-5 rounded-lg space-y-3">
                 <div class="flex flex-col items-center space-y-2 pb-3 border-b border-dashed border-[#222]">
                     <div class="h-4 bg-[#262626] rounded w-28"></div>
                     <div class="h-2.5 bg-[#1e1e1e] rounded w-36"></div>
@@ -728,7 +728,7 @@ const Skeleton = {
     tableRows(rows = 6, cols = 5) {
         let html = '';
         for (let r = 0; r < rows; r++) {
-            html += `<tr class="border-b border-[#1c1c1c] animate-pulse">`;
+            html += `<tr class="border-b border-[#1c1c1c]">`;
             for (let c = 0; c < cols; c++) {
                 const widthClass = (c === 0) ? 'w-20' : (c === cols - 1 ? 'w-16' : 'w-28');
                 html += `
@@ -750,7 +750,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <tr class="border-b border-[#1c1c1c] animate-pulse">
+                <tr class="border-b border-[#1c1c1c]">
                     <td class="px-2 sm:px-2.5 py-1 sm:py-1 2xl:py-1.5 text-left">
                         <div class="h-2.5 bg-[#202020] rounded w-6"></div>
                     </td>
@@ -789,7 +789,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="p-3 bg-[#111] border border-[#1c1c1c] rounded-lg animate-pulse flex items-center justify-between gap-4">
+                <div class="p-3 bg-[#111] border border-[#1c1c1c] rounded-lg flex items-center justify-between gap-4">
                     <div class="flex items-center gap-3">
                         <div class="h-4 bg-[#262626] rounded w-14"></div>
                         <div class="h-3 bg-[#202020] rounded w-28"></div>
@@ -812,7 +812,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5 animate-pulse space-y-3">
+                <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5 space-y-3">
                     <div class="h-3 bg-[#202020] rounded w-28"></div>
                     <div class="h-6 bg-[#262626] rounded w-36"></div>
                     <div class="h-2.5 bg-[#1a1a1a] rounded w-20"></div>
@@ -831,7 +831,7 @@ const Skeleton = {
      */
     modalTambahInfo() {
         return `
-            <div class="animate-pulse space-y-2">
+            <div class=" space-y-2">
                 <div class="h-3.5 bg-[#262626] rounded w-48 mx-auto"></div>
                 <div class="h-2.5 bg-[#202020] rounded w-32 mx-auto"></div>
             </div>
@@ -846,7 +846,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="p-3 bg-[#111] border border-[#222] rounded-lg animate-pulse flex items-center justify-between">
+                <div class="p-3 bg-[#111] border border-[#222] rounded-lg flex items-center justify-between">
                     <div class="space-y-1.5">
                         <div class="h-3 bg-[#262626] rounded w-24"></div>
                         <div class="h-2.5 bg-[#202020] rounded w-16"></div>
@@ -863,7 +863,7 @@ const Skeleton = {
      */
     hardwareDetailView() {
         return `
-            <div class="space-y-4 md:space-y-5 animate-pulse select-none">
+            <div class="space-y-4 md:space-y-5 select-none">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-5">
                     <div class="p-4 sm:p-5 bg-[#0c0c0c] border border-[#202020] rounded-xl space-y-3">
                         <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2.5">
@@ -905,7 +905,7 @@ const Skeleton = {
         let html = '';
         for (let i = 0; i < count; i++) {
             html += `
-                <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] rounded-lg overflow-hidden animate-pulse">
+                <div class="screenshot-card w-full h-full flex flex-col bg-[#121212] border border-[#1c1c1c] rounded-lg overflow-hidden">
                     <div class="p-1.5 px-2 border-b border-[#1c1c1c] flex justify-between items-center bg-[#171717]">
                         <div class="h-3 bg-[#262626] rounded w-12"></div>
                         <div class="h-3.5 w-3.5 bg-[#202020] rounded"></div>

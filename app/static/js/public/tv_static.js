@@ -426,6 +426,7 @@ class TVStaticSignage {
                 ? 'flex flex-col gap-2 content-start overflow-hidden' 
                 : `grid ${config.promoCols} gap-2 content-start overflow-hidden`;
 
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             container.innerHTML = `
                 <div class="${containerClass}">
                     ${page.items.map(p => {
@@ -595,6 +596,7 @@ class TVStaticSignage {
                 `;
             }).join('');
 
+            // xss-reviewed: HTML dihasilkan builder internal yang meng-escape nilai dinamis
             container.innerHTML = `
                 <div class="grid ${config.pcCols} gap-2.5 content-start overflow-hidden">
                     ${pcCardsHtml}
@@ -675,6 +677,7 @@ class TVStaticSignage {
                 ? 'flex flex-col gap-2 content-start overflow-hidden' 
                 : `grid ${config.kantinCols} gap-2 content-start overflow-hidden`;
 
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             container.innerHTML = `
                 <div class="${containerClass}">
                     ${page.items.map(item => {

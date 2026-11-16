@@ -46,7 +46,7 @@ def send_multipart_request(url, fields, files):
     req.add_header('Content-Type', f'multipart/form-data; boundary={boundary.decode("utf-8")}')
     req.add_header('User-Agent', 'TMBilling-Backup-Agent/1.0')
     
-    with urllib.request.urlopen(req) as res:
+    with urllib.request.urlopen(req, timeout=30) as res:
         return res.read().decode('utf-8')
 
 
@@ -171,7 +171,7 @@ class WebDAVProvider(BaseBackupProvider):
             if auth:
                 req.add_header('Authorization', auth)
                 
-            with urllib.request.urlopen(req) as res:
+            with urllib.request.urlopen(req, timeout=30) as res:
                 if res.status in (200, 201, 204):
                     self.cleanup()
                     return True
@@ -194,13 +194,13 @@ class WebDAVProvider(BaseBackupProvider):
             if auth:
                 req.add_header('Authorization', auth)
                 
-            with urllib.request.urlopen(req) as res:
+            with urllib.request.urlopen(req, timeout=30) as res:
                 if res.status in (200, 201, 204):
                     # Clean it up immediately
                     del_req = urllib.request.Request(test_url, method='DELETE')
                     if auth:
                         del_req.add_header('Authorization', auth)
-                    with urllib.request.urlopen(del_req):
+                    with urllib.request.urlopen(del_req, timeout=30):
                         pass
                     return True
             return False
@@ -220,7 +220,7 @@ class WebDAVProvider(BaseBackupProvider):
             if auth:
                 req.add_header('Authorization', auth)
                 
-            with urllib.request.urlopen(req) as res:
+            with urllib.request.urlopen(req, timeout=30) as res:
                 xml_data = res.read()
                 root = ET.fromstring(xml_data)
                 
@@ -252,7 +252,7 @@ class WebDAVProvider(BaseBackupProvider):
                         del_req = urllib.request.Request(delete_url, method='DELETE')
                         if auth:
                             del_req.add_header('Authorization', auth)
-                        with urllib.request.urlopen(del_req) as del_res:
+                        with urllib.request.urlopen(del_req, timeout=30) as del_res:
                             pass
         except Exception as e:
             print(f"[Backup] WebDAV cleanup error: {e}")
@@ -288,7 +288,7 @@ class GoogleDriveProvider(BaseBackupProvider):
             req = urllib.request.Request(url, data=data, method='POST')
             req.add_header('Content-Type', 'application/x-www-form-urlencoded')
             
-            with urllib.request.urlopen(req) as res:
+            with urllib.request.urlopen(req, timeout=30) as res:
                 res_data = json.loads(res.read().decode('utf-8'))
                 return res_data.get("access_token")
         except Exception as e:
@@ -330,7 +330,7 @@ class GoogleDriveProvider(BaseBackupProvider):
             req.add_header('Authorization', f'Bearer {access_token}')
             req.add_header('Content-Type', f'multipart/related; boundary={boundary}')
             
-            with urllib.request.urlopen(req) as res:
+            with urllib.request.urlopen(req, timeout=30) as res:
                 res_data = json.loads(res.read().decode('utf-8'))
                 if "id" in res_data:
                     self.cleanup(access_token=access_token)
@@ -349,7 +349,7 @@ class GoogleDriveProvider(BaseBackupProvider):
             url = "https://www.googleapis.com/oauth2/v3/userinfo"
             req = urllib.request.Request(url, method='GET')
             req.add_header('Authorization', f'Bearer {access_token}')
-            with urllib.request.urlopen(req) as res:
+            with urllib.request.urlopen(req, timeout=30) as res:
                 return res.status == 200
         except Exception as e:
             print(f"[Backup] GDrive test connection error: {e}")
@@ -369,7 +369,7 @@ class GoogleDriveProvider(BaseBackupProvider):
             req = urllib.request.Request(url, method='GET')
             req.add_header('Authorization', f'Bearer {access_token}')
             
-            with urllib.request.urlopen(req) as res:
+            with urllib.request.urlopen(req, timeout=30) as res:
                 data = json.loads(res.read().decode('utf-8'))
                 files = data.get("files", [])
                 
@@ -379,7 +379,7 @@ class GoogleDriveProvider(BaseBackupProvider):
                         del_url = f"https://www.googleapis.com/drive/v3/files/{file_id}"
                         del_req = urllib.request.Request(del_url, method='DELETE')
                         del_req.add_header('Authorization', f'Bearer {access_token}')
-                        with urllib.request.urlopen(del_req):
+                        with urllib.request.urlopen(del_req, timeout=30):
                             pass
         except Exception as e:
             print(f"[Backup] GDrive cleanup error: {e}")

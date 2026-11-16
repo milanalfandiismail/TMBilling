@@ -9,7 +9,7 @@ class TutorialRepository:
 
     @staticmethod
     def get_by_id(tutorial_id):
-        return SystemTutorial.query.get(tutorial_id)
+        return db.session.get(SystemTutorial, tutorial_id)
 
     @staticmethod
     def create(data):
@@ -26,7 +26,7 @@ class TutorialRepository:
 
     @staticmethod
     def update(tutorial_id, data):
-        t = SystemTutorial.query.get(tutorial_id)
+        t = db.session.get(SystemTutorial, tutorial_id)
         if not t:
             return None
         if "title" in data and data["title"] is not None:
@@ -44,7 +44,7 @@ class TutorialRepository:
 
     @staticmethod
     def delete(tutorial_id):
-        t = SystemTutorial.query.get(tutorial_id)
+        t = db.session.get(SystemTutorial, tutorial_id)
         if not t:
             return False
         db.session.delete(t)

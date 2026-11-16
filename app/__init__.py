@@ -12,9 +12,12 @@ Exports:
     create_app: Factory function untuk membuat instance Flask app.
 """
 
-from flask import Flask, current_app, redirect, render_template, request, g
+from flask import Flask, current_app, redirect, render_template, request, g, jsonify
 from flask_cors import CORS
 import os
+import hmac
+import secrets
+import string
 
 from flask_migrate import Migrate
 from flask_wtf import CSRFProtect
@@ -22,18 +25,25 @@ from app.models import db
 from app.config import Config
 
 class TMBillingCSRFProtect(CSRFProtect):
-    """Custom CSRFProtect yang membebaskan request server-to-server (Bearer API Key).
+    """Custom CSRFProtect yang memvalidasi header Bearer token (API Key).
     
-    Request API yang membawa header 'Authorization: Bearer ...' digunakan
-    untuk komunikasi multi-cabang antar server TMBilling dan diverifikasi
-    penuh oleh validasi API Key di middleware auth, sehingga tidak memerlukan
-    CSRF token browser session.
+    Hanya request dengan Bearer token yang valid dan cocok dengan API Key terdaftar
+    yang dibebaskan dari verifikasi CSRF cookie. Token palsu/acak akan tetap
+    menjalani verifikasi CSRF standar.
     """
-    def protect(self):
+    def protect(self, apply_exemptions=False):
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
-            return
-        super().protect()
+            token = auth_header[7:].strip()
+            if token:
+                try:
+                    from app.services.settings.settings_service import SettingsService
+                    client_api_key = SettingsService.get("client_api_key") or os.environ.get("CLIENT_API_KEY", "")
+                    if client_api_key and hmac.compare_digest(token, client_api_key):
+                        return
+                except Exception:  # noqa: silent - gagal evaluasi -> jalur aman (deny / CSRF standar) tetap diambil
+                    pass
+        super().protect(apply_exemptions=apply_exemptions)
 
 
 csrf = TMBillingCSRFProtect()
@@ -69,15 +79,14 @@ def _register_blueprints(app):
         game_kasir_api_bp,
         game_public_api_bp,
         server_monitor_bp,
-        plugin_api_bp,
         vnc_api_bp,
         maintenance_api_bp,
         uptime_api_bp,
         tv_public_api_bp,
+        health_api_bp,
         tutorial_api_bp,
-        fileexplorer_api_bp,
-        branch_api_bp,
-        notes_api_bp
+        notes_api_bp,
+        arsip_api_bp
     )
 
     # ==========================================
@@ -107,16 +116,14 @@ def _register_blueprints(app):
     app.register_blueprint(mikrotik_api_bp, url_prefix="/api/v1/kasir/mikrotik")
     app.register_blueprint(shift_api_bp, url_prefix="/api/v1/kasir/shift")
     app.register_blueprint(backup_api_bp, url_prefix="/api/v1/kasir/backup")
-    app.register_blueprint(plugin_api_bp, url_prefix="/api/v1/kasir/settings/plugins")
     app.register_blueprint(monitor_kasir_bp, url_prefix="/api/v1/kasir/monitor")
     app.register_blueprint(game_kasir_api_bp, url_prefix="/api/v1/kasir/game")
     app.register_blueprint(vnc_api_bp, url_prefix="/api/v1/kasir/vnc")
     app.register_blueprint(maintenance_api_bp, url_prefix="/api/v1/kasir/maintenance")
     app.register_blueprint(uptime_api_bp, url_prefix="/api/v1/kasir/uptime")
     app.register_blueprint(tutorial_api_bp, url_prefix="/api/v1/kasir/tutorials")
-    app.register_blueprint(fileexplorer_api_bp, url_prefix="/api/v1/kasir/fileexplorer")
-    app.register_blueprint(branch_api_bp, url_prefix="/api/v1/kasir/branch")
     app.register_blueprint(notes_api_bp, url_prefix="/api/v1/kasir/notes")
+    app.register_blueprint(arsip_api_bp, url_prefix="/api/v1/kasir/arsip")
 
     # ==========================================
     # 3. PUBLIC APIs (/api/v1/public/...)
@@ -126,6 +133,7 @@ def _register_blueprints(app):
     app.register_blueprint(monitor_api_bp, url_prefix="/api/v1/public/monitor")
     app.register_blueprint(game_public_api_bp, url_prefix="/api/v1/public/game")
     app.register_blueprint(tv_public_api_bp, url_prefix="/api/v1/public/tv")
+    app.register_blueprint(health_api_bp, url_prefix="/api")
     
     # ==========================================
     # 4. CSRF EXEMPTIONS (APIs using Tokens/Keys)
@@ -133,7 +141,6 @@ def _register_blueprints(app):
     csrf.exempt(client_api_bp)
     csrf.exempt(auth_api_bp)
     csrf.exempt(monitor_api_bp)
-    csrf.exempt(server_monitor_bp)
 
 def _register_public_routes(app):
     """Mendaftarkan route publik."""
@@ -183,22 +190,7 @@ def _register_public_routes(app):
     @app.route("/spesifikasi")
     def public_specs():
         """Render halaman grid spesifikasi hardware PC dinamis terkelompok per grup."""
-        import re
-        from app.models import Grup
-        groups = Grup.query.all()
-        
-        def extract_number(pc):
-            match = re.search(r'\d+', pc.kode)
-            return int(match.group()) if match else 0
-            
-        # Ambil grup yang memiliki PC terdaftar dan urutkan secara natural (TM-1, TM-2, ..., TM-10)
-        groups_with_pcs = []
-        for g in groups:
-            if len(g.pc_list) > 0:
-                g.sorted_pc_list = sorted(g.pc_list, key=extract_number)
-                groups_with_pcs.append(g)
-                
-        return render_template("public/specs/index.html", groups=groups_with_pcs)
+        return _render_public_specs_page()
 
     @app.route("/games")
     def public_games():
@@ -226,13 +218,7 @@ def _register_context_processors(app):
             title = SettingsService.get("warnet_title", "TMBilling")
         except Exception:
             title = "TMBilling"
-            
-        try:
-            from app.services.plugins.plugin_manager import PluginManager
-            plugin_menus = PluginManager.get_instance().get_active_menus()
-        except Exception:
-            plugin_menus = []
-            
+
         from app.utils.timezone_utils import format_display
         from app.config import Config
         raw_version = current_app.config.get("VERSION", Config.VERSION)
@@ -240,30 +226,25 @@ def _register_context_processors(app):
         v_cache = "".join(c for c in str(raw_version) if c.isdigit()) or Config.get_cache_version()
         return dict(
             warnet_title=title,
-            plugin_menus=plugin_menus,
             version=version_tag,
             app_version=raw_version,
             v_cache=v_cache,
             format_display=format_display
         )
 
-def _init_app_context(app):
-    """Inisialisasi yang membutuhkan app context (database, plugin, admin)."""
+def bootstrap_app_data(app):
+    """Seed data awal & admin. True bila skema sudah ada dan seed dijalankan."""
     with app.app_context():
-        db.create_all()
-        
-        # Load Plugins and their models/blueprints
-        try:
-            from app.services.plugins.plugin_manager import PluginManager
-            pm = PluginManager.get_instance()
-            pm.init_app(app)
-            # Second pass to create tables for plugin models
+        from sqlalchemy import inspect
+        # DB baru boleh dibuatkan skema; DB ber-Alembic hanya diubah lewat migrasi.
+        inspector = inspect(db.engine)
+        if not inspector.has_table("user") and not inspector.has_table("alembic_version"):
             db.create_all()
-            # Register plugin blueprints
-            pm.register_blueprints()
-        except Exception as e:
-            app.logger.error(f"Gagal memuat PluginManager: {e}")
-        
+            inspector = inspect(db.engine)
+        if not inspector.has_table("user"):
+            # Skema belum ada: biarkan init_db.py / run_migration.py yang menyiapkannya.
+            return False
+
         # Seed IP whitelist defaults (idempotent)
         try:
             from app.services import IpWhitelistService
@@ -285,105 +266,176 @@ def _init_app_context(app):
         except Exception as e:
             app.logger.warning(f"Gagal seed tutorial awal: {e}")
         
-        # Otomatis buat user admin default jika database kosong
+        # Otomatis buat user admin awal jika database kosong
         try:
             from app.models import User
             if User.query.count() == 0:
+                chars = string.ascii_letters + string.digits
+                tmp_pwd = "".join(secrets.choice(chars) for _ in range(12))
+
                 admin = User(
                     username="admin",
                     nama_lengkap="Administrator",
                     role="admin",
                     aktif=True
                 )
-                admin.set_password("admin123")
+                admin.set_password(tmp_pwd)
                 db.session.add(admin)
                 db.session.commit()
-                print("[OK] [TMBilling] Database kosong. Admin default otomatis dibuat (username: admin, password: admin123)")
+
+                is_testing = app.config.get("TESTING") or os.environ.get("FLASK_ENV") == "testing"
+                project_root = app.config.get("PROJECT_ROOT")
+                if project_root or not is_testing:
+                    try:
+                        target_root = project_root or os.path.abspath(os.path.join(app.root_path, ".."))
+                        info_path = os.path.join(target_root, "initial_admin.txt")
+                        with open(info_path, "w", encoding="utf-8") as f:
+                            f.write("=== TMBILLING INITIAL SUPERADMIN CREDENTIALS ===\n")
+                            f.write("Username: admin\n")
+                            f.write(f"Password: {tmp_pwd}\n")
+                            f.write("CATATAN: Harap segera login dan ubah password ini di Dashboard Kasir.\n")
+                            f.write("Berkas ini dapat Anda hapus setelah berhasil login.\n")
+                        print(f"[PENTING] [TMBilling] Admin awal dibuat. Username: admin | Password sementara: {tmp_pwd}")
+                        print(f"[PENTING] Kredensial telah disimpan di: {info_path}")
+                    except Exception as io_err:
+                        app.logger.warning(f"Gagal mencatat initial_admin.txt: {io_err}")
         except Exception as e:
             app.logger.error(f"Gagal membuat admin default saat bootstrap: {e}")
 
-        # Self-healing bootstrap & schema auto-migration (Non-destructive)
-        try:
-            from sqlalchemy import inspect, text
-            inspector = inspect(db.engine)
-            if not inspector.has_table('cabang'):
-                from app.models.branch import Branch
-                Branch.__table__.create(db.engine)
-                app.logger.info("[OK] [TMBilling] Tabel 'cabang' berhasil dibuat secara otomatis.")
+        return True
 
-            # Auto-migration v1.6.2: User kuota benefit columns
-            if inspector.has_table('user'):
-                user_cols = [c['name'] for c in inspector.get_columns('user')]
-                with db.engine.connect() as conn:
-                    if 'kuota_main_bulanan' not in user_cols:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN kuota_main_bulanan INTEGER DEFAULT 0"))
-                    if 'sisa_kuota_menit' not in user_cols:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN sisa_kuota_menit INTEGER DEFAULT 0"))
-                    if 'terakhir_reset_kuota' not in user_cols:
-                        conn.execute(text("ALTER TABLE user ADD COLUMN terakhir_reset_kuota VARCHAR(7)"))
-                    conn.commit()
 
-            # Auto-migration v1.6.2: Sesi user_id, kolom AFK, dan sesi_asal_id
-            if inspector.has_table('sesi'):
-                sesi_cols = [c['name'] for c in inspector.get_columns('sesi')]
-                with db.engine.connect() as conn:
-                    if 'user_id' not in sesi_cols:
-                        conn.execute(text("ALTER TABLE sesi ADD COLUMN user_id INTEGER REFERENCES user(id)"))
-                    if 'is_afk' not in sesi_cols:
-                        conn.execute(text("ALTER TABLE sesi ADD COLUMN is_afk BOOLEAN DEFAULT 0"))
-                    if 'afk_pin' not in sesi_cols:
-                        conn.execute(text("ALTER TABLE sesi ADD COLUMN afk_pin VARCHAR(100)"))
-                    if 'afk_sejak' not in sesi_cols:
-                        conn.execute(text("ALTER TABLE sesi ADD COLUMN afk_sejak DATETIME"))
-                    if 'sesi_asal_id' not in sesi_cols:
-                        conn.execute(text("ALTER TABLE sesi ADD COLUMN sesi_asal_id INTEGER REFERENCES sesi(id)"))
-                    conn.commit()
+def _install_bootstrap_guard(app):
+    """Bootstrap data saat skema pertama kali tersedia (mis. test membuat tabel setelah factory)."""
 
-            # Auto-migration v1.6.2: ShiftRecord catatan, total_qris, total_refund columns
-            if inspector.has_table('shift_record'):
-                shift_cols = [c['name'] for c in inspector.get_columns('shift_record')]
-                with db.engine.connect() as conn:
-                    if 'catatan' not in shift_cols:
-                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN catatan VARCHAR(255)"))
-                    if 'total_qris' not in shift_cols:
-                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_qris INTEGER DEFAULT 0"))
-                    if 'total_refund' not in shift_cols:
-                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN total_refund INTEGER DEFAULT 0"))
-                    if 'detail_metode_json' not in shift_cols:
-                        conn.execute(text("ALTER TABLE shift_record ADD COLUMN detail_metode_json TEXT"))
-                    conn.commit()
+    @app.before_request
+    def _ensure_app_bootstrapped():
+        if app.config.get("_BOOTSTRAP_DONE"):
+            return None
+        if bootstrap_app_data(app):
+            app.config["_BOOTSTRAP_DONE"] = True
+        return None
 
-            # Auto-migration v1.6.2: Tabel menu_stock_log
-            if not inspector.has_table('menu_stock_log'):
-                from app.models.menu.menu import MenuStockLog
-                MenuStockLog.__table__.create(db.engine)
-                app.logger.info("[OK] [TMBilling] Tabel 'menu_stock_log' berhasil dibuat secara otomatis.")
-        except Exception as e:
-            app.logger.warning(f"Pengecekan bootstrap skema database: {e}")
+def _render_public_specs_page():
+    """Render halaman /spesifikasi dengan cache 5 detik."""
+    import json
+    import re
+    import time
+    from app.models import Grup, PC
+    from app.services.cache.client_state_store import OnlineStatusStore
+    from sqlalchemy.orm import joinedload, selectinload
 
-def create_app():
+    cache = current_app.config.setdefault("_SPECS_CACHE", {"body": None, "expires": 0.0})
+    now = time.monotonic()
+    if cache["body"] is not None and now < cache["expires"]:
+        return cache["body"]
+
+    groups = (
+        Grup.query
+        .options(
+            selectinload(Grup.pc_list).joinedload(PC.hardware),
+        )
+        .all()
+    )
+
+    def extract_number(pc):
+        match = re.search(r"\d+", pc.kode)
+        return int(match.group()) if match else 0
+
+    # Ambil grup yang memiliki PC terdaftar dan urutkan secara natural (TM-1, TM-2, ..., TM-10)
+    groups_with_pcs = []
+    specs_catalog = {}
+
+    for g in groups:
+        active_pcs = [pc for pc in g.pc_list if pc.aktif]
+        if active_pcs:
+            g.sorted_pc_list = sorted(active_pcs, key=extract_number)
+            groups_with_pcs.append(g)
+
+            for pc in g.sorted_pc_list:
+                hw = pc.hardware
+                baseline = {}
+                if hw and hw.hardware_baseline:
+                    try:
+                        baseline = json.loads(hw.hardware_baseline) if isinstance(hw.hardware_baseline, str) else hw.hardware_baseline
+                    except Exception:
+                        baseline = {}
+
+                specs_catalog[pc.kode] = {
+                    "kode": pc.kode,
+                    "grup": {
+                        "nama": g.nama,
+                        "warna": g.warna or "#3b82f6",
+                    },
+                    "online": OnlineStatusStore.is_online(pc.id, 45),
+                    "cpu": {
+                        "name": hw.cpu_name if (hw and hw.cpu_name) else "Belum Terkumpul",
+                        "cores": baseline.get("cpu", {}).get("cores", None) if isinstance(baseline.get("cpu"), dict) else None,
+                    },
+                    "gpu": {
+                        "name": hw.gpu_name if (hw and hw.gpu_name) else "Belum Terkumpul",
+                    },
+                    "ram": {
+                        "total": hw.total_ram if (hw and hw.total_ram) else "Belum Terkumpul",
+                        "sticks": baseline.get("ram_sticks", []) if isinstance(baseline.get("ram_sticks"), list) else [],
+                    },
+                }
+
+    body = render_template(
+        "public/specs/index.html",
+        groups=groups_with_pcs,
+        specs_catalog_json=json.dumps(specs_catalog).replace("<", "\\u003c"),
+    )
+    cache["body"] = body
+    cache["expires"] = now + 5.0
+    return body
+
+def create_app(config_override=None):
     """Membuat dan mengkonfigurasi instance aplikasi Flask.
     
     Factory pattern digunakan agar aplikasi bisa diinstansiasi
     beberapa kali dengan konfigurasi berbeda (contoh: testing).
     
+    Args:
+        config_override (dict, optional): Dictionary konfigurasi untuk menimpa nilai default.
+
     Returns:
         Flask: Instance aplikasi Flask yang sudah terkonfigurasi lengkap
                dengan semua blueprint, database, dan CORS.
     """
-    app = Flask(__name__, template_folder='templates')
-    app.config.from_object(Config)
+    instance_path = config_override.get("INSTANCE_PATH") if config_override else None
+    if instance_path:
+        app = Flask(__name__, template_folder='templates', instance_path=instance_path)
+    else:
+        app = Flask(__name__, template_folder='templates')
 
-    # Konfigurasi CORS yang lebih ketat
-    allowed_origins = os.environ.get('ALLOWED_ORIGINS', '*').split(',')
-    CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
+    app.config.from_object(Config)
+    if config_override:
+        app.config.update(config_override)
+
+    # Konfigurasi CORS yang lebih ketat (anti wildcard credential leak)
+    raw_origins = os.environ.get('ALLOWED_ORIGINS')
+    if raw_origins and raw_origins.strip() != '*':
+        allowed_origins = [o.strip() for o in raw_origins.split(',') if o.strip()]
+        CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
+    else:
+        allowed_origins = [r"^http://localhost(:\d+)?$", r"^http://127\.0\.0\.1(:\d+)?$"]
+        CORS(app, resources={r"/*": {"origins": allowed_origins}}, supports_credentials=True)
 
     db.init_app(app)
 
-    # IP Whitelist & Branch Proxy Relay middleware
-    from app.middleware import check_ip_whitelist, handle_branch_proxy_relay
-    app.before_request(handle_branch_proxy_relay)
+    # Bootstrap data harus jalan sebelum middleware IP whitelist (urutan before_request).
+    _install_bootstrap_guard(app)
+
+    # IP Whitelist middleware
+    from app.middleware import check_ip_whitelist
     app.before_request(check_ip_whitelist)
+
+    @app.before_request
+    def _block_during_restore():
+        from app.services import maintenance_mode
+        if maintenance_mode.is_active() and request.path.startswith("/api/") and request.path != "/api/health":
+            return jsonify({"error": "Server sedang memulihkan database. Coba lagi sebentar."}), 503
 
     csrf.init_app(app)
     migrate.init_app(app, db, render_as_batch=True)
@@ -392,7 +444,7 @@ def create_app():
     def _isolate_stateless_bearer_sessions(response):
         """Mencegah pencemaran cookie sesi browser pada request API stateless Bearer relay."""
         auth_header = request.headers.get("Authorization", "")
-        if auth_header.startswith("Bearer ") or getattr(g, "is_branch_api_call", False):
+        if auth_header.startswith("Bearer "):
             from flask import session as flask_sess
             flask_sess.modified = False
             if "Set-Cookie" in response.headers:
@@ -402,11 +454,34 @@ def create_app():
                 response.headers.setlist("Set-Cookie", filtered)
         return response
 
+    @app.after_request
+    def _add_security_headers(response):
+        response.headers.setdefault('X-Frame-Options', 'SAMEORIGIN')
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        response.headers.setdefault('Referrer-Policy', 'same-origin')
+        return response
+
+    @app.after_request
+    def _cache_versioned_static_assets(response):
+        # Hanya folder aset ber-versi & QRIS (screenshot menimpa nama file yang sama).
+        if request.path.startswith(("/static/js/", "/static/css/", "/static/vendor/",
+                                    "/static/uploads/qris/")):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
     os.makedirs("logs", exist_ok=True)
 
     _register_blueprints(app)
     _register_public_routes(app)
     _register_context_processors(app)
-    _init_app_context(app)
+
+    # Screenshot lama di static publik dipindah ke folder instance sebelum request pertama.
+    # Dilewati saat TESTING agar pembuatan app di test tidak menyentuh berkas upload nyata.
+    if not app.config.get("TESTING"):
+        from app.routes.monitor.screenshot_routes import migrate_legacy_screenshots
+        migrate_legacy_screenshots(app)
+
+    if bootstrap_app_data(app):
+        app.config["_BOOTSTRAP_DONE"] = True
 
     return app

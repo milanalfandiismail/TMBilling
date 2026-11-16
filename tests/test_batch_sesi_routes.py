@@ -87,6 +87,25 @@ def test_buka_guest_batch_success(app_and_client):
     assert data["created"][1]["nama_guest"] == "Squad-2"
 
 
+def test_tambah_waktu_sesi_admin_ditolak(app_and_client):
+    app, client = app_and_client
+    with app.app_context():
+        pc = PC.query.filter_by(kode="BATCH-PC-1").one()
+        paket = Paket.query.filter_by(nama="Paket Batch 1 Jam").one()
+        sesi = SesiService.buka_admin(pc.id, "token-admin-test", admin_nama="ADMIN")
+        sesi_id = sesi.id
+        paket_id = paket.id
+
+    res = client.post(f"/api/v1/kasir/sesi/tambah-waktu-sesi/{sesi_id}", json={
+        "paket_id": paket_id,
+        "qty": 1,
+        "metode_pembayaran": "Tunai",
+    })
+
+    assert res.status_code == 400
+    assert "admin" in res.get_json()["error"].lower()
+
+
 def test_tambah_waktu_batch_and_tutup_batch(app_and_client):
     """Test tambah waktu batch dan tutup sesi batch."""
     app, client = app_and_client
@@ -121,6 +140,45 @@ def test_tambah_waktu_batch_and_tutup_batch(app_and_client):
     })
     assert res_tutup.status_code == 200
     assert res_tutup.get_json()["total_success"] == 2
+
+
+def test_tambah_waktu_batch_atomik(app_and_client, monkeypatch):
+    app, client = app_and_client
+    with app.app_context():
+        paket = Paket.query.filter_by(nama="Paket Batch 1 Jam").one()
+        paket_id = paket.id
+
+    res_buka = client.post("/api/v1/kasir/sesi/buka-guest-batch", json={
+        "pc_kodes": ["BATCH-PC-1", "BATCH-PC-2"],
+        "paket_id": paket_id,
+        "nama_guest_prefix": "Atomic",
+        "metode_pembayaran": "Tunai",
+    })
+    sesi_ids = [c["sesi_id"] for c in res_buka.get_json()["created"]]
+
+    asli = SesiService._tambah_waktu_sesi_locked
+    jumlah = {"n": 0}
+
+    def gagal_kedua(*args, **kwargs):
+        jumlah["n"] += 1
+        if jumlah["n"] == 2:
+            raise ValueError("gagal simulasi")
+        return asli(*args, **kwargs)
+
+    monkeypatch.setattr(SesiService, "_tambah_waktu_sesi_locked", staticmethod(gagal_kedua))
+
+    res = client.post("/api/v1/kasir/sesi/tambah-waktu-batch", json={
+        "sesi_ids": sesi_ids,
+        "paket_id": paket_id,
+        "qty": 1,
+        "metode_pembayaran": "Tunai",
+    })
+
+    assert res.status_code == 400
+    assert res.get_json()["total_success"] == 0
+    with app.app_context():
+        for sesi_id in sesi_ids:
+            assert db.session.get(Sesi, sesi_id).durasi_beli_menit == 60
 
 
 def test_remote_action_batch(app_and_client):

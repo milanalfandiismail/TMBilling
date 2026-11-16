@@ -8,7 +8,7 @@ color 0b
 :: CONFIGURATIONS (IP SERVER DAN API KEY DEFAULT WARNET)
 :: =========================================================================
 set DEFAULT_SERVER_URL=http://127.0.0.1:7015
-set DEFAULT_API_KEY=TM2026QWERTY-api-key
+set DEFAULT_API_KEY=
 
 :: =========================================================================
 :: 1. CHECK PERMISSIONS (SUPPORT BOTH ADMIN & RUN BIASA / NON-ADMIN)
@@ -139,14 +139,22 @@ if not errorlevel 1 (
 )
 :url_ready
 
-set /p INPUT_API_KEY="Masukkan API Key Server [Default: TM2026QWERTY-api-key]: "
-if "%INPUT_API_KEY%"=="" set INPUT_API_KEY=%DEFAULT_API_KEY%
+set /p INPUT_API_KEY="Masukkan API Key Server [kosong = dibuat acak]: "
+if "%INPUT_API_KEY%"=="" set INPUT_API_KEY=TM%RANDOM%%RANDOM%%RANDOM%
+echo [!] API Key Client (SIMPAN, dipakai saat install client): %INPUT_API_KEY%
 
 set /p INPUT_ADMIN_USER="Masukkan Username Admin Darurat [Default: TMBilling]: "
 if "%INPUT_ADMIN_USER%"=="" set INPUT_ADMIN_USER=TMBilling
 
-set /p INPUT_ADMIN_PASS="Masukkan Password Admin Darurat [Default: TM123qaz!@#]: "
-if "%INPUT_ADMIN_PASS%"=="" set INPUT_ADMIN_PASS=TM123qaz!@#
+set INPUT_ADMIN_PASS=
+set /p INPUT_ADMIN_PASS="Masukkan Password Admin Darurat [kosong = dibuat acak]: "
+if "%INPUT_ADMIN_PASS%"=="" set INPUT_ADMIN_PASS=TM%RANDOM%%RANDOM%%RANDOM%%RANDOM%
+if "%INPUT_ADMIN_PASS%"=="" goto :pass_ready
+echo.
+echo    [!] Password Admin Darurat (SIMPAN, dipakai saat server mati):
+echo        %INPUT_ADMIN_PASS%
+echo.
+:pass_ready
 
 echo.
 echo    Menulis konfigurasi server dan mengamankan kredensial...

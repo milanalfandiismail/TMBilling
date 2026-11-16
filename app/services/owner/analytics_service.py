@@ -20,40 +20,49 @@ class OwnerAnalyticsService:
         now_aware = now_utc().astimezone(tz)
         
         if end_str:
-            try: 
-                end_dt = datetime.strptime(end_str, '%Y-%m-%d').replace(hour=23, minute=59, second=59, tzinfo=tz)
-            except: 
-                end_dt = now_aware
+            try:
+                # Batas eksklusif: tengah malam lokal setelah tanggal akhir.
+                end_dt = datetime.strptime(end_str, '%Y-%m-%d').replace(tzinfo=tz) + timedelta(days=1)
+            except ValueError:
+                raise ValueError("Format tanggal harus YYYY-MM-DD")
         else:
             end_dt = now_aware
-            
+
         if start_str:
-            try: 
+            try:
                 start_dt = datetime.strptime(start_str, '%Y-%m-%d').replace(hour=0, minute=0, second=0, tzinfo=tz)
-            except: 
-                start_dt = (end_dt - timedelta(days=6)).replace(hour=0, minute=0, second=0)
+            except ValueError:
+                raise ValueError("Format tanggal harus YYYY-MM-DD")
         else:
             start_dt = (end_dt - timedelta(days=6)).replace(hour=0, minute=0, second=0)
             
+        if start_dt >= end_dt:
+            raise ValueError("Tanggal awal harus sebelum tanggal akhir")
+        if end_dt - start_dt > timedelta(days=366):
+            raise ValueError("Rentang tanggal maksimal 366 hari")
+
         start_utc = start_dt.astimezone(UTC).replace(tzinfo=None)
         end_utc = end_dt.astimezone(UTC).replace(tzinfo=None)
         return start_utc, end_utc
 
     @staticmethod
-    def _daily_labels(start, end):
-        labels, total_days = [], (end - start).days + 1
-        for i in range(total_days):
-            d = (start + timedelta(days=i)).date()
-            labels.append(d.strftime('%d/%m/%Y'))
-        return labels
+    def _normalize_range(start, end):
+        """Normalisasi datetime offset-aware menjadi naive UTC untuk query SQLite."""
+        if start and getattr(start, "tzinfo", None) is not None:
+            start = start.astimezone(UTC).replace(tzinfo=None)
+        if end and getattr(end, "tzinfo", None) is not None:
+            end = end.astimezone(UTC).replace(tzinfo=None)
+        return start, end
 
     @staticmethod
     def get_pendapatan_harian(start, end):
+        start, end = OwnerAnalyticsService._normalize_range(start, end)
+        # Arus kas bertanda per tanggal transaksi; refund mengurangi tanggal refund tercatat.
         billing = db.session.query(Transaksi.dibuat_pada, Transaksi.jumlah)\
-            .filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.jumlah > 0).all()
+            .filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada < end, Transaksi.jumlah != 0).all()
 
         kantin = db.session.query(TransaksiMenu.tanggal, TransaksiMenu.total_harga)\
-            .filter(TransaksiMenu.tanggal >= start, TransaksiMenu.tanggal <= end).all()
+            .filter(TransaksiMenu.tanggal >= start, TransaksiMenu.tanggal < end).all()
 
         b_map, k_map = {}, {}
         
@@ -71,7 +80,7 @@ class OwnerAnalyticsService:
 
         labels, bd, kd = [], [], []
         start_local = display_in_tz(start).date()
-        end_local = display_in_tz(end).date()
+        end_local = display_in_tz(end - timedelta(microseconds=1)).date()
         
         total_days = (end_local - start_local).days + 1
         for i in range(total_days):
@@ -85,7 +94,8 @@ class OwnerAnalyticsService:
 
     @staticmethod
     def get_heatmap_jam_sibuk(start, end):
-        sessions = Sesi.query.filter(Sesi.mulai_pada >= start, Sesi.mulai_pada <= end).all()
+        start, end = OwnerAnalyticsService._normalize_range(start, end)
+        sessions = Sesi.query.filter(Sesi.mulai_pada >= start, Sesi.mulai_pada < end).all()
         jam_counts = {}
         for s in sessions:
             if s.mulai_pada:
@@ -100,25 +110,27 @@ class OwnerAnalyticsService:
 
     @staticmethod
     def get_member_trend(start, end):
+        start, end = OwnerAnalyticsService._normalize_range(start, end)
         members = Member.query.filter(
-            (Member.dibuat_pada >= start) | (Member.kadaluarsa_pada >= start)
+            ((Member.dibuat_pada >= start) & (Member.dibuat_pada < end)) |
+            ((Member.kadaluarsa_pada >= start) & (Member.kadaluarsa_pada < end))
         ).all()
         
         b_map, k_map = {}, {}
         for m in members:
-            if m.dibuat_pada and start <= m.dibuat_pada <= end:
+            if m.dibuat_pada and start <= m.dibuat_pada < end:
                 local_dt = display_in_tz(m.dibuat_pada)
                 dt_iso = local_dt.date().isoformat()
                 b_map[dt_iso] = b_map.get(dt_iso, 0) + 1
                 
-            if m.kadaluarsa_pada and start <= m.kadaluarsa_pada <= end:
+            if m.kadaluarsa_pada and start <= m.kadaluarsa_pada < end:
                 local_dt = display_in_tz(m.kadaluarsa_pada)
                 dt_iso = local_dt.date().isoformat()
                 k_map[dt_iso] = k_map.get(dt_iso, 0) + 1
 
         labels, bd, kd = [], [], []
         start_local = display_in_tz(start).date()
-        end_local = display_in_tz(end).date()
+        end_local = display_in_tz(end - timedelta(microseconds=1)).date()
         
         total_days = (end_local - start_local).days + 1
         for i in range(total_days):
@@ -132,20 +144,20 @@ class OwnerAnalyticsService:
 
     @staticmethod
     def get_top_paket(start, end):
-        r = db.session.query(Paket.nama, func.count(Transaksi.id).label('total')
-        ).join(Transaksi, Transaksi.paket_id == Paket.id
-        ).filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.is_refunded == False
-        ).group_by(Paket.id, Paket.nama).order_by(func.count(Transaksi.id).desc()).limit(5).all()
-        if r:
-            ids = [p.id for p in Paket.query.filter(Paket.nama.in_([x.nama for x in r])).all()]
-            other = db.session.query(func.count(Transaksi.id)).filter(
-                Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end,
-                Transaksi.is_refunded == False, ~Transaksi.paket_id.in_(ids)
-            ).scalar() or 0
-        else:
-            other = 0
-        labels = [x.nama for x in r] + (['Lainnya'] if other > 0 else [])
-        data = [x.total for x in r] + ([other] if other > 0 else [])
+        rows = db.session.query(
+            Transaksi.paket_id, func.count(Transaksi.id)
+        ).filter(
+            Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada < end,
+            Transaksi.paket_id.isnot(None),
+            Transaksi.is_refunded == False, Transaksi.jenis != "refund_paket"
+        ).group_by(Transaksi.paket_id).order_by(func.count(Transaksi.id).desc()).all()
+
+        ids = [pid for pid, _ in rows if pid]
+        nama_map = {p.id: p.nama for p in Paket.query.filter(Paket.id.in_(ids)).all()} if ids else {}
+        top = rows[:5]
+        other = sum(count for _, count in rows[5:])
+        labels = [nama_map.get(pid, "Paket dihapus") for pid, _ in top] + (["Lainnya"] if other else [])
+        data = [count for _, count in top] + ([other] if other else [])
         colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#6b7280'][:len(labels)]
         return {'labels': labels, 'data': data, 'colors': colors}
 
@@ -153,14 +165,20 @@ class OwnerAnalyticsService:
     def get_pendapatan_per_kasir(start, end):
         r = db.session.query(User.nama_lengkap, func.coalesce(func.sum(Transaksi.jumlah), 0).label('total')
         ).join(Transaksi, Transaksi.user_id == User.id
-        ).filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.jumlah > 0
+        ).filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada < end, Transaksi.jumlah != 0
         ).group_by(User.id, User.nama_lengkap).order_by(func.sum(Transaksi.jumlah).desc()).all()
         return {'labels': [x.nama_lengkap for x in r], 'data': [x.total for x in r]}
 
     @staticmethod
     def get_refund_rate(start, end):
-        total = Transaksi.query.filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end).count()
-        refund = Transaksi.query.filter(Transaksi.dibuat_pada >= start, Transaksi.dibuat_pada <= end, Transaksi.is_refunded == True).count()
+        base_filter = (
+            Transaksi.dibuat_pada >= start,
+            Transaksi.dibuat_pada < end,
+            Transaksi.paket_id.isnot(None),
+            Transaksi.jenis != "refund_paket",
+        )
+        total = Transaksi.query.filter(*base_filter).count()
+        refund = Transaksi.query.filter(*base_filter, Transaksi.is_refunded == True).count()
         return {'total': total, 'refund': refund, 'refund_rate': round((refund / total * 100), 1) if total > 0 else 0}
 
     @staticmethod

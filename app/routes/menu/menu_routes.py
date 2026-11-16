@@ -8,6 +8,8 @@ dan riwayat transaksi penjualan makanan/minuman.
 
 import os
 from flask import Blueprint, request, jsonify, current_app, session
+from PIL import Image
+from app.utils.images import reject_oversized
 from werkzeug.utils import secure_filename
 from app.services import MenuService
 from app.middleware.auth import login_required, admin_required, shift_required
@@ -23,6 +25,14 @@ def handle_image_upload(file):
         return None
 
     validate_filename(file.filename, allowed_extensions=ALLOWED_EXTENSIONS, field_name="Gambar Menu")
+
+    try:
+        img = Image.open(file.stream)
+        reject_oversized(img)
+        img.verify()
+    except Exception:
+        raise ValueError("File gambar tidak valid")
+    file.stream.seek(0)
 
     # Buat direktori upload jika belum ada
     upload_folder = os.path.join(current_app.root_path, 'static', 'uploads', 'menu')
@@ -264,22 +274,11 @@ def checkout_order():
             return jsonify({"success": False, "error": "Kasir tidak terautentikasi"}), 401
 
         operator = kasir_username
-        result = MenuService.checkout_menu_order(cart_items, pc_kode, kasir_username, operator=operator, tunai=tunai, kembalian=kembalian, metode_pembayaran=metode_pembayaran)
+        result = MenuService.checkout_menu_order(cart_items, pc_kode, kasir_username, operator=operator, tunai=tunai, kembalian=kembalian, metode_pembayaran=metode_pembayaran, client_request_id=payload.get("client_request_id"))
 
         return jsonify({"success": True, "data": result, "message": "Transaksi F&B berhasil diproses!"}), 200
     except ValueError as val_e:
         return jsonify({"success": False, "error": str(val_e)}), 400
-    except Exception as e:
-        return jsonify({"success": False, "error": str(e)}), 500
-
-
-@menu_api_bp.route("/transaksi", methods=["GET"])
-@login_required
-def get_all_transactions():
-    """Mendapatkan riwayat seluruh transaksi menu."""
-    try:
-        transactions = MenuService.get_all_transactions()
-        return jsonify({"success": True, "data": [t.to_dict() for t in transactions]}), 200
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 

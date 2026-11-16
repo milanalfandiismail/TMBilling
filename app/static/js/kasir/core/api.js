@@ -7,13 +7,7 @@ const API = {
             const method = (options.method || 'GET').toUpperCase();
             const headers = { ...options.headers };
 
-            // Injeksi X-Branch-ID jika sedang memilih cabang remote
-            const activeBranchId = sessionStorage.getItem('active_branch_id');
-            if (activeBranchId && activeBranchId !== '0' && !headers['X-Branch-ID']) {
-                if (!url.includes('/api/v1/kasir/branch/') && !url.includes('/api/v1/kasir/auth/')) {
-                    headers['X-Branch-ID'] = activeBranchId;
-                }
-            }
+
 
             const isFormData = (typeof FormData !== 'undefined' && options.body instanceof FormData) ||
                 (options.body && typeof options.body.append === 'function');
@@ -39,27 +33,6 @@ const API = {
             let data;
             try { data = JSON.parse(txt); } catch (e) { data = { error: txt }; }
             if (!res.ok) {
-                // Jika cabang remote offline, jangan redirect login, tapi beri peringatan & failover
-                if (data && data.is_branch_offline) {
-                    if (window.Toast) {
-                        window.Toast.show(data.error || "Cabang sedang offline", "error");
-                    }
-                    if (window.BranchManager && typeof window.BranchManager.handleActiveBranchDisconnect === 'function') {
-                        window.BranchManager.handleActiveBranchDisconnect();
-                    }
-                    return data;
-                }
-                // Jika request cabang remote ditolak (401/403 misal kunci API cabang berubah/tidak valid),
-                // JANGAN tendang session kasir lokal ke login! Lakukan failover kembali ke Cabang Lokal.
-                if ((res.status === 401 || res.status === 403) && activeBranchId && activeBranchId !== '0') {
-                    if (window.Toast) {
-                        window.Toast.show(data?.error || `Otentikasi ke cabang remote ditolak (HTTP ${res.status}). Kembali ke Cabang Lokal.`, "error");
-                    }
-                    if (window.BranchManager && typeof window.BranchManager.handleActiveBranchDisconnect === 'function') {
-                        window.BranchManager.handleActiveBranchDisconnect();
-                    }
-                    return data;
-                }
                 // Session expired — redirect ke login (hanya 401 unauthenticated, bukan 403)
                 if (res.status === 401 && !url.includes('/api/v1/kasir/auth/login') && !url.includes('/api/v1/kasir/auth/check')) {
                     window.location.href = '/kasir/login';
@@ -97,9 +70,10 @@ const API = {
 
     // 🟢 KELOLA GRUP (Baru ditambahkan agar FE dinamis)
     grup: {
-        list: () => API.request('/api/v1/kasir/grup/'),
+        list: (opsi) => API.request('/api/v1/kasir/grup/' + (opsi && opsi.include_arsip ? '?include_arsip=1' : '')),
         create: (data) => API.request('/api/v1/kasir/grup/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/grup/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+        archive: (id) => API.request(`/api/v1/kasir/grup/${id}/archive`, { method: 'POST' }),
         delete: (id) => API.request(`/api/v1/kasir/grup/${id}`, { method: 'DELETE' })
     },
 
@@ -109,7 +83,8 @@ const API = {
         get: (id) => API.request(`/api/v1/kasir/user/${id}`),
         create: (data) => API.request('/api/v1/kasir/user/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/user/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: (id) => API.request(`/api/v1/kasir/user/${id}`, { method: 'DELETE' }),
+        delete: (id, confirm) => API.request(`/api/v1/kasir/user/${id}`, { method: 'DELETE', body: JSON.stringify({ confirm }) }),
+        archive: (id) => API.request(`/api/v1/kasir/user/${id}/archive`, { method: 'POST' }),
         resetKuota: (id) => API.request(`/api/v1/kasir/user/${id}/reset-kuota`, { method: 'POST' })
     },
 
@@ -143,13 +118,14 @@ const API = {
         getPaket: (memberId) => API.request(`/api/v1/kasir/member/${memberId}/paket`),
         create: data => API.request('/api/v1/kasir/member/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/member/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: id => API.request(`/api/v1/kasir/member/${id}`, { method: 'DELETE' }),
-        tambahWaktu: (memberId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai') => {
+        delete: (id, confirm) => API.request(`/api/v1/kasir/member/${id}`, { method: 'DELETE', body: JSON.stringify({ confirm }) }),
+        archive: id => API.request(`/api/v1/kasir/member/${id}/archive`, { method: 'POST' }),
+        tambahWaktu: (memberId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai', clientRequestId = null) => {
             if (paketIdOrPayload && typeof paketIdOrPayload === 'object') {
-                const payload = { metode_pembayaran: metodePembayaran, ...paketIdOrPayload };
+                const payload = { metode_pembayaran: metodePembayaran, ...paketIdOrPayload, client_request_id: clientRequestId };
                 return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify(payload) });
             }
-            return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify({ member_id: memberId, paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran }) });
+            return API.request('/api/v1/kasir/member/tambah-waktu', { method: 'POST', body: JSON.stringify({ member_id: memberId, paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran, client_request_id: clientRequestId }) });
         },
         refundPaket: (memberId, transaksiId) => API.request('/api/v1/kasir/member/refund-paket', {
             method: 'POST',
@@ -174,7 +150,8 @@ const API = {
         },
         create: data => API.request('/api/v1/kasir/paket/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/paket/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: id => API.request(`/api/v1/kasir/paket/${id}`, { method: 'DELETE' })
+        delete: (id, confirm) => API.request(`/api/v1/kasir/paket/${id}`, { method: 'DELETE', body: JSON.stringify({ confirm }) }),
+        archive: id => API.request(`/api/v1/kasir/paket/${id}/archive`, { method: 'POST' })
     },
 
     // 🔗 KELOLA PC
@@ -192,7 +169,8 @@ const API = {
         },
         create: data => API.request('/api/v1/kasir/pc/', { method: 'POST', body: JSON.stringify(data) }),
         update: (id, data) => API.request(`/api/v1/kasir/pc/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: id => API.request(`/api/v1/kasir/pc/${id}`, { method: 'DELETE' }),
+        delete: (id, confirm) => API.request(`/api/v1/kasir/pc/${id}`, { method: 'DELETE', body: JSON.stringify({ confirm }) }),
+        archive: id => API.request(`/api/v1/kasir/pc/${id}/archive`, { method: 'POST' }),
         batch: data => API.request('/api/v1/kasir/pc/batch', { method: 'POST', body: JSON.stringify(data) }),
         wol: (pcIds) => API.request('/api/v1/kasir/pc/wol', { method: 'POST', body: JSON.stringify({ pc_ids: pcIds }) }),
         wolMac: (macAddresses) => API.request('/api/v1/kasir/pc/wol', { method: 'POST', body: JSON.stringify({ mac_addresses: macAddresses }) })
@@ -203,15 +181,15 @@ const API = {
         bukaGuest: (pcKode, paketId, namaGuest, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/sesi/buka-guest', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, paket_id: paketId, nama_guest: namaGuest, metode_pembayaran: metodePembayaran }) }),
         bukaGuestBatch: (pcKodes, paketId, prefix = 'Guest', metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/sesi/buka-guest-batch', { method: 'POST', body: JSON.stringify({ pc_kodes: pcKodes, paket_id: paketId, nama_guest_prefix: prefix, metode_pembayaran: metodePembayaran }) }),
         bukaMember: (pcKode, username) => API.request('/api/v1/kasir/sesi/buka-member', { method: 'POST', body: JSON.stringify({ pc_kode: pcKode, username }) }),
-        tambahWaktu: (sesiId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai') => {
+        tambahWaktu: (sesiId, paketIdOrPayload, qty = 1, metodePembayaran = 'Tunai', clientRequestId = null) => {
             if (paketIdOrPayload && typeof paketIdOrPayload === 'object') {
-                const payload = { metode_pembayaran: metodePembayaran, ...paketIdOrPayload };
+                const payload = { metode_pembayaran: metodePembayaran, ...paketIdOrPayload, client_request_id: clientRequestId };
                 return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify(payload) });
             }
-            return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify({ paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran }) });
+            return API.request(`/api/v1/kasir/sesi/tambah-waktu-sesi/${sesiId}`, { method: 'POST', body: JSON.stringify({ paket_id: paketIdOrPayload, qty, metode_pembayaran: metodePembayaran, client_request_id: clientRequestId }) });
         },
-        tambahWaktuBatch: (sesiIds, payloadOrPaketId, qty = 1, metodePembayaran = 'Tunai') => {
-            let bodyData = { sesi_ids: sesiIds, metode_pembayaran: metodePembayaran };
+        tambahWaktuBatch: (sesiIds, payloadOrPaketId, qty = 1, metodePembayaran = 'Tunai', clientRequestId = null) => {
+            let bodyData = { sesi_ids: sesiIds, metode_pembayaran: metodePembayaran, client_request_id: clientRequestId };
             if (payloadOrPaketId && typeof payloadOrPaketId === 'object' && payloadOrPaketId.selections) {
                 bodyData.selections = payloadOrPaketId.selections;
             } else if (typeof payloadOrPaketId === 'number' || typeof payloadOrPaketId === 'string') {
@@ -237,6 +215,7 @@ const API = {
         remoteBatch: (pcIds, action) => API.request('/api/v1/kasir/monitor/remote/batch', { method: 'POST', body: JSON.stringify({ pc_ids: pcIds, action }) }),
         triggerScreenshot: pcId => API.request(`/api/v1/kasir/monitor/screenshot/${pcId}`, { method: 'POST' }),
         all: () => API.request('/api/v1/kasir/monitor/all'),
+        hardware: (pcId) => API.request(`/api/v1/kasir/monitor/hardware/${pcId}`),
         delete: (id) => API.request(`/api/v1/kasir/monitor/${id}`, { method: 'DELETE' }),
         processesKill: (pcId, processName) => API.request(`/api/v1/kasir/monitor/processes/${pcId}/kill`, {
             method: 'POST',
@@ -341,62 +320,16 @@ const API = {
             return API.request(url);
         },
         stockLogDates: () => API.request('/api/v1/kasir/menu/stock-logs/dates'),
-        checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai') => API.request('/api/v1/kasir/menu/checkout', {
+        checkout: (cartItems, pcKode = null, tunai = 0, kembalian = 0, metodePembayaran = 'Tunai', clientRequestId = null) => API.request('/api/v1/kasir/menu/checkout', {
             method: 'POST',
-            body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian, metode_pembayaran: metodePembayaran })
-        }),
-        transaksi: () => API.request('/api/v1/kasir/menu/transaksi')
+            body: JSON.stringify({ cart_items: cartItems, pc_kode: pcKode, tunai, kembalian, metode_pembayaran: metodePembayaran, client_request_id: clientRequestId })
+        })
     },
 
     // ???? UPTIME TRACKER
     uptime: {
         daily: (date) => API.request(`/api/v1/kasir/uptime/daily${date ? '?date=' + date : ''}`),
         range: (start, end) => API.request(`/api/v1/kasir/uptime/range?start=${start}&end=${end}`)
-    },
-
-    // 📁 FILE EXPLORER
-    fileexplorer: {
-        getRoots: () => API.request('/api/v1/kasir/fileexplorer/roots'),
-        setRoots: (roots) => API.request('/api/v1/kasir/fileexplorer/roots', { method: 'POST', body: JSON.stringify({ roots }) }),
-        list: (path = '') => API.request('/api/v1/kasir/fileexplorer/list' + (path ? `?path=${encodeURIComponent(path)}` : '')),
-        read: (path) => API.request(`/api/v1/kasir/fileexplorer/read?path=${encodeURIComponent(path)}`),
-        save: (path, content, expectedMtime = null, force = false) => API.request('/api/v1/kasir/fileexplorer/save', {
-            method: 'POST',
-            body: JSON.stringify({ path, content, expected_mtime: expectedMtime, force })
-        }),
-        create: (parentPath, name, isDir = false) => API.request('/api/v1/kasir/fileexplorer/create', {
-            method: 'POST',
-            body: JSON.stringify({ parent_path: parentPath, name, is_dir: isDir })
-        }),
-        rename: (path, newName) => API.request('/api/v1/kasir/fileexplorer/rename', {
-            method: 'POST',
-            body: JSON.stringify({ path, new_name: newName })
-        }),
-        delete: (path) => API.request('/api/v1/kasir/fileexplorer/delete', {
-            method: 'POST',
-            body: JSON.stringify({ path })
-        })
-    },
-
-    // 🏢 MULTI-CABANG (BRANCH MANAGEMENT)
-    branch: {
-        list: (includeKey = false) => API.request(`/api/v1/kasir/branch/list?include_key=${includeKey ? 1 : 0}`),
-        add: (data) => API.request('/api/v1/kasir/branch/add', { method: 'POST', body: JSON.stringify(data) }),
-        update: (id, data) => API.request(`/api/v1/kasir/branch/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-        delete: (id) => API.request(`/api/v1/kasir/branch/${id}`, { method: 'DELETE' }),
-        test: (url, apiKey) => API.request('/api/v1/kasir/branch/test', { method: 'POST', body: JSON.stringify({ url, api_key: apiKey }) }),
-        testBranch: (id) => API.request(`/api/v1/kasir/branch/${id}/test`, { method: 'POST' }),
-        myKey: () => API.request('/api/v1/kasir/branch/my-key'),
-        regenerateKey: () => API.request('/api/v1/kasir/branch/my-key/regenerate', { method: 'POST' }),
-        operators: () => API.request('/api/v1/kasir/branch/operators'),
-        hideOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/hide', { method: 'POST', body: JSON.stringify({ operator: operatorName }) }),
-        restoreOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/restore', { method: 'POST', body: JSON.stringify({ operator: operatorName }) }),
-        deleteOperator: (operatorName) => API.request('/api/v1/kasir/branch/operators/delete', { method: 'POST', body: JSON.stringify({ operator: operatorName }) }),
-        inboundList: () => API.request('/api/v1/kasir/branch/inbound'),
-        inboundBlock: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}/block`, { method: 'POST' }),
-        inboundUnblock: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}/unblock`, { method: 'POST' }),
-        inboundDelete: (id) => API.request(`/api/v1/kasir/branch/inbound/${id}`, { method: 'DELETE' }),
-        switchContext: (branchId) => API.request('/api/v1/kasir/branch/switch-context', { method: 'POST', body: JSON.stringify({ branch_id: branchId }) })
     },
 
     // 🔗 MANAJEMEN SHIFT KASIR
@@ -423,14 +356,6 @@ const API = {
 
     resolveMediaUrl(url) {
         if (!url || typeof url !== 'string') return '';
-        if (url.startsWith('data:') || url.startsWith('blob:')) return url;
-        const activeBranchId = (window.BranchManager && window.BranchManager.activeBranchId) || sessionStorage.getItem('active_branch_id') || '0';
-        if (activeBranchId && activeBranchId !== '0') {
-            if (url.startsWith('/static/')) {
-                const relPath = url.substring('/static/'.length);
-                return `/api/v1/kasir/branch/${activeBranchId}/media/${relPath}`;
-            }
-        }
         return url;
     }
 
@@ -446,11 +371,12 @@ const API = {
             if (xhr.status === 200) {
                 try {
                     var data = JSON.parse(xhr.responseText);
-                    if (!data.logged_in) {
+                    if (data && data.logged_in === false) {
                         window.location.href = '/kasir/login';
                     }
                 } catch (e) {
-                    window.location.href = '/kasir/login';
+                    // Hindari redirect palsu jika server merespons non-JSON sementara
+                    console.warn('[Session Polling] Respons bukan JSON yang valid:', e);
                 }
             }
         };

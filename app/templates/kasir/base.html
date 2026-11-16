@@ -9,21 +9,8 @@
         <meta name="app-version" content="{{ version }}">
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}?v={{ v_cache }}">
     <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/logo.png') }}?v={{ v_cache }}">
-    <script>
-        (function() {
-            try {
-                var bId = sessionStorage.getItem('active_branch_id');
-                if (bId && bId !== '0') {
-                    document.documentElement.setAttribute('data-branch-mode', 'remote');
-                }
-            } catch(e) {}
-        })();
-    </script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v={{ v_cache }}">
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
+    <script defer src="{{ url_for('static', filename='vendor/qrcode/qrcode.min.js') }}?v={{ v_cache }}"></script>
     <style>
         [x-cloak] {
             display: none !important;
@@ -81,21 +68,9 @@
             transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
         }
 
-        /* Modal open animation */
-        @keyframes modal-in {
-            from {
-                opacity: 0;
-                transform: scale(0.96) translateY(8px);
-            }
-
-            to {
-                opacity: 1;
-                transform: scale(1) translateY(0);
-            }
-        }
-
+        /* Modal base display */
         .fixed.inset-0>div {
-            animation: modal-in 0.18s ease-out;
+            transform: none;
         }
 
         /* CKEditor 5 Dark Theme Overrides */
@@ -364,17 +339,14 @@
     </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tailwind.css') }}?v={{ v_cache }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='vendor/ckeditor/ckeditor.css') }}?v={{ v_cache }}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css">
-    <script src="{{ url_for('static', filename='vendor/ckeditor/ckeditor.js') }}?v={{ v_cache }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendor/fontawesome/css/all.min.css') }}?v={{ v_cache }}">
+    <script defer src="{{ url_for('static', filename='vendor/ckeditor/ckeditor.js') }}?v={{ v_cache }}"></script>
 
     {% block head %}{% endblock %}
 </head>
 
 <body
-    class="bg-[#050505] text-neutral-200 font-space-grotesk antialiased flex h-[100dvh] lg:h-screen w-screen overflow-hidden"
+    class="bg-[#050505] text-neutral-200 font-space-grotesk antialiased flex h-[100dvh] lg:h-screen w-full overflow-hidden"
     data-kasir-role="{{ session.get('kasir_role', '') }}" data-app-version="{{ version }}">
 
     {% block content %}{% endblock %}
@@ -384,93 +356,108 @@
     </script>
 
     <!-- ===== SCRIPTS ===== -->
-    <script src="{{ url_for('static', filename='js/kasir/core/api.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/utils.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/skeleton.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/toast.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/core/modal.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/core/api.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/core/utils.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/core/skeleton.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/core/toast.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/core/modal.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/core/arsip_list.js') }}?v={{ v_cache }}"></script>
 
     <!-- Components -->
-    <script src="{{ url_for('static', filename='js/kasir/components/modal-buka.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/components/modal-tambah.js') }}?v={{ v_cache }}"></script>
-    <script
+    <script defer src="{{ url_for('static', filename='js/kasir/components/modal-buka.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/components/modal-tambah.js') }}?v={{ v_cache }}"></script>
+    <script defer
         src="{{ url_for('static', filename='js/kasir/components/modal-confirm-tambah.js') }}?v={{ v_cache }}"></script>
 
     <!-- Modules / Subfolders -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/sidebar.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/remote/vnc_client.js') }}?v={{ v_cache }}"></script>
-    <script
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/dashboard/sidebar.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/remote/vnc_core.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/remote/vnc_gestures.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/remote/vnc_keyboard.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/remote/vnc_client.js') }}?v={{ v_cache }}"></script>
+    <script defer
         src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_selection.js') }}?v={{ v_cache }}"></script>
-    <script
+    <script defer
         src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_compact.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/map_view.js') }}?v={{ v_cache }}"></script>
-    <script
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/dashboard/map_view.js') }}?v={{ v_cache }}"></script>
+    <script defer
         src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_process_monitor.js') }}?v={{ v_cache }}"></script>
-    <script
-        src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_detail_modal.js') }}?v={{ v_cache }}"></script>
-    <script
+    <!-- Dashboard Detail Modal (Modular Sub-modules + Unified Facade) -->
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/dashboard/detail_modal/modal_core.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/dashboard/detail_modal/modal_power.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/dashboard/detail_modal/modal_remote.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/dashboard/detail_modal/modal_hardware.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_detail_modal.js') }}?v={{ v_cache }}"></script>
+    <script defer
         src="{{ url_for('static', filename='js/kasir/modules/server_monitor/server_monitor.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/dashboard/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_refund_modal.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_context_menu.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/dashboard/dashboard_member_search.js') }}?v={{ v_cache }}"></script>
 
 
 
-    <script src="{{ url_for('static', filename='js/kasir/modules/grup/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/grup/index.js') }}?v={{ v_cache }}"></script>
 
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_grid.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/pc_modal.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/pc/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/pc/pc_grid.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/pc/pc_modal.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/pc/index.js') }}?v={{ v_cache }}"></script>
 
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_table.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/paket_modal.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/paket/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/paket/paket_table.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/paket/paket_modal.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/paket/index.js') }}?v={{ v_cache }}"></script>
+<script defer src="{{ url_for('static', filename='js/kasir/modules/arsip/index.js') }}?v={{ v_cache }}"></script>
 
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_table.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_modal.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/member_refill.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/member/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/member/member_table.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/member/member_modal.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/member/member_refill.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/member/index.js') }}?v={{ v_cache }}"></script>
 
-    <script src="{{ url_for('static', filename='js/kasir/modules/laporan/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/laporan_menu/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/log/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/monitor/index.js') }}?v={{ v_cache }}"></script>
-    <script
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/laporan/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/laporan_menu/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/log/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/monitor/index.js') }}?v={{ v_cache }}"></script>
+    <script defer
         src="{{ url_for('static', filename='js/kasir/modules/hardware_checker/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/maintenance/index.js') }}?v={{ v_cache }}"></script>
-    <script
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/maintenance/index.js') }}?v={{ v_cache }}"></script>
+    <script defer
         src="{{ url_for('static', filename='js/kasir/modules/laporan_maintenance/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/screenshot/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/blackout/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/branch/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/tutorials/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/plugins.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/settings/migration.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/mikrotik/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/screenshot/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/blackout/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/settings/settings_general.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/settings/settings_scheduler.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/settings/settings_network.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/settings/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/tutorials/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/settings/migration.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/mikrotik/index.js') }}?v={{ v_cache }}"></script>
 
-    <script src="{{ url_for('static', filename='js/kasir/modules/struk/struk_preview.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/struk/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/struk/struk_preview.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/struk/index.js') }}?v={{ v_cache }}"></script>
 
     <!-- Shift Kasir & Serah Terima Handover -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/shift/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/shift/shift_core.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/shift/shift_history.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/shift/index.js') }}?v={{ v_cache }}"></script>
 
-    <script src="{{ url_for('static', filename='js/kasir/modules/user/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/menu/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/menu/stock_log.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/tournament/index.js') }}?v={{ v_cache }}"></script>
-    <script src="{{ url_for('static', filename='js/kasir/modules/game/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/user/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/menu/menu_catalog.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/menu/menu_cart.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/menu/menu_crud.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/menu/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/menu/stock_log.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/tournament/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/game/index.js') }}?v={{ v_cache }}"></script>
 
-    <script src="{{ url_for('static', filename='js/kasir/modules/uptime/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/uptime/index.js') }}?v={{ v_cache }}"></script>
 
     <!-- Owner Analytics -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/owner/analytics.js') }}?v={{ v_cache }}"></script>
-
-    <!-- File Explorer -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/fileexplorer/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/owner/analytics.js') }}?v={{ v_cache }}"></script>
 
     <!-- Catatan Kasir & Operasional -->
-    <script src="{{ url_for('static', filename='js/kasir/modules/catatan/index.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/modules/catatan/index.js') }}?v={{ v_cache }}"></script>
 
-    <script src="{{ url_for('static', filename='js/kasir/app.js') }}?v={{ v_cache }}"></script>
+    <script defer src="{{ url_for('static', filename='js/kasir/app.js') }}?v={{ v_cache }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 

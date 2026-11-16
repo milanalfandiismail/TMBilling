@@ -6,6 +6,7 @@ use winreg::enums::*;
 use winreg::RegKey;
 use base64::Engine;
 use sha2::{Sha256, Digest};
+use super::qris_memory;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct StatusResponse {
@@ -77,34 +78,19 @@ pub struct WarnetConfig {
     pub paket: Vec<serde_json::Value>,
     #[serde(default)]
     pub menu: Vec<serde_json::Value>,
+    #[serde(default)]
+    pub qris_path: Option<String>,
 }
 
-fn deobfuscate(hex_input: &str) -> String {
-    let key = b"TMBillingSecretKey2026SecureObfuscation";
-    let mut bytes = Vec::new();
-    for i in (0..hex_input.len()).step_by(2) {
-        if i + 2 <= hex_input.len() {
-            if let Ok(b) = u8::from_str_radix(&hex_input[i..i+2], 16) {
-                bytes.push(b ^ key[(i/2) % key.len()]);
-            }
-        }
+/// URL gambar QRIS: path relatif dari server selalu menang,
+/// karena host/skema mengikuti server_url milik client sendiri.
+fn resolve_qris_source(base_url: &str, qris_path: Option<&str>, qris_url: Option<&str>) -> Option<String> {
+    let rel = qris_path.or(qris_url)?;
+    if rel.starts_with('/') {
+        Some(format!("{}{}", base_url, rel))
+    } else {
+        Some(rel.to_string())
     }
-    String::from_utf8(bytes).unwrap_or_default()
-}
-
-fn is_obfuscated(input: &str) -> bool {
-    let input = input.trim();
-    if input.is_empty() || input.len() % 2 != 0 {
-        return false;
-    }
-    if !input.chars().all(|c| c.is_ascii_hexdigit()) {
-        return false;
-    }
-    let deobf = deobfuscate(input);
-    if deobf.is_empty() {
-        return false;
-    }
-    deobf.chars().all(|c| c.is_ascii() && !c.is_control())
 }
 
 fn sha256_hex(input: &str) -> String {
@@ -121,6 +107,10 @@ fn to_sha256_hash(val: &str) -> String {
     }
     // Plain text — hash langsung (emergency creds tidak di-XOR-obfuscate)
     sha256_hex(val)
+}
+
+pub fn is_emergency_response(status: &str, nama: Option<&str>) -> bool {
+    status == "system" && nama == Some("SYSTEM")
 }
 
 #[derive(Clone)]
@@ -171,11 +161,7 @@ impl ApiService {
             if let Ok(k) = subkey.get_value::<String, _>("ApiKey") {
                 let k = k.trim().to_string();
                 if !k.is_empty() {
-                    if is_obfuscated(&k) {
-                        reg_api_key = Some(deobfuscate(&k));
-                    } else {
-                        reg_api_key = Some(k);
-                    }
+                    reg_api_key = Some(k);
                 }
             }
             if let Ok(user) = subkey.get_value::<String, _>("EmergencyUser") {
@@ -217,11 +203,7 @@ impl ApiService {
                         if key == "url" {
                             ini_url = Some(val);
                         } else if key == "apikey" || key == "api_key" {
-                            if is_obfuscated(&val) {
-                                ini_api_key = Some(deobfuscate(&val));
-                            } else {
-                                ini_api_key = Some(val);
-                            }
+                            ini_api_key = Some(val);
                         } else if key == "emergencyuser" || key == "emergency_user" {
                             ini_em_user = Some(to_sha256_hash(&val));
                         } else if key == "emergencytoken" || key == "emergency_token" {
@@ -236,9 +218,9 @@ impl ApiService {
         }
 
         let url = reg_url.or(ini_url).unwrap_or_else(|| "http://127.0.0.1:7015".to_string());
-        let api_key = reg_api_key.or(ini_api_key).unwrap_or_else(|| "TM2026".to_string());
-        let em_user = reg_em_user.or(ini_em_user).unwrap_or_else(|| sha256_hex("TMBilling"));
-        let em_token = reg_em_token.or(ini_em_token).unwrap_or_else(|| sha256_hex("TM123qaz!@#"));
+        let api_key = reg_api_key.or(ini_api_key).unwrap_or_default();
+        let em_user = reg_em_user.or(ini_em_user).unwrap_or_default();
+        let em_token = reg_em_token.or(ini_em_token).unwrap_or_default();
 
         (url, api_key, em_user, em_token)
     }
@@ -341,6 +323,7 @@ impl ApiService {
         let url = format!("{}/api/v1/public/auth/login", base_url);
 
         let res = self.client.post(&url)
+            .header("X-Client-Key", &self.api_key)
             .json(&body)
             .send()
             .await
@@ -385,7 +368,12 @@ impl ApiService {
         // 1. CEK EMERGENCY CREDENTIALS OFFLINE DULU (biar bisa offline)
         let user_hash = sha256_hex(user.trim());
         let pass_hash = sha256_hex(pass.trim());
-        if user_hash.eq_ignore_ascii_case(&self.emergency_user) && pass_hash.eq_ignore_ascii_case(&self.emergency_token) {
+        // Kredensial darurat kosong = fitur dinonaktifkan (fail-closed), lanjut ke login server
+        if !self.emergency_user.is_empty()
+            && !self.emergency_token.is_empty()
+            && user_hash.eq_ignore_ascii_case(&self.emergency_user)
+            && pass_hash.eq_ignore_ascii_case(&self.emergency_token)
+        {
             return Ok(StatusResponse {
                 status: "system".to_string(),
                 sisa_waktu: Some(0),
@@ -460,7 +448,9 @@ impl ApiService {
     }
 
     pub async fn emergency_login(&self, ip: &str, mac: &str, username: &str) -> Result<StatusResponse, String> {
-        // Kirim ke server agar tercatat di DB & log (PC mana yang emergency login, siapa usernya)
+        // Kirim ke server agar tercatat di DB & log (PC mana yang emergency login, siapa usernya).
+        // Otorisasi server berbasis IP asal PC (token darurat server tidak lagi dibagikan ke client).
+        // Server tak terjangkau = tidak ada yang perlu dicatat, jadi lewati POST (hindari timeout dobel).
         let body = serde_json::json!({
             "ip_address": ip,
             "mac_address": mac,
@@ -565,45 +555,108 @@ impl ApiService {
         let mut config: WarnetConfig = serde_json::from_str(&body_text)
             .map_err(|_| format!("Gagal urai data warnet dari server."))?;
 
-        // Fetch QRIS image bytes & base64 encode → bypass mixed-content blocking
-        if let Some(ref path) = config.qris_url.clone() {
-            let img_url = if path.starts_with('/') {
-                format!("{}{}", base_url, path)
+        // QRIS: pakai data URI di memori bila URL sama, unduh hanya saat URL berubah.
+        if let Some(img_url) = resolve_qris_source(
+            &base_url,
+            config.qris_path.as_deref(),
+            config.qris_url.as_deref(),
+        ) {
+            if let Some(data) = qris_memory::last_for(&img_url) {
+                config.qris_url = Some(data);
             } else {
-                path.clone()
-            };
-
-            match self.client.get(&img_url)
-                .timeout(std::time::Duration::from_secs(5))
-                .send()
-                .await
-            {
-                Ok(resp) if resp.status().is_success() => {
-                    let bytes = resp.bytes().await.unwrap_or_default();
-                    if !bytes.is_empty() {
-                        // detect mime from extension
-                        let mime = if img_url.ends_with(".png") {
-                            "image/png"
-                        } else if img_url.ends_with(".jpg") || img_url.ends_with(".jpeg") {
-                            "image/jpeg"
-                        } else if img_url.ends_with(".gif") {
-                            "image/gif"
-                        } else if img_url.ends_with(".webp") {
-                            "image/webp"
+                match self.client.get(&img_url)
+                    .timeout(std::time::Duration::from_secs(10))
+                    .send()
+                    .await
+                {
+                    Ok(resp) if resp.status().is_success() => {
+                        let bytes = resp.bytes().await.unwrap_or_default();
+                        if bytes.is_empty() {
+                            config.qris_url = None;
                         } else {
-                            "image/png"
-                        };
-                        let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
-                        config.qris_url = Some(format!("data:{};base64,{}", mime, b64));
+                            let lower = img_url.to_lowercase();
+                            let mime = if lower.ends_with(".png") {
+                                "image/png"
+                            } else if lower.ends_with(".jpg") || lower.ends_with(".jpeg") {
+                                "image/jpeg"
+                            } else if lower.ends_with(".gif") {
+                                "image/gif"
+                            } else if lower.ends_with(".webp") {
+                                "image/webp"
+                            } else {
+                                "image/png"
+                            };
+                            let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                            let data_uri = format!("data:{};base64,{}", mime, b64);
+                            qris_memory::remember(&img_url, &data_uri);
+                            config.qris_url = Some(data_uri);
+                        }
                     }
-                }
-                _ => {
-                    // fallback: keep original URL (may show broken img, but graceful)
-                    eprintln!("Failed to fetch QRIS image from: {}", img_url);
+                    _ => {
+                        // Jangan tampilkan QRIS lama untuk URL baru (risiko salah bayar).
+                        eprintln!("Failed to fetch QRIS image from: {}", img_url);
+                        config.qris_url = None;
+                    }
                 }
             }
         }
 
         Ok(config)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::resolve_qris_source;
+
+    #[test]
+    fn qris_path_beats_absolute_url() {
+        assert_eq!(
+            resolve_qris_source(
+                "http://192.168.1.2:7015",
+                Some("/static/uploads/qris/a.png"),
+                Some("https://salah.example.com/a.png"),
+            )
+            .as_deref(),
+            Some("http://192.168.1.2:7015/static/uploads/qris/a.png"),
+        );
+    }
+
+    #[test]
+    fn falls_back_to_qris_url_when_path_missing() {
+        assert_eq!(
+            resolve_qris_source("http://srv", None, Some("/static/uploads/qris/a.png")).as_deref(),
+            Some("http://srv/static/uploads/qris/a.png"),
+        );
+        assert_eq!(
+            resolve_qris_source("http://srv", None, Some("https://cdn.example.com/a.png")).as_deref(),
+            Some("https://cdn.example.com/a.png"),
+        );
+        assert_eq!(resolve_qris_source("http://srv", None, None), None);
+    }
+}
+
+
+#[cfg(test)]
+mod secret_tests {
+    use super::{is_emergency_response, to_sha256_hash};
+
+    #[test]
+    fn hash_64_hex_dipertahankan_lowercase() {
+        let h = "A".repeat(64);
+        assert_eq!(to_sha256_hash(&h), "a".repeat(64));
+    }
+
+    #[test]
+    fn plaintext_di_hash() {
+        assert_eq!(to_sha256_hash("TMBilling").len(), 64);
+    }
+
+    #[test]
+    fn darurat_hanya_bila_keduanya() {
+        assert!(is_emergency_response("system", Some("SYSTEM")));
+        assert!(!is_emergency_response("system", None));
+        assert!(!is_emergency_response("system", Some("Member")));
+        assert!(!is_emergency_response("aktif", Some("SYSTEM")));
     }
 }

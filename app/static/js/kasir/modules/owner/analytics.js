@@ -14,8 +14,9 @@ const OwnerAnalytics = {
         if (!s.value || !e.value) {
             const t = new Date(), w = new Date(t);
             w.setDate(t.getDate() - 6);
-            s.value = w.toISOString().slice(0, 10);
-            e.value = t.toISOString().slice(0, 10);
+            const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            s.value = fmtDate(w);
+            e.value = fmtDate(t);
         }
 
         const loadingEl = document.getElementById('analytics-loading');
@@ -45,14 +46,12 @@ const OwnerAnalytics = {
             document.getElementById('kpi-total-billing').textContent = 'Rp' + totalB.toLocaleString('id-ID');
             document.getElementById('kpi-tabel-billing').innerHTML = gridTable(['Tanggal', 'Pendapatan'],
                 pd.labels.map((l,i) => [l, 'Rp' + pd.billing[i].toLocaleString('id-ID')]));
-            setScroll('kpi-tabel-billing', pd.labels.length, 10);
 
             // 2. Pendapatan Kantin
             const totalK = pd.kantin.reduce((a,b)=>a+b,0);
             document.getElementById('kpi-total-kantin').textContent = 'Rp' + totalK.toLocaleString('id-ID');
             document.getElementById('kpi-tabel-kantin').innerHTML = gridTable(['Tanggal', 'Pendapatan'],
                 pd.labels.map((l,i) => [l, 'Rp' + pd.kantin[i].toLocaleString('id-ID')]));
-            setScroll('kpi-tabel-kantin', pd.labels.length, 10);
 
             // 3. Paket Terlaris
             const tp = d.top_paket;
@@ -62,7 +61,6 @@ const OwnerAnalytics = {
                     <span class="text-white font-semibold">${tp.data[i]}x</span>
                 </div>`
             ).join('') || '<div class="text-neutral-500 py-2">Belum ada data</div>';
-            setScroll('kpi-paket', tp.labels.length, 10);
 
             // 5. Per Kasir
             const pk = d.pendapatan_per_kasir;
@@ -72,13 +70,13 @@ const OwnerAnalytics = {
                     <span class="text-white font-semibold">Rp${pk.data[i].toLocaleString('id-ID')}</span>
                 </div>`
             ).join('') || '<div class="text-neutral-500 py-2">Belum ada data</div>';
-            setScroll('kpi-kasir', pk.labels.length, 10);
 
             // 6. Member
             const mb = d.member_trend;
             const baru = mb.baru.reduce((a,b)=>a+b,0);
             const keluar = mb.kadaluarsa.reduce((a,b)=>a+b,0);
             const bersih = baru - keluar;
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             document.getElementById('kpi-member').innerHTML = `
                 <div class="flex justify-between py-1.5">
                     <span class="text-green-400 text-sm font-bold">+${baru}</span>
@@ -107,6 +105,7 @@ const OwnerAnalytics = {
             // 8. Refund
             const rf = d.refund_rate;
             const sukses = rf.total - rf.refund;
+            // xss-reviewed: nilai internal dari server/admin, bukan isian bebas pengguna
             document.getElementById('kpi-refund').innerHTML = `
                 <div class="text-sm lg:text-2xl font-bold text-yellow-400 mb-3">${rf.refund_rate}%</div>
                 <div class="flex justify-between py-1.5"><span class="text-neutral-500">Total Transaksi</span><span class="text-white font-semibold">${rf.total}</span></div>
@@ -122,17 +121,6 @@ const OwnerAnalytics = {
         }
     }
 };
-
-// Helper: scroll kalo data > 10 item
-function setScroll(id, count, thresh) {
-    const el = document.getElementById(id);
-    if (count > thresh) {
-        el.style.maxHeight = '360px';
-        el.style.overflowY = 'auto';
-        el.style.scrollbarWidth = 'thin';
-        el.style.scrollbarColor = '#333 transparent';
-    }
-}
 
 // Helper: render tabel 2 kolom dengan border grid
 function gridTable(headers, rows) {

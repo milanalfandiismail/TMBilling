@@ -1,15 +1,20 @@
-# app/services/game/game_service.py
+﻿# app/services/game/game_service.py
 
 import os
+from flask import current_app
 from werkzeug.utils import secure_filename
 from app.repositories.game.game_repository import GameRepository
 from app.models.game.game import Game
 from app.utils.logger import write_log
+from app.utils.helpers import remove_quiet
 
 from app.utils.validators import validate_string_length, validate_choice, validate_filename
+from app.services.write_lock import with_write_lock
 
-UPLOAD_FOLDER = os.path.join('app', 'static', 'uploads', 'games')
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'ico', 'svg'}
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'webp', 'ico'}
+
+def _upload_folder():
+    return os.path.join(current_app.static_folder, 'uploads', 'games')
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -22,14 +27,15 @@ class GameService:
             
         clean_filename = validate_filename(icon_file.filename, allowed_extensions=ALLOWED_EXTENSIONS, field_name="Icon Game")
             
-        if not os.path.exists(UPLOAD_FOLDER):
-            os.makedirs(UPLOAD_FOLDER)
+        upload_folder = _upload_folder()
+        if not os.path.exists(upload_folder):
+            os.makedirs(upload_folder)
             
         filename = secure_filename(clean_filename)
         # Tambahkan timestamp agar unik
         import time
         unique_filename = f"{int(time.time())}_{filename}"
-        filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+        filepath = os.path.join(upload_folder, unique_filename)
         icon_file.save(filepath)
         return unique_filename
 
@@ -38,13 +44,9 @@ class GameService:
         """Menghapus file fisik icon/cover game dari disk secara aman."""
         if not icon_filename or not isinstance(icon_filename, str):
             return
-        try:
-            filename = os.path.basename(icon_filename.replace("\\", "/"))
-            filepath = os.path.join(UPLOAD_FOLDER, filename)
-            if os.path.exists(filepath):
-                os.remove(filepath)
-        except Exception:
-            pass
+        filename = os.path.basename(icon_filename.replace("\\", "/"))
+        filepath = os.path.join(_upload_folder(), filename)
+        remove_quiet(filepath)
 
     @staticmethod
     def _normalize_kategori(kat_val):
@@ -59,8 +61,9 @@ class GameService:
         return str(kat_val)
 
     @staticmethod
-    def get_all(aktif_only=False, category=None, tipe=None, search_query=None):
-        return GameRepository.get_all(aktif_only=aktif_only, category=category, tipe=tipe, search_query=search_query)
+    def get_all(aktif_only=False, category=None, tipe=None, search_query=None, limit=None, offset=0):
+        return GameRepository.get_all(aktif_only=aktif_only, category=category, tipe=tipe, search_query=search_query,
+                                      limit=limit, offset=offset)
 
     @staticmethod
     def create(data, icon_file=None, operator=None):
@@ -149,6 +152,42 @@ class GameService:
             }
         )
         return result
+
+    @staticmethod
+    @with_write_lock
+    def archive(game_id, operator=None):
+        """Sembunyikan game dari katalog tanpa menghapus ikon/riwayatnya."""
+        from app.models import db
+
+        game = GameRepository.get_by_id(game_id)
+        if not game:
+            raise ValueError("Game tidak ditemukan")
+        if not game.aktif:
+            return {"success": True, "message": f"Game '{game.nama}' sudah diarsipkan"}
+        game.aktif = False
+        db.session.commit()
+        op_name = operator if isinstance(operator, str) else "admin"
+        write_log("GAME_ARCHIVE", f"Game '{game.nama}' diarsipkan", user=op_name,
+                  detail_json={"nama": game.nama, "kategori": game.kategori})
+        return {"success": True, "message": f"Game '{game.nama}' berhasil diarsipkan"}
+
+    @staticmethod
+    @with_write_lock
+    def restore(game_id, operator=None):
+        """Tampilkan kembali game yang diarsipkan di katalog dan daftar."""
+        from app.models import db
+
+        game = GameRepository.get_by_id(game_id)
+        if not game:
+            raise ValueError("Game tidak ditemukan")
+        if game.aktif:
+            raise ValueError("Game tidak dalam arsip")
+        game.aktif = True
+        db.session.commit()
+        op_name = operator if isinstance(operator, str) else "admin"
+        write_log("RESTORE_GAME", f"Game '{game.nama}' dipulihkan dari arsip", user=op_name,
+                  detail_json={"nama": game.nama})
+        return {"success": True, "message": f"Game '{game.nama}' berhasil dipulihkan"}
 
     @staticmethod
     def delete(game_id, operator=None):

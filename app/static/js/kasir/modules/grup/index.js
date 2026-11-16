@@ -8,6 +8,21 @@ const Grup = {
     searchQuery: '',
     currentPage: 1,
     perPage: 7,
+    arsipMode: false,
+
+    toggleView(arsip) {
+        this.arsipMode = arsip;
+        document.getElementById('grup-table').classList.toggle('hidden', arsip);
+        document.getElementById('grup-arsip-list').classList.toggle('hidden', !arsip);
+        document.getElementById('grup-view-aktif').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_OFF : ArsipList.PILL_ON);
+        document.getElementById('grup-view-arsip').className = ArsipList.PILL_BASE + (arsip ? ArsipList.PILL_ON : ArsipList.PILL_OFF);
+        if (arsip) {
+            ArsipList.mount({
+                res: 'grup',
+                container: document.getElementById('grup-arsip-list')
+            });
+        }
+    },
 
     refreshLive() {
         if (typeof App !== 'undefined' && App.currentTab !== 'grup') return;
@@ -240,11 +255,23 @@ const Grup = {
     },
 
     async delete(id, nama) {
-        const message = `<div class="text-center"><p class="text-xs sm:text-sm text-neutral-300 font-semibold mb-1">Hapus grup <span class="text-neutral-100 font-bold uppercase font-mono">${Utils.escapeHtml(nama)}</span>?</p><p class="text-[11px] sm:text-xs text-neutral-500">Pastikan tidak ada PC atau Paket yang masih terikat dengan grup ini.</p></div>`;
+        const message = `<div class="text-center"><p class="text-xs sm:text-sm text-neutral-300 font-semibold mb-1">Hapus permanen grup <span class="text-neutral-100 font-bold uppercase font-mono">${Utils.escapeHtml(nama)}</span>?</p><p class="text-[11px] sm:text-xs text-neutral-500">Pastikan tidak ada PC atau Paket yang masih terikat dengan grup ini.</p></div>`;
         Modal.confirm(message, async () => {
             try {
                 await API.grup.delete(id);
                 Toast.success("Grup berhasil dihapus");
+                this.load();
+            } catch (err) {
+                Toast.error(err.message);
+            }
+        }, null, { requireCheck: "Saya paham data ini dihapus permanen dan tidak bisa dikembalikan." });
+    },
+
+    async archive(id, nama) {
+        Modal.confirm(`Arsipkan grup ${nama}? PC, paket, dan member di grup ini ikut diarsipkan. Pulihkan manual dari tab arsipnya.`, async () => {
+            try {
+                await API.grup.archive(id);
+                Toast.success("Grup berhasil diarsipkan");
                 this.load();
             } catch (err) {
                 Toast.error(err.message);
@@ -286,6 +313,7 @@ const Grup = {
         }
 
         if (filtered.length === 0) {
+            // xss-reviewed: hanya angka dan kelas CSS dari state internal
             area.innerHTML = `
                 <div class="flex flex-col items-center justify-center py-10 sm:py-14 2xl:py-20 text-neutral-500 bg-[#050505] border border-dashed border-[#1c1c1c] rounded">
                     <svg class="w-8 h-8 2xl:w-10 2xl:h-10 mb-2 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 01-2-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
@@ -339,9 +367,14 @@ const Grup = {
                                 title="Edit Grup">
                                 <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             </button>
+                            <button onclick="Grup.archive(${g.id}, '${safeNama}')" 
+                                class="w-6 h-6 sm:w-7 sm:h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-amber-400 hover:bg-amber-500 hover:text-black transition-colors flex items-center justify-center shrink-0" 
+                                title="Arsipkan">
+                                <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7v13H4V7m16 0H4m16 0l-1.5-3h-13L4 7m5 5v5m6-5v5"></path></svg>
+                            </button>
                             <button onclick="Grup.delete(${g.id}, '${safeNama}')" 
                                 class="w-6 h-6 sm:w-7 sm:h-7 2xl:w-8 2xl:h-8 rounded bg-[#171717] border border-[#262626] text-red-400 hover:bg-red-600 hover:text-white transition-colors flex items-center justify-center shrink-0" 
-                                title="Hapus Grup">
+                                title="Hapus permanen">
                                 <svg class="w-3 h-3 sm:w-3.5 sm:h-3.5 2xl:w-4 2xl:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                             </button>
                         </div>`}
@@ -369,6 +402,7 @@ const Grup = {
             `;
         }
 
+        // xss-reviewed: HTML dihasilkan builder internal yang meng-escape nilai dinamis
         area.innerHTML = `
             <div class="overflow-x-auto w-full border border-[#1c1c1c] rounded">
                 <table class="w-full text-xs 2xl:text-sm">

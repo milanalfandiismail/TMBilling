@@ -71,21 +71,15 @@ def get_active_shift():
 @shift_api_bp.route("/<int:shift_id>/summary", methods=["GET"])
 @login_required
 def get_shift_summary(shift_id=None):
-    """Ringkasan pendapatan shift aktif (HANYA untuk admin preview, bukan blind count)."""
+    """Ringkasan pendapatan shift (HANYA admin; kasir wajib hitung buta)."""
     try:
+        if session.get("kasir_role", "kasir") != "admin":
+            return jsonify({"error": "Akses ditolak"}), 403
+
         if not shift_id:
-            role = session.get("kasir_role", "kasir")
-            if role == "admin":
-                from app.models.shift.shift_record import ShiftRecord
-                active_s = ShiftRecord.query.filter_by(status="AKTIF").first()
-                shift_id = active_s.id if active_s else None
-            else:
-                kasir_id = session.get("kasir_id")
-                from app.repositories import UserRepository
-                user = UserRepository.get_by_id(kasir_id) if kasir_id else None
-                kasir_username = user.username if user else session.get("kasir_username", "kasir")
-                shift = ShiftService.get_active_shift(kasir_username)
-                shift_id = shift.id if shift else None
+            from app.models.shift.shift_record import ShiftRecord
+            active_s = ShiftRecord.query.filter_by(status="AKTIF").first()
+            shift_id = active_s.id if active_s else None
 
         if not shift_id:
             return jsonify({"error": "Tidak ada shift aktif"}), 400
@@ -164,21 +158,12 @@ def force_close_shift():
 def get_shift_receipt(shift_id):
     """Generate struk teks serah terima shift untuk printer thermal 58mm/80mm."""
     try:
+        if session.get("kasir_role") != "admin":
+            shift = ShiftService.get_shift(shift_id)
+            if not shift or shift.kasir_id != session.get("kasir_id"):
+                return jsonify({"error": "Akses ditolak"}), 403
         receipt_text = ShiftService.generate_shift_receipt_text(shift_id)
         return jsonify({"success": True, "receipt_text": receipt_text}), 200
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 404
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-
-@shift_api_bp.route("/<int:shift_id>/summary", methods=["GET"])
-@login_required
-def get_single_shift_summary(shift_id):
-    """Ambil ringkasan detail shift tertentu."""
-    try:
-        summary = ShiftService.get_shift_summary(shift_id)
-        return jsonify({"success": True, "summary": summary}), 200
     except ValueError as e:
         return jsonify({"error": str(e)}), 404
     except Exception as e:
@@ -192,9 +177,15 @@ def get_shift_history():
     try:
         limit = request.args.get("limit", 10, type=int)
         offset = request.args.get("offset", 0, type=int)
+        if limit is None or not (1 <= limit <= 100):
+            raise ValueError("Parameter limit harus 1..100")
+        if offset is None or offset < 0:
+            raise ValueError("Parameter offset harus >= 0")
         tanggal_mulai = request.args.get("tanggal_mulai")
         tanggal_selesai = request.args.get("tanggal_selesai")
         kasir_id = request.args.get("kasir_id", type=int)
+        if session.get("kasir_role") != "admin":
+            kasir_id = session.get("kasir_id")
 
         shifts = ShiftService.get_shift_history(
             limit=limit,
@@ -205,6 +196,8 @@ def get_shift_history():
         )
         return jsonify({"success": True, "shifts": shifts}), 200
 
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
