@@ -153,3 +153,69 @@ pub fn mac_address(raw: &str) -> Result<Option<String>, String> {
         .collect();
     Ok(Some(pasangan.join(":")))
 }
+
+/// Username member: lowercase, pola `^[a-z0-9_.-]+$` (pesan identik Python).
+pub fn username_lower(raw: &str) -> Result<String, String> {
+    let cleaned = username(raw, 3, 30)?.to_lowercase();
+    let valid = cleaned
+        .chars()
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || matches!(c, '_' | '.' | '-'));
+    if !valid {
+        return Err(
+            "Username hanya boleh berisi huruf kecil, angka, garis bawah (_), titik (.), atau minus (-)"
+                .into(),
+        );
+    }
+    Ok(cleaned)
+}
+
+/// Nomor HP opsional: 8-16 digit (boleh +, -, spasi).
+pub fn phone(raw: &str) -> Result<Option<String>, String> {
+    let cleaned = raw.trim();
+    if cleaned.is_empty() {
+        return Ok(None);
+    }
+    let digits = cleaned.chars().filter(|c| c.is_ascii_digit()).count();
+    let bentuk_ok = cleaned
+        .chars()
+        .all(|c| c.is_ascii_digit() || matches!(c, '+' | '-' | ' '));
+    if !bentuk_ok || !(8..=16).contains(&digits) {
+        return Err(
+            "Nomor HP harus berupa 8-16 digit angka (boleh menyertakan tanda +, -, atau spasi)"
+                .into(),
+        );
+    }
+    Ok(Some(cleaned.to_string()))
+}
+
+/// Email opsional maks 120 karakter.
+pub fn email(raw: &str) -> Result<Option<String>, String> {
+    let cleaned = raw.trim();
+    if cleaned.is_empty() {
+        return Ok(None);
+    }
+    let pola_ok = {
+        let parts: Vec<&str> = cleaned.split('@').collect();
+        parts.len() == 2
+            && !parts[0].is_empty()
+            && parts[0]
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '%' | '+' | '-'))
+            && {
+                let host = parts[1];
+                let segmen: Vec<&str> = host.split('.').collect();
+                segmen.len() >= 2
+                    && segmen.iter().all(|s| {
+                        !s.is_empty() && s.chars().all(|c| c.is_ascii_alphanumeric() || c == '-')
+                    })
+                    && segmen
+                        .last()
+                        .map(|tld| tld.len() >= 2 && tld.chars().all(|c| c.is_ascii_alphabetic()))
+                        == Some(true)
+            }
+    };
+    if !pola_ok || cleaned.chars().count() > 120 {
+        return Err("Format alamat email tidak valid".into());
+    }
+    Ok(Some(cleaned.to_string()))
+}

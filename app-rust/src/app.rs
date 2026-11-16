@@ -6,12 +6,15 @@ use crate::routes::auth::auth_kasir;
 use crate::routes::blackout::blackout_routes;
 use crate::routes::game::{game_public_routes, game_routes};
 use crate::routes::grup::grup_routes;
+use crate::routes::member::member_routes;
 use crate::routes::menu::menu_routes;
+use crate::routes::notes::note_routes;
 use crate::routes::paket::paket_routes;
 use crate::routes::pc::pc_routes;
 use crate::routes::public::health;
 use crate::routes::sesi::sesi_routes;
 use crate::routes::settings::settings_routes;
+use crate::routes::shift::shift_routes;
 use crate::routes::user::user_routes;
 use crate::state::AppState;
 use axum::body::Body;
@@ -281,7 +284,88 @@ pub fn router(state: Arc<AppState>) -> Router {
             "/api/v1/kasir/blackout/force-all-and-detect",
             post(blackout_routes::force_all),
         )
-        .route("/api/v1/kasir/blackout/clear", post(blackout_routes::clear));
+        .route("/api/v1/kasir/blackout/clear", post(blackout_routes::clear))
+        .route(
+            "/api/v1/kasir/member",
+            get(member_routes::list).post(member_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/member/",
+            get(member_routes::list).post(member_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/member/tambah-waktu",
+            post(member_routes::tambah_waktu),
+        )
+        .route(
+            "/api/v1/kasir/member/refund-paket",
+            post(member_routes::refund),
+        )
+        .route(
+            "/api/v1/kasir/member/{id}",
+            get(member_routes::detail)
+                .put(member_routes::update)
+                .delete(member_routes::hapus),
+        )
+        .route(
+            "/api/v1/kasir/member/{id}/archive",
+            post(member_routes::archive),
+        )
+        .route(
+            "/api/v1/kasir/member/{id}/restore",
+            post(member_routes::restore),
+        )
+        .route(
+            "/api/v1/kasir/member/{id}/paket",
+            get(member_routes::riwayat),
+        )
+        .route("/api/v1/kasir/shift/start", post(shift_routes::start))
+        .route("/api/v1/kasir/shift/active", get(shift_routes::active))
+        .route(
+            "/api/v1/kasir/shift/summary",
+            get(shift_routes::summary_aktif),
+        )
+        .route("/api/v1/kasir/shift/end", post(shift_routes::end))
+        .route(
+            "/api/v1/kasir/shift/force-close",
+            post(shift_routes::force_close),
+        )
+        .route("/api/v1/kasir/shift/history", get(shift_routes::history))
+        .route(
+            "/api/v1/kasir/shift/kasir-list",
+            get(shift_routes::kasir_list),
+        )
+        .route(
+            "/api/v1/kasir/shift/receipt/{id}",
+            get(shift_routes::receipt),
+        )
+        .route(
+            "/api/v1/kasir/shift/{id}/summary",
+            get(shift_routes::summary),
+        )
+        .route(
+            "/api/v1/kasir/notes",
+            get(note_routes::list).post(note_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/notes/",
+            get(note_routes::list).post(note_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/notes/{filename}",
+            get(note_routes::get)
+                .put(note_routes::save)
+                .delete(note_routes::hapus),
+        )
+        .route(
+            "/api/v1/kasir/notes/{filename}/download",
+            get(note_routes::download),
+        )
+        .route("/api/v1/kasir/notes/{filename}/pin", post(note_routes::pin))
+        .route(
+            "/api/v1/kasir/notes/{filename}/duplicate",
+            post(note_routes::duplicate),
+        );
 
     let guarded = Router::new()
         .route("/kasir/", get(shell_placeholder))

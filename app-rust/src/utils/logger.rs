@@ -54,6 +54,10 @@ pub fn audit(
     );
 }
 
+pub fn rec(user: &str, action: &str, detail: &str) {
+    audit(user, action, detail, None, "", "");
+}
+
 pub fn audit_json(
     user: &str,
     action: &str,

@@ -6,5 +6,6 @@ pub mod paket;
 pub mod pc;
 pub mod sesi;
 pub mod settings;
+pub mod shift;
 pub mod transaksi;
 pub mod user;

@@ -5,5 +5,6 @@ pub mod menu;
 pub mod paket;
 pub mod pc;
 pub mod sesi;
+pub mod shift;
 pub mod transaksi;
 pub mod user;

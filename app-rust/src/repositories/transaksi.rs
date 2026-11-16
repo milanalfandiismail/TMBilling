@@ -59,3 +59,17 @@ pub async fn riwayat_paket_sesi(
     }
     q.fetch_all(pool).await
 }
+
+pub async fn riwayat_paket_member(
+    pool: &SqlitePool,
+    member_id: i64,
+) -> sqlx::Result<Vec<Transaksi>> {
+    let sql = format!(
+        "{SELECT} WHERE t.member_id = ? AND t.jenis IN ('beli_paket_member') \
+         AND COALESCE(t.is_refunded, 0) = 0 ORDER BY t.dibuat_pada DESC"
+    );
+    sqlx::query_as::<_, Transaksi>(&sql)
+        .bind(member_id)
+        .fetch_all(pool)
+        .await
+}

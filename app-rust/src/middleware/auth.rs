@@ -172,3 +172,24 @@ mod tests {
         assert!(decode(&c, &encode(&c, &data)).is_none());
     }
 }
+
+/// Gate shift: admin bebas, kasir wajib punya shift AKTIF.
+pub async fn shift_required(st: &AppState, kasir: &Kasir) -> Result<(), axum::response::Response> {
+    if kasir.user.role() == "admin" {
+        return Ok(());
+    }
+    let aktif: Option<String> = sqlx::query_scalar(
+        "SELECT status FROM shift_record WHERE kasir_id = ? AND status = 'AKTIF'",
+    )
+    .bind(kasir.user.id)
+    .fetch_optional(&st.pool)
+    .await
+    .map_err(|e| crate::utils::http::err(500, e.to_string()))?;
+    if aktif.is_none() {
+        return Err(crate::utils::http::err(
+            400,
+            "Harap buka shift terlebih dahulu sebelum melayani transaksi.",
+        ));
+    }
+    Ok(())
+}
