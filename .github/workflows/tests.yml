@@ -1,7 +1,7 @@
 name: tests
 
 on:
-  push:
+  # Hanya pull request: pengujian rutin dijalankan lokal, push biasa tidak memicu CI.
   pull_request:
 
 jobs:
