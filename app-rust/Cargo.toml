@@ -44,6 +44,10 @@ name = "idempotency_test"
 path = "tests/unit/idempotency_test.rs"
 
 [[test]]
+name = "sesi_test"
+path = "tests/contract/sesi_test.rs"
+
+[[test]]
 name = "master_data_test"
 path = "tests/contract/master_data_test.rs"
 

@@ -21,6 +21,23 @@ pub fn today_local(tz_name: &str) -> NaiveDate {
     now_local(tz_name).date()
 }
 
+/// Timestamp DB: semua kolom waktu disimpan UTC naive seperti Python `now_local()`.
+pub fn now_db() -> NaiveDateTime {
+    Utc::now().naive_utc()
+}
+
+/// Tulis timestamp DB dengan mikro detik (layout Python SQLAlchemy).
+pub fn db_str(dt: NaiveDateTime) -> String {
+    dt.format("%Y-%m-%d %H:%M:%S%.6f").to_string()
+}
+
+/// Baca kolom waktu SQLite; nilai tanpa fraksi detik juga diterima.
+pub fn parse_dt(raw: &str) -> Option<NaiveDateTime> {
+    NaiveDateTime::parse_from_str(raw, "%Y-%m-%d %H:%M:%S%.f")
+        .or_else(|_| NaiveDateTime::parse_from_str(raw, "%Y-%m-%d %H:%M:%S"))
+        .ok()
+}
+
 /// Format tanggal-jam standar log: `YYYY-MM-DD HH:MM:SS`.
 pub fn format_local_now(tz_name: &str) -> String {
     now_local(tz_name).format("%Y-%m-%d %H:%M:%S").to_string()
@@ -46,6 +63,14 @@ pub fn format_display(dt: NaiveDateTime, tz_name: &str) -> String {
 }
 
 /// Rentang UTC `[start, end)` untuk satu tanggal lokal, siap dibandingkan kolom teks SQLite.
+/// Format waktu UTC naive ke zona aplikasi dengan pola bebas.
+pub fn format_local(dt: NaiveDateTime, tz_name: &str, fmt: &str) -> String {
+    dt.and_local_timezone(tz(tz_name))
+        .single()
+        .map(|d| d.format(fmt).to_string())
+        .unwrap_or_default()
+}
+
 pub fn day_range_utc(date: NaiveDate, tz_name: &str) -> (String, String) {
     let zone = tz(tz_name);
     let midnight = date.and_hms_opt(0, 0, 0).expect("midnight valid");

@@ -463,7 +463,7 @@ pub async fn hard_delete(st: &AppState, id: i64, operator: &str) -> Result<(Stri
 }
 
 /// Metode pembayaran sah = default sistem + konfigurasi `payment_methods`.
-async fn metode_pembayaran(st: &AppState, raw: Option<&str>) -> Result<String, String> {
+pub async fn metode_pembayaran(st: &AppState, raw: Option<&str>) -> Result<String, String> {
     let raw = raw
         .map(str::trim)
         .filter(|s| !s.is_empty())

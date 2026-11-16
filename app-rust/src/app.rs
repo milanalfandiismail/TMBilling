@@ -3,12 +3,14 @@
 use crate::assets::StaticAssets;
 use crate::middleware::{csrf, whitelist};
 use crate::routes::auth::auth_kasir;
+use crate::routes::blackout::blackout_routes;
 use crate::routes::game::{game_public_routes, game_routes};
 use crate::routes::grup::grup_routes;
 use crate::routes::menu::menu_routes;
 use crate::routes::paket::paket_routes;
 use crate::routes::pc::pc_routes;
 use crate::routes::public::health;
+use crate::routes::sesi::sesi_routes;
 use crate::routes::settings::settings_routes;
 use crate::routes::user::user_routes;
 use crate::state::AppState;
@@ -214,7 +216,72 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route(
             "/api/v1/public/game/kategori",
             get(game_public_routes::kategori_list),
-        );
+        )
+        .route(
+            "/api/v1/kasir/sesi/buka-guest",
+            post(sesi_routes::buka_guest),
+        )
+        .route(
+            "/api/v1/kasir/sesi/buka-member",
+            post(sesi_routes::buka_member),
+        )
+        .route(
+            "/api/v1/kasir/sesi/buka-guest-batch",
+            post(sesi_routes::buka_guest_batch),
+        )
+        .route(
+            "/api/v1/kasir/sesi/tambah-waktu-batch",
+            post(sesi_routes::tambah_waktu_batch),
+        )
+        .route(
+            "/api/v1/kasir/sesi/tambah-waktu-sesi/{id}",
+            post(sesi_routes::tambah_waktu_sesi),
+        )
+        .route(
+            "/api/v1/kasir/sesi/pindah-pc/{id}",
+            post(sesi_routes::pindah_pc),
+        )
+        .route("/api/v1/kasir/sesi/tutup/{id}", post(sesi_routes::tutup))
+        .route(
+            "/api/v1/kasir/sesi/tutup-batch",
+            post(sesi_routes::tutup_batch),
+        )
+        .route(
+            "/api/v1/kasir/sesi/refund-paket",
+            post(sesi_routes::refund_paket),
+        )
+        .route("/api/v1/kasir/sesi/{id}", get(sesi_routes::detail))
+        .route(
+            "/api/v1/kasir/sesi/{id}/riwayat-paket",
+            get(sesi_routes::riwayat_paket),
+        )
+        .route(
+            "/api/v1/kasir/blackout/deteksi",
+            post(blackout_routes::deteksi),
+        )
+        .route("/api/v1/kasir/blackout/list", get(blackout_routes::list))
+        .route("/api/v1/kasir/blackout/dates", get(blackout_routes::dates))
+        .route(
+            "/api/v1/kasir/blackout/resolve/member/{id}",
+            post(blackout_routes::resolve_member),
+        )
+        .route(
+            "/api/v1/kasir/blackout/resolve/guest/sama/{id}",
+            post(blackout_routes::resolve_guest_sama),
+        )
+        .route(
+            "/api/v1/kasir/blackout/resolve/guest/lanjut/{id}",
+            post(blackout_routes::resolve_guest_lanjut),
+        )
+        .route(
+            "/api/v1/kasir/blackout/resolve/guest/tutup/{id}",
+            post(blackout_routes::resolve_tutup),
+        )
+        .route(
+            "/api/v1/kasir/blackout/force-all-and-detect",
+            post(blackout_routes::force_all),
+        )
+        .route("/api/v1/kasir/blackout/clear", post(blackout_routes::clear));
 
     let guarded = Router::new()
         .route("/kasir/", get(shell_placeholder))
