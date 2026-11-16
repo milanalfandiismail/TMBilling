@@ -11,6 +11,7 @@ pub mod monitor;
 pub mod notes;
 pub mod paket;
 pub mod pc;
+pub mod report;
 pub mod sesi;
 pub mod settings;
 pub mod shift;

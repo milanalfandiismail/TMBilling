@@ -73,3 +73,195 @@ pub async fn riwayat_paket_member(
         .fetch_all(pool)
         .await
 }
+
+// ---------- Laporan ----------
+
+/// Klausa WHERE laporan. Semua nilai di-bind sebagai TEXT; SQLite menerapkan
+/// affinity kolom sehingga perbandingan dengan INTEGER tetap cocok.
+fn filter_sql(
+    tanggal: Option<&str>,
+    kasir_id: Option<i64>,
+    metode: Option<&str>,
+    q: Option<&str>,
+) -> (String, Vec<String>) {
+    let mut parts: Vec<String> = Vec::new();
+    let mut binds: Vec<String> = Vec::new();
+    if let Some(t) = tanggal {
+        parts.push("date(t.dibuat_pada) = date(?)".into());
+        binds.push(t.to_string());
+    }
+    if let Some(k) = kasir_id {
+        parts.push("t.user_id = ?".into());
+        binds.push(k.to_string());
+    }
+    if let Some(m) = metode {
+        parts.push("(CASE WHEN COALESCE(t.metode_pembayaran,'') IN ('','Cash') THEN 'Tunai' ELSE t.metode_pembayaran END) = ?".into());
+        binds.push(m.to_string());
+    }
+    if let Some(kata) = q.filter(|k| !k.is_empty()) {
+        parts.push(
+            "(COALESCE(t.no_nota,'') LIKE ? OR COALESCE(t.keterangan,'') LIKE ? OR COALESCE(t.operator,'') LIKE ?)".into(),
+        );
+        let like = format!("%{kata}%");
+        binds.extend([like.clone(), like.clone(), like]);
+    }
+    let clause = if parts.is_empty() {
+        String::new()
+    } else {
+        format!(" AND {}", parts.join(" AND "))
+    };
+    (clause, binds)
+}
+
+async fn scalar(sql: &str, binds: &[String], pool: &SqlitePool) -> sqlx::Result<i64> {
+    let mut q = sqlx::query_scalar::<_, i64>(sql);
+    for b in binds {
+        q = q.bind(b.clone());
+    }
+    q.fetch_one(pool).await
+}
+
+const BILLING: &str = "t.jumlah > 0 AND t.jenis NOT IN ('tutup_sesi','pindah_pc','refund_paket')";
+
+pub async fn total_pemasukan(
+    pool: &SqlitePool,
+    tanggal: Option<&str>,
+    kasir_id: Option<i64>,
+    metode: Option<&str>,
+) -> sqlx::Result<i64> {
+    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, None);
+    scalar(
+        &format!("SELECT COALESCE(SUM(t.jumlah),0) FROM transaksi t WHERE {BILLING}{clause}"),
+        &binds,
+        pool,
+    )
+    .await
+}
+
+pub async fn total_refund(
+    pool: &SqlitePool,
+    tanggal: Option<&str>,
+    kasir_id: Option<i64>,
+    metode: Option<&str>,
+) -> sqlx::Result<i64> {
+    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, None);
+    scalar(
+        &format!("SELECT COALESCE(SUM(ABS(t.jumlah)),0) FROM transaksi t WHERE t.jenis = 'refund_paket'{clause}"),
+        &binds,
+        pool,
+    )
+    .await
+}
+
+pub async fn pendapatan_kategori(
+    pool: &SqlitePool,
+    tipe: &str,
+    tanggal: Option<&str>,
+    kasir_id: Option<i64>,
+    metode: Option<&str>,
+) -> sqlx::Result<i64> {
+    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, None);
+    let mut semua = binds.clone();
+    semua.insert(0, tipe.to_string());
+    scalar(
+        &format!(
+            "SELECT COALESCE(SUM(t.jumlah),0) FROM transaksi t JOIN sesi s ON s.id = t.sesi_id
+             WHERE {BILLING} AND s.tipe = ?{clause}"
+        ),
+        &semua,
+        pool,
+    )
+    .await
+}
+
+/// `(metode, total)` billing per metode pembayaran (gross - refund).
+pub async fn breakdown_metode(
+    pool: &SqlitePool,
+    tanggal: Option<&str>,
+    kasir_id: Option<i64>,
+    metode: Option<&str>,
+    q: Option<&str>,
+) -> sqlx::Result<Vec<(String, i64)>> {
+    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, q);
+    let sql = format!(
+        "SELECT CASE WHEN COALESCE(t.metode_pembayaran,'') IN ('','Cash') THEN 'Tunai'
+                     ELSE t.metode_pembayaran END AS m,
+                COALESCE(SUM(t.jumlah),0)
+         FROM transaksi t WHERE t.jenis NOT IN ('tutup_sesi','pindah_pc'){clause}
+         GROUP BY m ORDER BY 2 DESC"
+    );
+    let mut q2 = sqlx::query_as::<_, (String, i64)>(&sql);
+    for b in &binds {
+        q2 = q2.bind(b.clone());
+    }
+    q2.fetch_all(pool).await
+}
+
+pub async fn get_by_no_nota(pool: &SqlitePool, no_nota: &str) -> sqlx::Result<Option<Transaksi>> {
+    sqlx::query_as::<_, Transaksi>(&format!("{SELECT} WHERE t.no_nota = ? LIMIT 1"))
+        .bind(no_nota)
+        .fetch_optional(pool)
+        .await
+}
+
+pub async fn history_paginated(
+    pool: &SqlitePool,
+    tanggal: Option<&str>,
+    kasir_id: Option<i64>,
+    metode: Option<&str>,
+    q: Option<&str>,
+    limit: i64,
+    offset: i64,
+) -> sqlx::Result<(Vec<Transaksi>, i64)> {
+    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, q);
+    let total = scalar(
+        &format!("SELECT COUNT(*) FROM transaksi t WHERE 1=1{clause}"),
+        &binds,
+        pool,
+    )
+    .await?;
+    let sql = format!("{SELECT} WHERE 1=1{clause} ORDER BY t.id DESC LIMIT ? OFFSET ?");
+    let mut s = sqlx::query_as::<_, Transaksi>(&sql);
+    for b in &binds {
+        s = s.bind(b.clone());
+    }
+    let rows = s.bind(limit).bind(offset).fetch_all(pool).await?;
+    Ok((rows, total))
+}
+
+pub async fn tanggal_unik(pool: &SqlitePool) -> sqlx::Result<Vec<String>> {
+    sqlx::query_scalar(
+        "SELECT DISTINCT date(dibuat_pada) AS t FROM transaksi WHERE dibuat_pada IS NOT NULL ORDER BY t DESC",
+    )
+    .fetch_all(pool)
+    .await
+}
+
+pub async fn delete_by_id(pool: &SqlitePool, id: i64) -> sqlx::Result<bool> {
+    let res = sqlx::query("DELETE FROM transaksi WHERE id = ?")
+        .bind(id)
+        .execute(pool)
+        .await?;
+    Ok(res.rows_affected() > 0)
+}
+
+pub async fn delete_by_date(pool: &SqlitePool, tanggal: &str) -> sqlx::Result<u64> {
+    let res = sqlx::query("DELETE FROM transaksi WHERE date(dibuat_pada) = date(?)")
+        .bind(tanggal)
+        .execute(pool)
+        .await?;
+    Ok(res.rows_affected())
+}
+
+pub async fn delete_all(pool: &SqlitePool) -> sqlx::Result<u64> {
+    let res = sqlx::query("DELETE FROM transaksi").execute(pool).await?;
+    Ok(res.rows_affected())
+}
+
+pub async fn distinct_remote_operators(pool: &SqlitePool) -> sqlx::Result<Vec<String>> {
+    sqlx::query_scalar(
+        "SELECT DISTINCT operator FROM transaksi WHERE operator IS NOT NULL AND operator != '' ORDER BY operator",
+    )
+    .fetch_all(pool)
+    .await
+}

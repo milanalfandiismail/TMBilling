@@ -342,3 +342,94 @@ pub async fn distinct_dates(pool: &SqlitePool) -> Result<Vec<String>, sqlx::Erro
     .await?;
     Ok(rows.into_iter().filter_map(|r| r.0).collect())
 }
+
+/// Total pemasukan kantin pada satu tanggal (opsional per kasir & metode).
+pub async fn total_pemasukan_by_date(
+    pool: &SqlitePool,
+    tanggal: Option<&str>,
+    kasir_id: Option<i64>,
+    metode: Option<&str>,
+) -> sqlx::Result<i64> {
+    let mut sql = String::from("SELECT COALESCE(SUM(total_harga),0) FROM transaksi_menu WHERE 1=1");
+    let mut binds: Vec<String> = Vec::new();
+    if let Some(t) = tanggal {
+        sql.push_str(" AND date(tanggal) = date(?)");
+        binds.push(t.into());
+    }
+    if let Some(k) = kasir_id {
+        sql.push_str(" AND kasir_id = ?");
+        binds.push(k.to_string());
+    }
+    if let Some(m) = metode {
+        sql.push_str(
+            " AND (CASE WHEN COALESCE(metode_pembayaran,'') IN ('','Cash') THEN 'Tunai' ELSE metode_pembayaran END) = ?",
+        );
+        binds.push(m.into());
+    }
+    let mut q = sqlx::query_scalar::<_, i64>(&sql);
+    for b in binds {
+        q = q.bind(b);
+    }
+    q.fetch_one(pool).await
+}
+
+/// Semua transaksi menu pada tanggal (dipakai laporan kantin yang dikelompokkan per nota).
+pub async fn transactions_by_date(
+    pool: &SqlitePool,
+    tanggal: Option<&str>,
+    kasir_id: Option<i64>,
+    metode: Option<&str>,
+) -> sqlx::Result<Vec<TransaksiMenu>> {
+    let mut sql = String::from(
+        "SELECT tm.id, tm.no_nota, tm.menu_id, tm.jumlah, tm.total_harga, tm.pc_kode,
+                tm.tanggal, tm.kasir_id, tm.tunai, tm.kembalian, tm.metode_pembayaran, tm.operator,
+                m.nama AS menu_nama, m.harga AS menu_harga,
+                NULL AS kasir_nama, NULL AS kasir_username
+         FROM transaksi_menu tm
+         LEFT JOIN menu_item m ON m.id = tm.menu_id WHERE 1=1",
+    );
+    let mut binds: Vec<String> = Vec::new();
+    if let Some(t) = tanggal {
+        sql.push_str(" AND date(tm.tanggal) = date(?)");
+        binds.push(t.into());
+    }
+    if let Some(k) = kasir_id {
+        sql.push_str(" AND tm.kasir_id = ?");
+        binds.push(k.to_string());
+    }
+    if let Some(m) = metode {
+        sql.push_str(
+            " AND (CASE WHEN COALESCE(tm.metode_pembayaran,'') IN ('','Cash') THEN 'Tunai' ELSE tm.metode_pembayaran END) = ?",
+        );
+        binds.push(m.into());
+    }
+    sql.push_str(" ORDER BY tm.id DESC");
+    let mut q = sqlx::query_as::<_, TransaksiMenu>(&sql);
+    for b in binds {
+        q = q.bind(b);
+    }
+    q.fetch_all(pool).await
+}
+
+pub async fn delete_all_transaksi(pool: &SqlitePool) -> sqlx::Result<u64> {
+    let res = sqlx::query("DELETE FROM transaksi_menu")
+        .execute(pool)
+        .await?;
+    Ok(res.rows_affected())
+}
+
+pub async fn delete_transaksi_by_date(pool: &SqlitePool, tanggal: &str) -> sqlx::Result<u64> {
+    let res = sqlx::query("DELETE FROM transaksi_menu WHERE date(tanggal) = date(?)")
+        .bind(tanggal)
+        .execute(pool)
+        .await?;
+    Ok(res.rows_affected())
+}
+
+pub async fn delete_transaksi_by_id(pool: &SqlitePool, id: i64) -> sqlx::Result<bool> {
+    let res = sqlx::query("DELETE FROM transaksi_menu WHERE id = ?")
+        .bind(id)
+        .execute(pool)
+        .await?;
+    Ok(res.rows_affected() > 0)
+}

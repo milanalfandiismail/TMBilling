@@ -142,3 +142,40 @@ pub async fn delete_resolved_blackout(
     .await?;
     Ok(res.rows_affected())
 }
+
+pub async fn count_by_date(pool: &SqlitePool, tanggal: &str) -> sqlx::Result<i64> {
+    sqlx::query_scalar("SELECT COUNT(*) FROM sesi WHERE date(mulai_pada) = date(?)")
+        .bind(tanggal)
+        .fetch_one(pool)
+        .await
+}
+
+pub async fn distinct_tanggal(pool: &SqlitePool) -> sqlx::Result<Vec<String>> {
+    sqlx::query_scalar(
+        "SELECT DISTINCT date(mulai_pada) AS t FROM sesi WHERE mulai_pada IS NOT NULL ORDER BY t DESC",
+    )
+    .fetch_all(pool)
+    .await
+}
+
+pub async fn delete_history(pool: &SqlitePool) -> sqlx::Result<u64> {
+    let res = sqlx::query("DELETE FROM sesi WHERE status != 'aktif'")
+        .execute(pool)
+        .await?;
+    Ok(res.rows_affected())
+}
+
+pub async fn delete_history_by_date(pool: &SqlitePool, tanggal: &str) -> sqlx::Result<u64> {
+    let res =
+        sqlx::query("DELETE FROM sesi WHERE status != 'aktif' AND date(mulai_pada) = date(?)")
+            .bind(tanggal)
+            .execute(pool)
+            .await?;
+    Ok(res.rows_affected())
+}
+
+pub async fn mulai_pada_aktif(pool: &SqlitePool) -> sqlx::Result<Vec<(i64, Option<String>)>> {
+    sqlx::query_as("SELECT id, mulai_pada FROM sesi WHERE status = 'aktif'")
+        .fetch_all(pool)
+        .await
+}

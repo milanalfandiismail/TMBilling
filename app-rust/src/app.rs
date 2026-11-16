@@ -16,6 +16,7 @@ use crate::routes::notes::note_routes;
 use crate::routes::paket::paket_routes;
 use crate::routes::pc::pc_routes;
 use crate::routes::public::health;
+use crate::routes::report::report_routes;
 use crate::routes::server_monitor::server_monitor_routes;
 use crate::routes::sesi::sesi_routes;
 use crate::routes::settings::settings_routes;
@@ -373,10 +374,65 @@ pub fn router(state: Arc<AppState>) -> Router {
             post(note_routes::duplicate),
         );
 
+    // Laporan, struk, audit log (18 handler).
+    let report_api = Router::new()
+        .route("/api/v1/kasir/laporan/billing", get(report_routes::laporan))
+        .route(
+            "/api/v1/kasir/laporan/kantin",
+            get(report_routes::laporan_kantin),
+        )
+        .route(
+            "/api/v1/kasir/laporan-harian",
+            get(report_routes::laporan_harian),
+        )
+        .route("/api/v1/kasir/tanggal", get(report_routes::tanggal_list))
+        .route("/api/v1/kasir/kasir-list", get(report_routes::kasir_list))
+        .route(
+            "/api/v1/kasir/struk/menu/{id}",
+            get(report_routes::struk_menu),
+        )
+        .route(
+            "/api/v1/kasir/struk/{identifier}",
+            get(report_routes::struk),
+        )
+        .route("/api/v1/kasir/log", get(report_routes::get_logs))
+        .route("/api/v1/kasir/log/clear", post(report_routes::clear_logs))
+        .route("/api/v1/kasir/log/export", get(report_routes::export_logs))
+        .route(
+            "/api/v1/kasir/blackout-log",
+            get(report_routes::blackout_log),
+        )
+        .route(
+            "/api/v1/kasir/transaksi/clear",
+            post(report_routes::clear_transactions),
+        )
+        .route(
+            "/api/v1/kasir/transaksi/by-date/{tanggal}",
+            axum::routing::delete(report_routes::clear_date_transactions),
+        )
+        .route(
+            "/api/v1/kasir/transaksi/{id}",
+            axum::routing::delete(report_routes::delete_transaction),
+        )
+        .route(
+            "/api/v1/kasir/export/billing",
+            get(report_routes::export_billing),
+        )
+        .route(
+            "/api/v1/kasir/export/kantin",
+            get(report_routes::export_kantin),
+        )
+        .route("/api/v1/kasir/export/pnl", get(report_routes::export_pnl))
+        .route(
+            "/api/v1/kasir/export/audit-pdf",
+            get(report_routes::export_audit_pdf),
+        );
+
     let guarded = Router::new()
         .route("/kasir/", get(shell_placeholder))
         .route("/kasir/login", get(auth_kasir::login_page))
         .merge(kasir_api)
+        .merge(report_api)
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             csrf::guard,

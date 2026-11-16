@@ -12,6 +12,10 @@ name = "tmbilling-server"
 path = "src/main.rs"
 
 [[test]]
+name = "report_test"
+path = "tests/contract/report_test.rs"
+
+[[test]]
 name = "cache_test"
 path = "tests/unit/cache_test.rs"
 
@@ -52,6 +56,7 @@ name = "master_data_test"
 path = "tests/contract/master_data_test.rs"
 
 [dependencies]
+printpdf = "0.7"
 anyhow = "1"
 tokio = { version = "1", features = ["full"] }
 sqlx = { version = "0.8", features = ["runtime-tokio", "sqlite", "chrono"] }

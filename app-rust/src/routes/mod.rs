@@ -12,6 +12,7 @@ pub mod notes;
 pub mod paket;
 pub mod pc;
 pub mod public;
+pub mod report;
 pub mod server_monitor;
 pub mod sesi;
 pub mod settings;
