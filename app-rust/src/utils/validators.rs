@@ -219,3 +219,34 @@ pub fn email(raw: &str) -> Result<Option<String>, String> {
     }
     Ok(Some(cleaned.to_string()))
 }
+
+/// Varian yang menerima field JSON opsional.
+pub fn text_opt(
+    val: Option<&serde_json::Value>,
+    min_len: usize,
+    max_len: usize,
+    field: &str,
+    required: bool,
+) -> Result<String, String> {
+    text(
+        val.and_then(|v| v.as_str()).unwrap_or(""),
+        min_len,
+        max_len,
+        field,
+        required,
+    )
+}
+
+pub fn int_opt(
+    val: Option<&serde_json::Value>,
+    min_val: i64,
+    max_val: i64,
+    field: &str,
+) -> Result<i64, String> {
+    int_range(
+        val.unwrap_or(&serde_json::Value::Null),
+        min_val,
+        max_val,
+        field,
+    )
+}

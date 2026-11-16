@@ -64,6 +64,11 @@ pub fn format_display(dt: NaiveDateTime, tz_name: &str) -> String {
 
 /// Rentang UTC `[start, end)` untuk satu tanggal lokal, siap dibandingkan kolom teks SQLite.
 /// Format waktu UTC naive ke zona aplikasi dengan pola bebas.
+/// Sama seperti `format_display`, tapi menerima string timestamp mentah dari DB.
+pub fn format_display_opt(raw: Option<&str>, tz_name: &str) -> Option<String> {
+    raw.and_then(parse_dt).map(|d| format_display(d, tz_name))
+}
+
 pub fn format_local(dt: NaiveDateTime, tz_name: &str, fmt: &str) -> String {
     dt.and_local_timezone(tz(tz_name))
         .single()

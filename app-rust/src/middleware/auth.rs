@@ -88,6 +88,12 @@ pub struct Kasir {
     pub session: SessionData,
 }
 
+impl Kasir {
+    pub fn is_admin(&self) -> bool {
+        self.user.role() == "admin"
+    }
+}
+
 impl FromRequestParts<Arc<AppState>> for Kasir {
     type Rejection = Response;
 

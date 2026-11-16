@@ -2,12 +2,15 @@
 
 use crate::assets::StaticAssets;
 use crate::middleware::{csrf, whitelist};
+use crate::routes::arsip::arsip_routes;
 use crate::routes::auth::auth_kasir;
 use crate::routes::blackout::blackout_routes;
 use crate::routes::client::client_routes;
+use crate::routes::dashboard::dashboard_routes;
 use crate::routes::game::{game_public_routes, game_routes};
 use crate::routes::grup::grup_routes;
 use crate::routes::hardware::uptime_routes;
+use crate::routes::maintenance::maintenance_routes;
 use crate::routes::member::member_routes;
 use crate::routes::menu::menu_routes;
 use crate::routes::mikrotik::mikrotik_routes;
@@ -16,11 +19,14 @@ use crate::routes::notes::note_routes;
 use crate::routes::paket::paket_routes;
 use crate::routes::pc::pc_routes;
 use crate::routes::public::health;
+use crate::routes::public::tv_public_routes;
 use crate::routes::report::report_routes;
 use crate::routes::server_monitor::server_monitor_routes;
 use crate::routes::sesi::sesi_routes;
 use crate::routes::settings::settings_routes;
 use crate::routes::shift::shift_routes;
+use crate::routes::tournament::tournament_routes;
+use crate::routes::tutorial::tutorial_routes;
 use crate::routes::user::user_routes;
 use crate::routes::vnc::vnc_routes;
 use crate::state::AppState;
@@ -428,11 +434,107 @@ pub fn router(state: Arc<AppState>) -> Router {
             get(report_routes::export_audit_pdf),
         );
 
+    let konten_api = Router::new()
+        .route("/api/v1/kasir/dashboard/pc", get(dashboard_routes::pc_list))
+        .route(
+            "/api/v1/kasir/dashboard/server-metrics",
+            get(dashboard_routes::server_metrics),
+        )
+        .route(
+            "/api/v1/kasir/dashboard/analytics",
+            get(dashboard_routes::analytics),
+        )
+        .route("/api/v1/kasir/arsip", get(arsip_routes::index))
+        .route("/api/v1/kasir/arsip/", get(arsip_routes::index))
+        .route(
+            "/api/v1/kasir/tournament",
+            get(tournament_routes::list).post(tournament_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/tournament/",
+            get(tournament_routes::list).post(tournament_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/tournament/{id}",
+            get(tournament_routes::detail).delete(tournament_routes::delete),
+        )
+        .route(
+            "/api/v1/kasir/tournament/match/{id}/skor",
+            post(tournament_routes::update_skor),
+        )
+        .route(
+            "/api/v1/kasir/tournament/{id}/swiss/next",
+            post(tournament_routes::next_swiss),
+        )
+        .route(
+            "/api/v1/kasir/tournament/stage/{id}/finish",
+            post(tournament_routes::finish_stage),
+        )
+        .route(
+            "/api/v1/kasir/maintenance/create",
+            post(maintenance_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/maintenance/list",
+            get(maintenance_routes::list),
+        )
+        .route(
+            "/api/v1/kasir/maintenance/{id}/status",
+            put(maintenance_routes::update_status),
+        )
+        .route(
+            "/api/v1/kasir/maintenance/report",
+            get(maintenance_routes::report),
+        )
+        .route(
+            "/api/v1/kasir/maintenance/export",
+            get(maintenance_routes::export),
+        )
+        .route(
+            "/api/v1/kasir/maintenance/{id}",
+            axum::routing::delete(maintenance_routes::hapus),
+        )
+        .route(
+            "/api/v1/kasir/tutorial",
+            get(tutorial_routes::list).post(tutorial_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/tutorial/",
+            get(tutorial_routes::list).post(tutorial_routes::create),
+        )
+        .route(
+            "/api/v1/kasir/tutorial/{id}",
+            get(tutorial_routes::detail)
+                .put(tutorial_routes::update)
+                .delete(tutorial_routes::hapus),
+        )
+        .route(
+            "/api/v1/kasir/tutorial/categories",
+            get(tutorial_routes::categories),
+        )
+        .route(
+            "/api/v1/kasir/tutorial/categories/{nama}",
+            axum::routing::delete(tutorial_routes::delete_category),
+        )
+        .route(
+            "/api/v1/kasir/tutorial/upload-image",
+            post(tutorial_routes::upload_image),
+        )
+        .route(
+            "/api/v1/kasir/tutorial/cleanup-temp",
+            post(tutorial_routes::cleanup_temp),
+        )
+        .route(
+            "/api/v1/kasir/tutorial/export-json",
+            post(tutorial_routes::export_json),
+        );
+
     let guarded = Router::new()
         .route("/kasir/", get(shell_placeholder))
         .route("/kasir/login", get(auth_kasir::login_page))
         .merge(kasir_api)
         .merge(report_api)
+        .merge(konten_api)
         .layer(axum::middleware::from_fn_with_state(
             state.clone(),
             csrf::guard,
@@ -555,6 +657,7 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/api/v1/kasir/uptime/range", get(uptime_routes::range));
 
     let client_api = Router::new()
+        .route("/api/v1/public/tv/data", get(tv_public_routes::data))
         .route("/api/v1/public/monitor/", post(monitor_routes::receive))
         .route("/api/v1/public/monitor", post(monitor_routes::receive))
         .route(

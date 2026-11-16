@@ -65,6 +65,7 @@ impl AppState {
         };
         crate::services::settings::ip_whitelist::seed_defaults(&state).await?;
         crate::services::auth::bootstrap::ensure_initial_admin(&state).await?;
+        let _ = crate::services::tutorial::tutorial_service::seed(&state).await;
         Ok(state)
     }
 

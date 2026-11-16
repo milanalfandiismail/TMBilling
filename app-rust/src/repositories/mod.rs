@@ -1,6 +1,7 @@
 pub mod game;
 pub mod grup;
 pub mod hardware;
+pub mod maintenance;
 pub mod member;
 pub mod menu;
 pub mod mikrotik;
@@ -9,6 +10,8 @@ pub mod pc;
 pub mod sesi;
 pub mod settings;
 pub mod shift;
+pub mod tournament;
 pub mod transaksi;
+pub mod tutorial;
 pub mod uptime;
 pub mod user;

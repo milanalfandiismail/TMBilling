@@ -95,3 +95,7 @@ path = "tests/contract/client_agent_test.rs"
 [[test]]
 name = "device_test"
 path = "tests/contract/device_test.rs"
+
+[[test]]
+name = "public_cms_test"
+path = "tests/contract/public_cms_test.rs"
