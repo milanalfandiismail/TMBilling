@@ -1,4 +1,10 @@
+pub mod app;
+pub mod assets;
 pub mod config;
 pub mod db;
+pub mod middleware;
+pub mod repositories;
+pub mod routes;
 pub mod state;
+pub mod templates;
 pub mod utils;

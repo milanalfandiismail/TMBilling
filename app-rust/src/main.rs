@@ -13,6 +13,14 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    println!("TMBilling {} — fondasi siap (server HTTP menyusul di Task 3)", state.cfg.version);
+    let port = std::env::var("PORT").ok().and_then(|p| p.parse::<u16>().ok()).unwrap_or(7015);
+    let state = std::sync::Arc::new(state);
+    let listener = tokio::net::TcpListener::bind(("0.0.0.0", port)).await?;
+    println!("TMBilling {} — http://localhost:{}", state.cfg.version, port);
+    axum::serve(
+        listener,
+        tmbilling_server::app::router(state).into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .await?;
     Ok(())
 }

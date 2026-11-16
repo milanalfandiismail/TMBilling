@@ -12,6 +12,10 @@ name = "tmbilling-server"
 path = "src/main.rs"
 
 [[test]]
+name = "http_test"
+path = "tests/contract/http_test.rs"
+
+[[test]]
 name = "config_test"
 path = "tests/unit/config_test.rs"
 
@@ -38,3 +42,11 @@ chrono-tz = "0.10"
 rand = "0.9"
 flate2 = "1"
 tracing = "0.1"
+axum = "0.8"
+rust-embed = "8"
+minijinja = "2"
+fs2 = "0.4"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }
+http-body-util = "0.1"
