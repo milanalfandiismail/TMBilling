@@ -618,3 +618,7 @@ audit-screenshots/
 *.png
 !app/static/img/*.png
 !tm.png
+
+# Pesan commit/tag sementara untuk rilis
+.commitmsg.txt
+.tagmsg.txt

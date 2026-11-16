@@ -53,7 +53,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 ### 2. Backend Server (`app/`)
 
 #### A. Konfigurasi & Inisialisasi
-- `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5-rc3"`), dynamic random `SECRET_KEY` generator with write-through `.env` persistence, konfigurasi database SQLite, session lifetime, batas upload `MAX_CONTENT_LENGTH = 64 MB`, dan environment loader.
+- `app/config.py`: **Single Source of Version Truth** (`VERSION = "1.6.5"`), dynamic random `SECRET_KEY` generator with write-through `.env` persistence, konfigurasi database SQLite, session lifetime, batas upload `MAX_CONTENT_LENGTH = 64 MB`, dan environment loader.
 - `app/__init__.py`: Application Factory (`create_app(config_override=None)`), inisialisasi CORS, custom `TMBillingCSRFProtect` (Bearer client key dibandingkan dengan `hmac.compare_digest`), Flask-Migrate, `bootstrap_app_data(app)` (seed pengaturan/whitelist/tutorial + bootstrap superadmin acak unik `initial_admin.txt`; hanya menjalankan `db.create_all()` untuk database yang benar-benar baru, database ber-`alembic_version` tidak disentuh factory dan wajib lewat migrasi), guard `before_request` lazy bila skema baru tersedia setelah factory, dan pendaftaran 34 Blueprint.
 
 #### B. Model ORM SQLAlchemy (`app/models/` — 17 Sub-Domain)

@@ -4,8 +4,8 @@
 
 # Master Dokumentasi Teknis & Operasional TMBilling (Single Source of Truth)
 
-> **Versi Rilis:** v1.6.5-rc3  
-> **Branch:** `v1.6.5-rc3` ("Autonomous Offline Studio")  
+> **Versi Rilis:** v1.6.5  
+> **Branch:** `main` ("Autonomous Offline Studio")  
 > **Status:** Single Source of Truth Resmi Repositori TMBilling  
 > **Target Audiens:** Pengembang Backend/Frontend, Pengembang Rust/Tauri, Operator/Kasir, dan Administrator Sistem Warnet & Game Center.
 
@@ -120,7 +120,7 @@ Sistem TMBilling dirancang dengan arsitektur pemisahan tanggung jawab 3 lapis (*
 ```text
 c:\Project GIT\TMBilling
 ├── app/                                # Backend Server Flask & Frontend Kasir
-│   ├── config.py                       # Single Source of Version Truth (VERSION = "1.6.5-rc3")
+│   ├── config.py                       # Single Source of Version Truth (VERSION = "1.6.5")
 │   ├── models/                         # 24 Model Database SQLAlchemy
 │   │   ├── game/                       # Game & GameKategori
 │   │   ├── grup/                       # Grup Ruangan / Tarif (Reguler/VIP)

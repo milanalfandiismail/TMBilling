@@ -6,36 +6,25 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
-## [1.6.5-rc3] - 2026-11-13 - Release Candidate 3
+## [1.6.5] - 2026-11-16 - Autonomous Offline Studio
 
-### Added
-- **Tab Data Diarsipkan**: tab baru `arsip` (`modules/arsip/index.js`) mengumpulkan seluruh data terarsip — grup, PC, paket, member, user, game, menu — lewat `GET /api/v1/kasir/arsip/`, dengan pills kategori (satu kategori tampil sekaligus) serta tombol Pulihkan dan Hapus Permanen.
-- **Arsip Per Tab**: tab grup, PC, paket, member, user, game, dan menu FnB kini punya pill `Aktif | Diarsipkan`; data yang diarsipkan tetap terlihat di tab asalnya, bukan hilang. Baris arsip memakai renderer bersama `core/arsip_list.js` (Pulihkan / Hapus Permanen).
-- **Arsip Grup Berantai**: mengarsipkan grup kini ikut mengarsipkan PC, paket, dan member miliknya dalam satu transaksi (`WRITE_LOCK`), ditolak bila grup masih punya sesi aktif. Restore grup tidak berantai - PC/paket/member dipulihkan manual dari tab arsipnya.
-- **Arsip Grup**: kolom `grup.aktif` (migrasi `a1b2c3d4e5f6`) plus `POST /api/v1/kasir/grup/<id>/archive` dan `/restore`; daftar grup reguler menyembunyikan grup arsip.
-- **Daftar Bersih dari Arsip**: daftar PC, paket, member, user, dan game kini hanya menampilkan data aktif; `?include_arsip=1` untuk menampilkan semuanya.
-- **Arsip dan Hapus Permanen Terpisah**: PC, Paket, Member, User, dan Game punya aksi arsip (`POST .../<id>/archive`, `aktif = False`, bisa dipulihkan) dan hapus permanen (`DELETE .../<id>`) yang benar-benar menghapus baris utama. Body `{"confirm": "<kode/nama/username>"}` wajib; konfirmasi salah atau kosong dibalas 400.
-- **Riwayat Tidak Ikut Terhapus**: purge melepas referensi (`sesi.pc_id`, `sesi.paket_id`, `sesi.member_id`, `sesi.user_id`, `transaksi.paket_id`, `transaksi.member_id`, `transaksi.user_id`) menjadi NULL di dalam `WRITE_LOCK`, jadi laporan dan struk lama tetap utuh nominalnya.
-- **Pengecualian User Ber-shift**: `DELETE /api/v1/kasir/user/<id>` tetap ditolak bila user punya riwayat shift (`shift_record.kasir_id` NOT NULL) — gunakan arsip.
+### Rilis Stabil: Audit, Pengerasan, dan Pengujian Menyeluruh (2026-11-16)
 
-### Changed
-- **Konfirmasi Centang**: hapus permanen kini memakai satu checkbox "Saya paham data ini dihapus permanen dan tidak bisa dikembalikan" pada `Modal.confirm` (`requireCheck`); tombol setuju nonaktif sampai dicentang, menggantikan konfirmasi ketik nama sebelumnya.
-- **Arsip Mengikuti Kolom Tab Asal**: tampilan arsip kini memakai bentuk dan kolom yang sama dengan data aktifnya (`ArsipList.SCHEMA`) — tabel untuk grup/paket/member/user/game, kartu untuk PC dan katalog FnB — baik lewat pill `Aktif | Diarsipkan` di tab asal maupun lewat pills kategori di tab Data Diarsipkan. Modal menu FnB untuk arsip dan hapus permanen kini memakai `Modal.confirm` (bukan `confirm()` bawaan), dan kartu arsip tidak lagi merender tombol yang tidak berfungsi.
-- **Pill Filter Tetap Aktif di Mode Arsip**: pill grup pada tab PC/paket/member dan filter tipe/kategori pada tab game tetap tampil saat melihat arsip dan benar-benar memfilter daftar arsip (`ArsipList.filter` + `match`). Konfirmasi arsip grup menyebutkan PC, paket, dan member yang ikut diarsipkan.
-- **Filter Grup Arsip Tidak Lagi Kosong**: filter grup memakai `ArsipList.setGrup` sehingga pilihan "Semua" benar-benar mengosongkan filter (sebelumnya `''` menjadi `0` dan menyembunyikan semua baris), dan `Member.to_dict()` ikut mengirim `grup_id` agar pill grup member berfungsi tanpa harus kembali ke "Semua" dulu.
-- **Pill Grup Arsip Lengkap**: tab Data Diarsipkan kini punya pill grup sendiri (grup terarsip tetap muncul dengan label ` · arsip`), dan pill grup di tab PC/paket/member memuat grup terarsip lewat `?include_arsip=1`.
-- **Refresh Real-Time Setelah Pulihkan**: `ArsipList.onChanged` menjalankan ulang daftar arsip **dan** seluruh callback pemanggil (`_refresh` + `_callbacks`), sehingga memulihkan atau menghapus permanen langsung memperbarui daftar, total, dan pill grup tanpa reload.
-- **Total dan Warna Kartu Arsip**: footer `Total N <unit> arsip` mengikuti jumlah baris yang benar-benar tampil setelah filter, dan kartu PC terarsip memakai warna kartu aktif (`border-[#242424]`, tanpa `opacity-60`).
-- **Angka Pill Grup Mengikuti Mode**: hitungan pill grup di tab PC/paket/member diambil dari data mode yang sedang tampil (`ArsipList.counts`) — mode aktif menghitung data aktif, mode arsip menghitung data arsip — dan grup tanpa data pada mode itu tidak ditampilkan; member memakai `grup_counts` dari server agar angka ikut hasil pencarian.
-- **Pill Grup Tab Data Diarsipkan Per Kategori**: pill grup di tab terpusat dihitung hanya dari kategori yang sedang dibuka (mis. kategori Member hanya menampilkan grup yang punya member terarsip, dengan angka `NAMA (n)`), dan baris pill grup disembunyikan untuk kategori tanpa grup (`Grup PC / Zona`, `User Staff`, `Menu FnB`). Label pill kategori kini uppercase.
-- **Versi 1.6.5-rc3**: `Config.VERSION` dan semua cermin versi (package.json, klien Tauri, README, DOCUMENTATION, AGENTS) dinaikkan ke `1.6.5-rc3`.
-
-### Fixed
-- **Pill Grup Member di Mode Aktif**: tab member kini menampilkan pill untuk seluruh grup aktif walau grup tersebut belum punya member; grup kosong tampil tanpa angka dan memilihnya menampilkan state "Member Tidak Ditemukan", sedangkan mode arsip tetap hanya menampilkan grup yang punya member terarsip.
-- **Pill Grup Kembali ke Mode Aktif**: `_loadArsipGroups()` pada tab PC/paket/member menyimpan daftar grup arsip di field terpisah (`_arsipGroups`) dan tidak lagi menimpa daftar grup aktif, sehingga pill grup tidak tertinggal menampilkan grup beserta angka arsip setelah pengguna kembali dari `Diarsipkan` ke `Aktif`; `toggleView(false)` juga langsung merender ulang pill grup.
-- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (686 unit test, 385 check E2E, 34 blueprint, 254 rute).
-
-## [Unreleased]
+- **Audit Kode Menyeluruh (7 putaran, tanpa temuan tersisa)**: seluruh 391 metode service diperiksa pemakainya, 247 rute diverifikasi cakupan otorisasinya, 7 job scheduler diaudit terhadap `WRITE_LOCK`, 18 `setInterval` frontend dipastikan berpagar, dan rantai 26 revisi Alembic dipastikan tanpa `down_revision` yatim.
+- **Pagar Otomatis Anti-Regresi**: lima berkas test baru mengunci aturan secara permanen - `test_write_lock_coverage.py` (setiap `commit()` di service wajib di dalam `WRITE_LOCK` atau ber-marker alasan), `test_exception_silence.py` (larang `except` senyap tanpa alasan tertulis), `test_frontend_xss_guard.py` (setiap interpolasi pada blok `innerHTML` wajib di-escape), `test_version_consistency.py` (versi config, package.json, klien Tauri, badge README, dan jumlah blueprint wajib sama), serta `test_route_authorization.py` (setiap rute wajib berguard atau terdaftar publik beralasan).
+- **Backup Manual Terpisah dari Rotasi**: `cleanup_old_backups()` memangkas dua prefiks terpisah - otomatis (5 berkas) dan manual (10 berkas) - sehingga backup buatan operator tidak lagi terhapus setelah beberapa jam oleh backup terjadwal.
+- **Restore Meminta Konfirmasi Sesi Aktif**: `POST /api/v1/kasir/backup/restore/<filename>` membalas 409 beserta `active_sessions` bila masih ada sesi bermain, kecuali body memuat `confirm_active_sessions: true`; dialog dashboard menampilkan peringatan kedua.
+- **Uptime Tidak Lagi Menulis di Luar Lock**: `run_flush_uptime` dan `run_cleanup_uptime_logs` dibungkus `@with_write_lock`, dan `UptimeService.flush_uptime_to_db()` mengembalikan `bool` sehingga kegagalan flush tercatat sebagai job gagal, bukan sukses palsu.
+- **Tiga Index Baru lewat Migrasi a2b3c4d5e6f7**: `ix_pc_uptime_log_tanggal`, `ix_menu_stock_log_created_at`, dan `ix_menu_stock_log_menu_id`, dipasang dengan `CREATE INDEX IF NOT EXISTS` agar aman pada database baru maupun lama.
+- **Arsip Log Dibatasi**: `archive_logs()` menyisakan 30 arsip terbaru (`_prune_archives`) sehingga folder log tidak tumbuh tanpa akhir.
+- **Kunci Idempotensi Checkout Diperbaiki**: permintaan duplikat tidak lagi melepas kunci milik request pertama (flag `claimed`), sehingga retry ganda tidak menghasilkan dua pesanan.
+- **Checkout FnB Turun dari 13 ke 8 Query**: transaksi diserialisasi sebelum `commit()` (tanpa lazy-load pasca-commit), dan `decrement_stok_if_available()` menerima objek menu sehingga tidak melakukan SELECT ulang per item.
+- **Audit Log Client Di-throttle**: `ClientAuditThrottle` membatasi event berulang (5 menit) agar satu PC salah konfigurasi tidak membanjiri log dengan puluhan ribu baris per hari.
+- **Skrip Batch Diperkuat**: `install.bat` dan `developer_install.bat` memindahkan diri ke folder skrip (`cd /d "%~dp0"`); `stop.bat` dan `updater.bat` hanya mematikan proses venv proyek ini; `update.bat` menyalin dirinya ke `%TEMP%` sebelum menukar berkas, mewarisi `TM_ROOT`, dan ditulis tanpa BOM sehingga exit code serta langkah pembersihan tidak hilang.
+- **Kebersihan Kode**: endpoint `GET /api/v1/kasir/menu/transaksi` yang tak terbatas dan tak dipakai UI dihapus, `SesiRepository.get_selesai_by_tanggal` dihapus, 25 pemakaian `Query.get()` legacy dimigrasikan ke `db.session.get()`, dan `get_distinct_tanggal()` memakai `DATE()` di SQL sehingga tidak lagi menarik seluruh baris ke Python.
+- **Guard XSS dan escapeHtml**: seluruh blok template literal multi-baris diperiksa (bukan hanya satu baris), dan `Utils.escapeHtml()` menerima nilai non-string (angka) sehingga filter riwayat shift tidak lagi gagal serta nilai `0` tidak lagi hilang.
+- **Klien Tauri**: hook keyboard yang gagal dipasang kini mematikan proses (`exit(1)`) agar watchdog memasang ulang, bukan meninggalkan PC terkunci tanpa keyboard; perbandingan hash integritas diuji di build debug.
+- **Bukti Pengujian**: 881 unit test hijau, 54 check E2E lintas suite (`backup_restore`, `fnb_pos`, `route_smoke`), dan verifikasi visual Playwright pada 30 tab dashboard, 10 sub-tab settings, serta 8 portal publik dengan browser sungguhan.
 
 ### Perbaikan Migrasi Skema Saat Update (2026-11-12)
 - **Update Gagal pada Instalasi Baru**: `install_scripts/run_migration.py` tidak lagi memutar ulang seluruh migrasi pada database hasil `db.create_all()`; bila skema sudah identik dengan metadata model, revisi langsung di-`stamp` ke `head` sehingga `updater.bat` tidak berhenti di `:fail` karena `duplicate column name: operator`.
@@ -122,57 +111,6 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Suite Backup & Restore**: suite `backup_restore` (8 check) memicu backup nyata, memutasi data, lalu restore tanpa restart di sandbox; folder `backups/` produksi diverifikasi tidak berubah dan guard sha256 database produksi tetap lulus.
 - **Bug Produk Ditemukan & Diperbaiki**: member dengan `kadaluarsa_pada` lampau kini ditolak saat login portal (`403 Masa aktif member sudah kadaluarsa`); dua kelas `animate-in` sisa di modal dashboard dan overlay screenshot dihapus sesuai aturan zero-thrash.
 
----
-
-## [1.6.5-rc2] - 2026-11-01 - Release Candidate 2
-
-### Keamanan & Perbaikan Bug
-- **Validasi API Key Menyeluruh pada Endpoint Member Client & Hardware Monitor**:
-  - Memproteksi rute `/api/v1/public/auth/login`, `/logout`, dan `/status` dengan decorator `@api_key_required`.
-  - Memperbaiki fungsi `member_login` pada client Tauri agar menyertakan header `X-Client-Key`.
-  - Memproteksi rute `/api/v1/public/monitor` dengan `@api_key_required` untuk mencegah telemetry dari client tanpa API key yang sah menandai PC aktif.
-- **Deteksi Mismatch API Key & Visual Alert Khusus pada Dashboard**:
-  - Menghadirkan in-memory store `ApiKeyMismatchStore` untuk melacak IP dan PC yang mengalami penolakan API key.
-  - Menandai PC dengan status koneksi `api_key_mismatch` (`online: False`) agar kartu meja tidak menyala online secara keliru.
-  - Menghadirkan visual alert bertema warna **Fuchsia / Magenta** (`pulse-fuchsia-bg`, `text-fuchsia-400`, `KEY SALAH`, `🔑 KEY TIDAK COCOK`) yang eksklusif dan berbeda dari warna status lainnya (merah terputus, hijau aktif, oranye admin/afk).
-- **Pencegahan Race Condition Sesi Member**:
-  - Menambahkan pengecekan sesi aktif member dan migrasi SQLite partial index `uq_aktif_sesi_member` untuk menolak double-click pembukaan sesi secara atomik.
-- **Pembersihan Silent Exceptions & Resilience**:
-  - Menghilangkan `except: pass` pada middleware auth dan rute client API key mismatch dengan pencatatan audit log terstruktur.
-  - Memperkuat alur migrasi database (`migration_routes.py`) dengan pembersihan berkas sementara ZIP terpusat (`_safe_remove_temp`) dan logging error.
-- **Pembaruan Sistem Otomatis 1-Klik**:
-  - Integrasi fitur cek rilis GitHub dan runner updater mandiri anti file-locking Windows (`updater.bat`).
-- **Perbaikan False Alarm Hardware Checker & Anti-Theft Cold Boot**:
-  - Mengeliminasi false positive `Model GPU berubah (ke 'Unknown')` saat boot dengan mengabaikan nilai placeholder `Unknown` dan menerapkan proteksi grace period 60 detik pada model GPU.
-  - Memastikan jika PCI PNP ID kartu fisik sama persis dengan baseline, status pembacaan nama sementara tidak memicu alarm pencurian.
-  - Menghadirkan deteksi reboot otomatis pada `OnlineStatusStore` dan `AntiTheftGraceTracker` saat PC online kembali setelah offline (> 15 detik) untuk menjamin grace period 60 detik selalu aktif.
-  - Mencegah penimpaan cache nama hardware valid di database dengan string `Unknown`.
-  - Menambahkan sinkronisasi cold boot wait (maks 3 detik) pada agen `TMMonitor.exe` agar menunggu `hardware_temp.json` dari `HardwareHelper.exe` selesai dibuat sebelum mengirim telemetri perdana.
-
-### Optimasi Performa & Refactoring
-- **Batch Flush Uptime (Eliminasi N+1 Queries)**:
-  - Mengubah kalkulasi akumulasi `UptimeMemoryStore.flush_to_database()` dari N+1 query loop tunggal menjadi satu `WHERE pc_id IN (...) AND tanggal IN (...)` bulk-fetch.
-- **Dekomposisi Modular Rute Monitor**:
-  - Memisahkan file monolitik `monitor_routes.py` menjadi 4 modul terfokus: `monitor_routes.py` (telemetri & hardware baseline), `remote_action_routes.py` (AFK lock/unlock, shutdown, restart batch), `screenshot_routes.py` (capture & upload screenshot), dan `vnc_client_routes.py` (proxy VNC client).
-  - Mengonsolidasikan kode duplikat handler hardware, penghapusan, dan kill process.
-- **In-Memory Cache TTL Pruning**:
-  - Menambahkan auto-pruning entri usang (> 5 menit) pada `ApiKeyMismatchStore` untuk mencegah akumulasi memori.
-- **Optimalisasi Query Laporan Finansial Owner**:
-  - Membatasi kueri analitik member trend dengan filter tanggal atas-bawah yang ketat di level database dan normalisasi timezone range otomatis.
-
-## [1.6.5-rc1] - 2026-10-24 - Release Candidate 1
-
-### Diperbaiki
-- **Interaktivitas Menu Stok Habis (Out-of-Stock Restock)**:
-  - Memperbaiki tombol aksi kartu produk di katalog kasir sehingga tombol **Restock**, Edit, dan Hapus tetap dapat diakses saat stok mencapai `0`.
-  - Mengubah badge pasif `Habis` menjadi tombol interaktif **`+ Restock`** yang dapat langsung diklik oleh Kasir (shift aktif) dan Admin untuk menambah stok barang secara instan.
-  - Memperbaiki aksi klik kartu menu berstok 0 agar langsung membuka modal Restock disertai notifikasi toast panduan.
-  - Menjaga integritas keranjang kasir dari penambahan item yang stok fisiknya habis.
-- **Standarisasi Rilis Semantic Versioning**:
-  - Mengubah skema rilis dan cabang git menjadi `v1.6.5-rc1` sebagai Release Candidate sebelum rilis stabil `v1.6.5`.
-
-## [1.6.5] - 2026-10-18 - Autonomous Offline Studio
-
 ### Ditambahkan
 - **Arsitektur 100% Pure Offline & Local Vendor Management**:
   - Mengintegrasikan seluruh dependensi frontend pihak ketiga (`@fortawesome/fontawesome-free@6.4.0`, `qrcodejs@1.0.0`, `@novnc/novnc@1.4.0`) ke dalam `package.json`.
@@ -198,6 +136,35 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - Menghapus dead links stylesheet CDN eksternal `flatpickr` dan `tom-select` dari `base.html`.
 
 ---
+
+## [1.6.5-rc3] - 2026-11-13 - Release Candidate 3
+
+### Added
+- **Tab Data Diarsipkan**: tab baru `arsip` (`modules/arsip/index.js`) mengumpulkan seluruh data terarsip — grup, PC, paket, member, user, game, menu — lewat `GET /api/v1/kasir/arsip/`, dengan pills kategori (satu kategori tampil sekaligus) serta tombol Pulihkan dan Hapus Permanen.
+- **Arsip Per Tab**: tab grup, PC, paket, member, user, game, dan menu FnB kini punya pill `Aktif | Diarsipkan`; data yang diarsipkan tetap terlihat di tab asalnya, bukan hilang. Baris arsip memakai renderer bersama `core/arsip_list.js` (Pulihkan / Hapus Permanen).
+- **Arsip Grup Berantai**: mengarsipkan grup kini ikut mengarsipkan PC, paket, dan member miliknya dalam satu transaksi (`WRITE_LOCK`), ditolak bila grup masih punya sesi aktif. Restore grup tidak berantai - PC/paket/member dipulihkan manual dari tab arsipnya.
+- **Arsip Grup**: kolom `grup.aktif` (migrasi `a1b2c3d4e5f6`) plus `POST /api/v1/kasir/grup/<id>/archive` dan `/restore`; daftar grup reguler menyembunyikan grup arsip.
+- **Daftar Bersih dari Arsip**: daftar PC, paket, member, user, dan game kini hanya menampilkan data aktif; `?include_arsip=1` untuk menampilkan semuanya.
+- **Arsip dan Hapus Permanen Terpisah**: PC, Paket, Member, User, dan Game punya aksi arsip (`POST .../<id>/archive`, `aktif = False`, bisa dipulihkan) dan hapus permanen (`DELETE .../<id>`) yang benar-benar menghapus baris utama. Body `{"confirm": "<kode/nama/username>"}` wajib; konfirmasi salah atau kosong dibalas 400.
+- **Riwayat Tidak Ikut Terhapus**: purge melepas referensi (`sesi.pc_id`, `sesi.paket_id`, `sesi.member_id`, `sesi.user_id`, `transaksi.paket_id`, `transaksi.member_id`, `transaksi.user_id`) menjadi NULL di dalam `WRITE_LOCK`, jadi laporan dan struk lama tetap utuh nominalnya.
+- **Pengecualian User Ber-shift**: `DELETE /api/v1/kasir/user/<id>` tetap ditolak bila user punya riwayat shift (`shift_record.kasir_id` NOT NULL) — gunakan arsip.
+
+### Changed
+- **Konfirmasi Centang**: hapus permanen kini memakai satu checkbox "Saya paham data ini dihapus permanen dan tidak bisa dikembalikan" pada `Modal.confirm` (`requireCheck`); tombol setuju nonaktif sampai dicentang, menggantikan konfirmasi ketik nama sebelumnya.
+- **Arsip Mengikuti Kolom Tab Asal**: tampilan arsip kini memakai bentuk dan kolom yang sama dengan data aktifnya (`ArsipList.SCHEMA`) — tabel untuk grup/paket/member/user/game, kartu untuk PC dan katalog FnB — baik lewat pill `Aktif | Diarsipkan` di tab asal maupun lewat pills kategori di tab Data Diarsipkan. Modal menu FnB untuk arsip dan hapus permanen kini memakai `Modal.confirm` (bukan `confirm()` bawaan), dan kartu arsip tidak lagi merender tombol yang tidak berfungsi.
+- **Pill Filter Tetap Aktif di Mode Arsip**: pill grup pada tab PC/paket/member dan filter tipe/kategori pada tab game tetap tampil saat melihat arsip dan benar-benar memfilter daftar arsip (`ArsipList.filter` + `match`). Konfirmasi arsip grup menyebutkan PC, paket, dan member yang ikut diarsipkan.
+- **Filter Grup Arsip Tidak Lagi Kosong**: filter grup memakai `ArsipList.setGrup` sehingga pilihan "Semua" benar-benar mengosongkan filter (sebelumnya `''` menjadi `0` dan menyembunyikan semua baris), dan `Member.to_dict()` ikut mengirim `grup_id` agar pill grup member berfungsi tanpa harus kembali ke "Semua" dulu.
+- **Pill Grup Arsip Lengkap**: tab Data Diarsipkan kini punya pill grup sendiri (grup terarsip tetap muncul dengan label ` · arsip`), dan pill grup di tab PC/paket/member memuat grup terarsip lewat `?include_arsip=1`.
+- **Refresh Real-Time Setelah Pulihkan**: `ArsipList.onChanged` menjalankan ulang daftar arsip **dan** seluruh callback pemanggil (`_refresh` + `_callbacks`), sehingga memulihkan atau menghapus permanen langsung memperbarui daftar, total, dan pill grup tanpa reload.
+- **Total dan Warna Kartu Arsip**: footer `Total N <unit> arsip` mengikuti jumlah baris yang benar-benar tampil setelah filter, dan kartu PC terarsip memakai warna kartu aktif (`border-[#242424]`, tanpa `opacity-60`).
+- **Angka Pill Grup Mengikuti Mode**: hitungan pill grup di tab PC/paket/member diambil dari data mode yang sedang tampil (`ArsipList.counts`) — mode aktif menghitung data aktif, mode arsip menghitung data arsip — dan grup tanpa data pada mode itu tidak ditampilkan; member memakai `grup_counts` dari server agar angka ikut hasil pencarian.
+- **Pill Grup Tab Data Diarsipkan Per Kategori**: pill grup di tab terpusat dihitung hanya dari kategori yang sedang dibuka (mis. kategori Member hanya menampilkan grup yang punya member terarsip, dengan angka `NAMA (n)`), dan baris pill grup disembunyikan untuk kategori tanpa grup (`Grup PC / Zona`, `User Staff`, `Menu FnB`). Label pill kategori kini uppercase.
+- **Versi 1.6.5-rc3**: `Config.VERSION` dan semua cermin versi (package.json, klien Tauri, README, DOCUMENTATION, AGENTS) dinaikkan ke `1.6.5-rc3`.
+
+### Fixed
+- **Pill Grup Member di Mode Aktif**: tab member kini menampilkan pill untuk seluruh grup aktif walau grup tersebut belum punya member; grup kosong tampil tanpa angka dan memilihnya menampilkan state "Member Tidak Ditemukan", sedangkan mode arsip tetap hanya menampilkan grup yang punya member terarsip.
+- **Pill Grup Kembali ke Mode Aktif**: `_loadArsipGroups()` pada tab PC/paket/member menyimpan daftar grup arsip di field terpisah (`_arsipGroups`) dan tidak lagi menimpa daftar grup aktif, sehingga pill grup tidak tertinggal menampilkan grup beserta angka arsip setelah pengguna kembali dari `Diarsipkan` ke `Aktif`; `toggleView(false)` juga langsung merender ulang pill grup.
+- **Dokumentasi Basi**: klaim "hapus user/member beriwayat selalu ditolak" diganti sesuai perilaku rc3, dan angka pengujian disamakan dengan hasil nyata (686 unit test, 385 check E2E, 34 blueprint, 254 rute).
 
 ## [1.6.4] - 2026-10-14
 
