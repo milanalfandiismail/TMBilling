@@ -13,6 +13,7 @@ pub mod menu;
 pub mod mikrotik;
 pub mod monitor;
 pub mod notes;
+pub mod pages;
 pub mod paket;
 pub mod pc;
 pub mod public;

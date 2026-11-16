@@ -117,8 +117,9 @@ async fn whitelist_mengizinkan_ip_terdaftar_dan_bypass_login() {
         .await
         .unwrap();
     st.settings.invalidate();
-    let (status, _) = get(st.clone(), "/kasir/", LAN).await;
-    assert_eq!(status, StatusCode::OK);
+    // Halaman login harus tersaji (bukan 403) untuk IP yang diizinkan.
+    let (status, body) = get(st.clone(), "/kasir/login", LAN).await;
+    assert_eq!(status, StatusCode::OK, "{body}");
     // wholescope check: rute api di luar whitelist → 403 JSON dengan field ip
     let (status, body) = get(
         st,

@@ -223,7 +223,7 @@ async fn tutorial_create_dan_kategori() {
     let dibuat = send(
         st.clone(),
         "POST",
-        "/api/v1/kasir/tutorial",
+        "/api/v1/kasir/tutorials",
         &cookie,
         Some(&csrf),
         Some(json!({"title": "Cara buka shift", "content": "Tekan tombol buka shift.", "category": "Operasional"})),
@@ -234,7 +234,7 @@ async fn tutorial_create_dan_kategori() {
     let kosong = send(
         st.clone(),
         "POST",
-        "/api/v1/kasir/tutorial",
+        "/api/v1/kasir/tutorials",
         &cookie,
         Some(&csrf),
         Some(json!({"title": ""})),
@@ -245,7 +245,7 @@ async fn tutorial_create_dan_kategori() {
     let kategori = send(
         st.clone(),
         "GET",
-        "/api/v1/kasir/tutorial/categories",
+        "/api/v1/kasir/tutorials/categories",
         &cookie,
         None,
         None,

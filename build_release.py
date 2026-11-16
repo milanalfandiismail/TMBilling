@@ -90,11 +90,63 @@ def compile_csharp(project_dir):
     return True
 
 
+
+def get_rust_version(project_dir):
+    cargo = os.path.join(project_dir, 'app-rust', 'Cargo.toml')
+    if not os.path.exists(cargo):
+        return None
+    with open(cargo, 'r', encoding='utf-8') as f:
+        match = re.search(r'^version\s*=\s*["\']([^"\']+)["\']', f.read(), re.MULTILINE)
+    return match.group(1) if match else None
+
+
+def build_rust_server(project_dir):
+    """Paket biner Rust: exe + installer + helper LHM + SHA256SUMS."""
+    exe = os.path.join(project_dir, 'app-rust', 'target', 'release', 'tmbilling-server.exe')
+    version = get_rust_version(project_dir)
+    if not os.path.exists(exe) or not version:
+        print('[SKIP] Biner Rust belum dibangun (cargo build --release di app-rust).')
+        return 0
+
+    paket = os.path.join(project_dir, f"TMBilling_Server_v{version}.zip")
+    if os.path.exists(paket):
+        os.remove(paket)
+
+    isi = [(exe, 'tmbilling-server.exe')]
+    for nama, tujuan in (
+        ('app-rust/packaging/install.bat', 'install.bat'),
+        ('app-rust/packaging/update.bat', 'update.bat'),
+        ('app/services/server_monitor/TMLHMService.exe', 'TMLHMService.exe'),
+        ('app/services/server_monitor/LibreHardwareMonitorLib.dll', 'LibreHardwareMonitorLib.dll'),
+        ('app/services/server_monitor/TMLHMService.sys', 'TMLHMService.sys'),
+        ('.env.example', '.env.example'),
+    ):
+        jalur = os.path.join(project_dir, nama)
+        if os.path.exists(jalur):
+            isi.append((jalur, tujuan))
+
+    import hashlib
+    baris_hash = []
+    with zipfile.ZipFile(paket, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for jalur, tujuan in isi:
+            zipf.write(jalur, tujuan)
+            with open(jalur, 'rb') as f:
+                baris_hash.append(f"{hashlib.sha256(f.read()).hexdigest()}  {tujuan}")
+            print(f"[OK] Rust: {tujuan}")
+        zipf.writestr('SHA256SUMS.txt', "\n".join(baris_hash) + "\n")
+    print(f"[OK] Paket Rust dibuat: {os.path.basename(paket)}")
+    return 0
+
+
 def main():
     project_dir = os.path.dirname(os.path.abspath(__file__))
 
     if not compile_csharp(project_dir):
         return 1
+
+    status_rust = build_rust_server(project_dir)
+    if status_rust:
+        return status_rust
 
     hilang = missing_required(project_dir)
     if hilang:

@@ -17,9 +17,11 @@ use crate::routes::menu::menu_routes;
 use crate::routes::mikrotik::mikrotik_routes;
 use crate::routes::monitor::monitor_routes;
 use crate::routes::notes::note_routes;
+use crate::routes::pages;
 use crate::routes::paket::paket_routes;
 use crate::routes::pc::pc_routes;
 use crate::routes::public::health;
+use crate::routes::public::member_portal;
 use crate::routes::public::tv_public_routes;
 use crate::routes::report::report_routes;
 use crate::routes::server_monitor::server_monitor_routes;
@@ -386,55 +388,73 @@ pub fn router(state: Arc<AppState>) -> Router {
 
     // Laporan, struk, audit log (18 handler).
     let report_api = Router::new()
-        .route("/api/v1/kasir/laporan/billing", get(report_routes::laporan))
         .route(
-            "/api/v1/kasir/laporan/kantin",
+            "/api/v1/kasir/report/laporan/billing",
+            get(report_routes::laporan),
+        )
+        .route(
+            "/api/v1/kasir/report/laporan/kantin",
             get(report_routes::laporan_kantin),
         )
         .route(
-            "/api/v1/kasir/laporan-harian",
+            "/api/v1/kasir/report/laporan-harian",
             get(report_routes::laporan_harian),
         )
-        .route("/api/v1/kasir/tanggal", get(report_routes::tanggal_list))
-        .route("/api/v1/kasir/kasir-list", get(report_routes::kasir_list))
         .route(
-            "/api/v1/kasir/struk/menu/{id}",
+            "/api/v1/kasir/report/tanggal",
+            get(report_routes::tanggal_list),
+        )
+        .route(
+            "/api/v1/kasir/report/kasir-list",
+            get(report_routes::kasir_list),
+        )
+        .route(
+            "/api/v1/kasir/report/struk/menu/{id}",
             get(report_routes::struk_menu),
         )
         .route(
-            "/api/v1/kasir/struk/{identifier}",
+            "/api/v1/kasir/report/struk/{identifier}",
             get(report_routes::struk),
         )
-        .route("/api/v1/kasir/log", get(report_routes::get_logs))
-        .route("/api/v1/kasir/log/clear", post(report_routes::clear_logs))
-        .route("/api/v1/kasir/log/export", get(report_routes::export_logs))
+        .route("/api/v1/kasir/report/log", get(report_routes::get_logs))
         .route(
-            "/api/v1/kasir/blackout-log",
+            "/api/v1/kasir/report/log/clear",
+            post(report_routes::clear_logs),
+        )
+        .route(
+            "/api/v1/kasir/report/log/export",
+            get(report_routes::export_logs),
+        )
+        .route(
+            "/api/v1/kasir/report/blackout-log",
             get(report_routes::blackout_log),
         )
         .route(
-            "/api/v1/kasir/transaksi/clear",
+            "/api/v1/kasir/report/transaksi/clear",
             post(report_routes::clear_transactions),
         )
         .route(
-            "/api/v1/kasir/transaksi/by-date/{tanggal}",
+            "/api/v1/kasir/report/transaksi/by-date/{tanggal}",
             axum::routing::delete(report_routes::clear_date_transactions),
         )
         .route(
-            "/api/v1/kasir/transaksi/{id}",
+            "/api/v1/kasir/report/transaksi/{id}",
             axum::routing::delete(report_routes::delete_transaction),
         )
         .route(
-            "/api/v1/kasir/export/billing",
+            "/api/v1/kasir/report/export/billing",
             get(report_routes::export_billing),
         )
         .route(
-            "/api/v1/kasir/export/kantin",
+            "/api/v1/kasir/report/export/kantin",
             get(report_routes::export_kantin),
         )
-        .route("/api/v1/kasir/export/pnl", get(report_routes::export_pnl))
         .route(
-            "/api/v1/kasir/export/audit-pdf",
+            "/api/v1/kasir/report/export/pnl",
+            get(report_routes::export_pnl),
+        )
+        .route(
+            "/api/v1/kasir/report/export/audit-pdf",
             get(report_routes::export_audit_pdf),
         );
 
@@ -499,37 +519,37 @@ pub fn router(state: Arc<AppState>) -> Router {
             axum::routing::delete(maintenance_routes::hapus),
         )
         .route(
-            "/api/v1/kasir/tutorial",
+            "/api/v1/kasir/tutorials",
             get(tutorial_routes::list).post(tutorial_routes::create),
         )
         .route(
-            "/api/v1/kasir/tutorial/",
+            "/api/v1/kasir/tutorials/",
             get(tutorial_routes::list).post(tutorial_routes::create),
         )
         .route(
-            "/api/v1/kasir/tutorial/{id}",
+            "/api/v1/kasir/tutorials/{id}",
             get(tutorial_routes::detail)
                 .put(tutorial_routes::update)
                 .delete(tutorial_routes::hapus),
         )
         .route(
-            "/api/v1/kasir/tutorial/categories",
+            "/api/v1/kasir/tutorials/categories",
             get(tutorial_routes::categories),
         )
         .route(
-            "/api/v1/kasir/tutorial/categories/{nama}",
+            "/api/v1/kasir/tutorials/categories/{nama}",
             axum::routing::delete(tutorial_routes::delete_category),
         )
         .route(
-            "/api/v1/kasir/tutorial/upload-image",
+            "/api/v1/kasir/tutorials/upload-image",
             post(tutorial_routes::upload_image),
         )
         .route(
-            "/api/v1/kasir/tutorial/cleanup-temp",
+            "/api/v1/kasir/tutorials/cleanup-temp",
             post(tutorial_routes::cleanup_temp),
         )
         .route(
-            "/api/v1/kasir/tutorial/export-json",
+            "/api/v1/kasir/tutorials/export-json",
             post(tutorial_routes::export_json),
         );
 
@@ -585,15 +605,15 @@ pub fn router(state: Arc<AppState>) -> Router {
             get(migration_routes::status),
         )
         .route(
-            "/api/v1/kasir/settings/check_github",
+            "/api/v1/kasir/settings/migration/check_github",
             get(migration_routes::check_github),
         )
         .route(
-            "/api/v1/kasir/settings/update_github",
+            "/api/v1/kasir/settings/migration/update_github",
             post(migration_routes::update_github),
         )
         .route(
-            "/api/v1/kasir/settings/update/upload",
+            "/api/v1/kasir/settings/migration/upload",
             post(migration_routes::upload),
         )
         .route(
@@ -627,10 +647,28 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route(
             "/api/v1/kasir/settings/cloudflare-tunnel/toggle",
             post(network_routes::toggle_tunnel),
+        )
+        .route(
+            "/api/v1/kasir/settings/scheduler",
+            put(database_routes::scheduler_update),
+        )
+        .route(
+            "/api/v1/kasir/settings/scheduler/status",
+            get(database_routes::scheduler_status),
+        )
+        .route(
+            "/api/v1/kasir/settings/scheduler/restart",
+            post(database_routes::scheduler_restart),
+        )
+        .route(
+            "/api/v1/kasir/settings/uptime/flush",
+            post(database_routes::uptime_flush),
         );
 
     let guarded = Router::new()
-        .route("/kasir/", get(shell_placeholder))
+        .route("/kasir/", get(pages::kasir_index))
+        .route("/kasir", get(pages::kasir_index))
+        .route("/kasir/documentation", get(pages::documentation))
         .route("/kasir/login", get(auth_kasir::login_page))
         .merge(kasir_api)
         .merge(report_api)
@@ -644,6 +682,30 @@ pub fn router(state: Arc<AppState>) -> Router {
             state.clone(),
             whitelist::guard,
         ));
+
+    let publik = Router::new()
+        .route("/", get(pages::landing))
+        .route("/livepc", get(pages::livepc))
+        .route("/paket", get(pages::paket))
+        .route("/spesifikasi", get(pages::specs))
+        .route("/games", get(pages::games))
+        .route("/tv", get(pages::tv))
+        .route("/tv/static", get(pages::tv_static))
+        .route("/tv-static", get(pages::tv_static))
+        .route("/tv/dynamic", get(pages::tv))
+        .route("/member", get(pages::member_login))
+        .route("/member/login", get(pages::member_login))
+        .route("/member/dashboard", get(pages::member_dashboard))
+        .route("/pc-status", get(pages::pc_status))
+        .route("/member/login", post(member_portal::login))
+        .route("/member/logout", post(member_portal::logout))
+        .route(
+            "/member/profile/update",
+            post(member_portal::profile_update),
+        )
+        .route("/api/v1/public/auth/login", post(member_portal::login))
+        .route("/api/v1/public/auth/logout", post(member_portal::logout))
+        .route("/api/v1/public/auth/status", post(member_portal::status));
 
     let kasir_monitor = Router::new()
         .route("/api/v1/kasir/monitor/all", get(monitor_routes::all))
@@ -762,6 +824,10 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/api/v1/public/monitor/", post(monitor_routes::receive))
         .route("/api/v1/public/monitor", post(monitor_routes::receive))
         .route(
+            "/api/v1/public/monitor/screenshot/upload",
+            post(monitor_routes::screenshot_upload),
+        )
+        .route(
             "/api/v1/public/client/screenshot/upload",
             post(monitor_routes::screenshot_upload),
         )
@@ -811,6 +877,7 @@ pub fn router(state: Arc<AppState>) -> Router {
     Router::new()
         .route("/api/health", get(health::health))
         .merge(client_api)
+        .merge(publik)
         .merge(
             kasir_monitor
                 .layer(axum::middleware::from_fn_with_state(
@@ -825,11 +892,6 @@ pub fn router(state: Arc<AppState>) -> Router {
         .merge(guarded)
         .route("/static/{*path}", get(static_file))
         .with_state(state)
-}
-
-/// Placeholder sampai template dashboard diport.
-async fn shell_placeholder() -> &'static str {
-    "TMBilling"
 }
 
 async fn static_file(Path(path): Path<String>) -> Response {

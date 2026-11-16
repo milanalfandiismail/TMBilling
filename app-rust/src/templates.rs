@@ -3,8 +3,14 @@
 use crate::assets::TemplateAssets;
 use anyhow::Result;
 use minijinja::{Environment, Value};
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::sync::OnceLock;
+
+thread_local! {
+    /// Token CSRF milik request yang sedang dirender (dipakai `{{ csrf_token() }}`).
+    static CSRF: RefCell<String> = const { RefCell::new(String::new()) };
+}
 
 fn env() -> &'static Environment<'static> {
     static ENV: OnceLock<Environment<'static>> = OnceLock::new();
@@ -14,7 +20,7 @@ fn env() -> &'static Environment<'static> {
             Ok(TemplateAssets::get(name).map(|f| String::from_utf8_lossy(&f.data).to_string()))
         });
         env.add_function("url_for", url_for);
-        env.add_function("csrf_token", || "");
+        env.add_function("csrf_token", || CSRF.with(|c| c.borrow().clone()));
         env
     })
 }
@@ -47,6 +53,11 @@ pub fn url_for(args: minijinja::value::Rest<Value>) -> String {
             None => base.to_string(),
         },
     }
+}
+
+pub fn render_with(name: &str, ctx: Value, csrf: &str) -> Result<String> {
+    CSRF.with(|c| *c.borrow_mut() = csrf.to_string());
+    render(name, ctx)
 }
 
 pub fn render(name: &str, ctx: Value) -> Result<String> {

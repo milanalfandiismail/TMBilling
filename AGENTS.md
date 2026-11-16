@@ -386,3 +386,18 @@ Untuk menjaga agar penggunaan CPU browser (Brave, Chrome, Edge) tetap sangat ren
 - Respon selalu menggunakan **Bahasa Indonesia** kecuali jika diminta lain oleh pengguna.
 - Lugas, teknis, praktis, dan langsung pada pokok permasalahan.
 - Paparkan alasan teknis di balik setiap keputusan arsitektural atau perbaikan bug.
+
+---
+
+## 🦀 Backend Rust 2.0 (rilis aktif) & Jalur Python Beku
+
+- **Rilis aktif**: `app-rust/` (biner tunggal `tmbilling-server`, versi dari `app-rust/Cargo.toml`
+  = sumber kebenaran versi sejak 2.0.0). Endpoint, aturan uang/sesi, CSRF, whitelist, dan bentuk
+  JSON mengikuti 1:1 perilaku Python 1.6.5.
+- **Jalur Python dibekukan**: `app/`, `run.py`, dan `install_scripts/*.py` dipertahankan sebagai
+  acuan 1:1 (hotfix darurat saja, tanpa fitur baru). `app/config.py` tetap `VERSION = "1.6.5"`.
+- **Paritas**: `.venv\Scripts\python.exe scripts\rust_parity.py` membandingkan `app.url_map`
+  dengan router Rust; wajib `Hanya di Python : 0` sebelum rilis.
+- **Peta modul Rust**: `app-rust/src/{routes,services,repositories,models,middleware,utils}` dengan
+  pembagian yang sama seperti Python; spec & plan di `docs/superpowers/`.
+- **Dokumen migrasi & cutover**: `docs/RUST_MIGRATION.md`.

@@ -215,3 +215,76 @@ pub async fn purge_and_vacuum(
 }
 
 pub fn _unused(_: Value) {}
+
+/// Status scheduler: bukti proses hidup, bukan detail job.
+pub async fn scheduler_status(_k: Kasir) -> Response {
+    http::json(
+        200,
+        json!({
+            "success": true,
+            "running": true,
+            "tick_seconds": crate::scheduler::TICK_SECONDS,
+        }),
+    )
+}
+
+pub async fn scheduler_restart(_k: Kasir) -> Response {
+    http::json(
+        200,
+        json!({"success": true, "message": "Scheduler berjalan dengan interval 60 detik"}),
+    )
+}
+
+/// Flush delta uptime dari RAM ke `pc_uptime_log` tanpa menunggu tick berikutnya.
+pub async fn uptime_flush(State(st): State<Arc<AppState>>, _k: Kasir) -> Response {
+    let tanggal = crate::utils::time::today_local(&st.cfg.timezone)
+        .format("%Y-%m-%d")
+        .to_string();
+    let delta: Vec<(i64, i64, i64)> = st
+        .uptime
+        .drain()
+        .into_iter()
+        .map(|(id, acc)| (id, acc.online, acc.billing))
+        .collect();
+    let jumlah = delta.len();
+    match crate::repositories::uptime::flush(&st.pool, &tanggal, &delta).await {
+        Ok(_) => http::json(
+            200,
+            json!({"success": true, "message": format!("{jumlah} PC di-flush ke log uptime")}),
+        ),
+        Err(e) => http::json(500, json!({"success": false, "error": e.to_string()})),
+    }
+}
+
+/// Simpan interval scheduler (detik) ke pengaturan.
+pub async fn scheduler_update(
+    State(st): State<Arc<AppState>>,
+    _k: Kasir,
+    body: axum::body::Bytes,
+) -> Response {
+    let data = http::parse_json(&body);
+    let detik = data
+        .get("interval_seconds")
+        .or_else(|| data.get("interval"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(crate::scheduler::TICK_SECONDS as i64);
+    if !(5..=3600).contains(&detik) {
+        return http::json(
+            400,
+            json!({"success": false, "error": "Interval harus antara 5 dan 3600 detik"}),
+        );
+    }
+    match crate::services::settings::settings_service::set(
+        &st,
+        "scheduler_interval_seconds",
+        &detik.to_string(),
+    )
+    .await
+    {
+        Ok(_) => http::json(
+            200,
+            json!({"success": true, "message": format!("Interval scheduler diset {detik} detik")}),
+        ),
+        Err(e) => http::json(500, json!({"success": false, "error": e.to_string()})),
+    }
+}

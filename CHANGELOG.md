@@ -6,6 +6,25 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [2.0.0] - 2026-11-17 - Backend Rust
+
+### Rewrite backend penuh ke Rust (biner tunggal)
+
+- **Backend Rust (`app-rust/`)**: satu biner `tmbilling-server` berisi HTTP server (axum), SQLite
+  (sqlx), template (minijinja), aset embed (rust-embed), PDF (printpdf), dan WebSocket RFB proxy
+  pengganti websockify. 277 rute terdaftar, paritas dengan 257 endpoint Python diverifikasi
+  `scripts/rust_parity.py` (selisih 0).
+- **Kontrak yang dipertahankan**: bentuk JSON endpoint, pesan error, aturan uang/sesi/refund,
+  CSRF double-submit, whitelist IP, throttle login, screenshot privat admin-only, dan struktur ZIP
+  backup.
+- **Operasional**: tray Windows (buka dashboard/keluar), autostart login lewat `install.bat`,
+  scheduler 60 detik (flush uptime, blackout, cleanup sesi, reaper VNC, backup harian, prune uptime),
+  single instance lock, dan penerap pembaruan mandiri (`--apply-update` dari salinan `%TEMP%`).
+- **Jalur Python 1.6.5 dibekukan** sebagai acuan 1:1: `app/`, `run.py`, dan `install_scripts/*.py`
+  tetap ada untuk referensi/perbaikan darurat, tanpa pengembangan fitur baru.
+
+---
+
 ## [1.6.5] - 2026-11-16 - Autonomous Offline Studio
 
 ### Rilis Stabil: Audit, Pengerasan, dan Pengujian Menyeluruh (2026-11-16)

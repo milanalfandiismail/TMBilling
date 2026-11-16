@@ -197,7 +197,7 @@ async fn billing_menghitung_billing_refund_dan_kantin() {
     let reply = kirim(
         st.clone(),
         "GET",
-        "/api/v1/kasir/laporan/billing",
+        "/api/v1/kasir/report/laporan/billing",
         None,
         &cookies,
         None,
@@ -220,7 +220,7 @@ async fn nota_paket_tidak_boleh_dihapus() {
     let reply = kirim(
         st.clone(),
         "DELETE",
-        &format!("/api/v1/kasir/transaksi/{id}"),
+        &format!("/api/v1/kasir/report/transaksi/{id}"),
         None,
         &cookies,
         None,
@@ -241,7 +241,7 @@ async fn struk_tidak_ada_404() {
     let reply = kirim(
         st.clone(),
         "GET",
-        "/api/v1/kasir/struk/999999",
+        "/api/v1/kasir/report/struk/999999",
         None,
         &cookies,
         None,
@@ -258,7 +258,7 @@ async fn struk_memuat_meta_warnet() {
     let reply = kirim(
         st.clone(),
         "GET",
-        &format!("/api/v1/kasir/struk/{id}"),
+        &format!("/api/v1/kasir/report/struk/{id}"),
         None,
         &cookies,
         None,
@@ -278,7 +278,7 @@ async fn log_clear_tanpa_arsip() {
     let reply = kirim(
         st.clone(),
         "POST",
-        "/api/v1/kasir/log/clear",
+        "/api/v1/kasir/report/log/clear",
         Some(json!({"archive": false})),
         &cookies,
         None,
@@ -300,7 +300,7 @@ async fn export_billing_pdf() {
     let reply = kirim(
         st.clone(),
         "GET",
-        "/api/v1/kasir/export/billing",
+        "/api/v1/kasir/report/export/billing",
         None,
         &cookies,
         None,

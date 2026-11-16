@@ -4,8 +4,8 @@
 
 # Master Dokumentasi Teknis & Operasional TMBilling (Single Source of Truth)
 
-> **Versi Rilis:** v1.6.5  
-> **Branch:** `main` ("Autonomous Offline Studio")  
+> **Versi Rilis:** v2.0.0 (backend Rust; jalur Python 1.6.5 dibekukan)  
+> **Branch:** `rust` (rilis 2.0), `main` (Python 1.6.5)  
 > **Status:** Single Source of Truth Resmi Repositori TMBilling  
 > **Target Audiens:** Pengembang Backend/Frontend, Pengembang Rust/Tauri, Operator/Kasir, dan Administrator Sistem Warnet & Game Center.
 
