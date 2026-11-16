@@ -20,6 +20,10 @@ name = "logger_test"
 path = "tests/unit/logger_test.rs"
 
 [[test]]
+name = "schema_parity_test"
+path = "tests/unit/schema_parity_test.rs"
+
+[[test]]
 name = "idempotency_test"
 path = "tests/unit/idempotency_test.rs"
 

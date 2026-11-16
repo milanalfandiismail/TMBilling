@@ -1,5 +1,6 @@
 //! Pool SQLite bersama dan gerbang tulis.
 
+pub mod migrate;
 pub mod write_lock;
 
 use anyhow::{Context, Result};

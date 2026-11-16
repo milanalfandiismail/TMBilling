@@ -1,0 +1,1636 @@
+{
+ "tables": [
+  {
+   "name": "game",
+   "create_sql": "CREATE TABLE game ( id INTEGER NOT NULL, nama VARCHAR(255) NOT NULL, tipe VARCHAR(50), kategori VARCHAR(500), exe_path VARCHAR(500), argumen VARCHAR(500), icon VARCHAR(255), aktif BOOLEAN, created_at DATETIME, updated_at DATETIME, operator_id VARCHAR(50), PRIMARY KEY (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "nama",
+     "type": "VARCHAR(255)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "tipe",
+     "type": "VARCHAR(50)",
+     "nullable": true,
+     "default": "'game'"
+    },
+    {
+     "name": "kategori",
+     "type": "VARCHAR(500)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "exe_path",
+     "type": "VARCHAR(500)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "argumen",
+     "type": "VARCHAR(500)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "icon",
+     "type": "VARCHAR(255)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "aktif",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "1"
+    },
+    {
+     "name": "created_at",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "operator_id",
+     "type": "VARCHAR(50)",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "game_kategori",
+   "create_sql": "CREATE TABLE game_kategori ( id INTEGER NOT NULL, nama VARCHAR(100) NOT NULL, created_at DATETIME, updated_at DATETIME, PRIMARY KEY (id), UNIQUE (nama) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "nama",
+     "type": "VARCHAR(100)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "created_at",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "grup",
+   "create_sql": "CREATE TABLE grup ( id INTEGER NOT NULL, nama VARCHAR(50) NOT NULL, warna VARCHAR(20), keterangan VARCHAR(255), aktif BOOLEAN DEFAULT 1 NOT NULL, dibuat_pada DATETIME, PRIMARY KEY (id), UNIQUE (nama) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "nama",
+     "type": "VARCHAR(50)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "warna",
+     "type": "VARCHAR(20)",
+     "nullable": true,
+     "default": "'#888888'"
+    },
+    {
+     "name": "keterangan",
+     "type": "VARCHAR(255)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "aktif",
+     "type": "BOOLEAN",
+     "nullable": false,
+     "default": "1"
+    },
+    {
+     "name": "dibuat_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "menu_item",
+   "create_sql": "CREATE TABLE menu_item ( id INTEGER NOT NULL, nama VARCHAR(100) NOT NULL, harga INTEGER NOT NULL, stok INTEGER NOT NULL, gambar_path VARCHAR(255), is_active BOOLEAN DEFAULT 1 NOT NULL, PRIMARY KEY (id), UNIQUE (nama) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "nama",
+     "type": "VARCHAR(100)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "harga",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "0"
+    },
+    {
+     "name": "stok",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "0"
+    },
+    {
+     "name": "gambar_path",
+     "type": "VARCHAR(255)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "is_active",
+     "type": "BOOLEAN",
+     "nullable": false,
+     "default": "1"
+    }
+   ]
+  },
+  {
+   "name": "mikrotik_config",
+   "create_sql": "CREATE TABLE mikrotik_config ( id INTEGER NOT NULL, enabled BOOLEAN NOT NULL, host VARCHAR(100), port INTEGER NOT NULL, username VARCHAR(100), password VARCHAR(255), hotspot_profile VARCHAR(100) NOT NULL, updated_at DATETIME, PRIMARY KEY (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "enabled",
+     "type": "BOOLEAN",
+     "nullable": false,
+     "default": "0"
+    },
+    {
+     "name": "host",
+     "type": "VARCHAR(100)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "port",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "8728"
+    },
+    {
+     "name": "username",
+     "type": "VARCHAR(100)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "password",
+     "type": "VARCHAR(255)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "hotspot_profile",
+     "type": "VARCHAR(100)",
+     "nullable": false,
+     "default": "'default'"
+    },
+    {
+     "name": "updated_at",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "settings",
+   "create_sql": "CREATE TABLE settings ( id INTEGER NOT NULL, \"key\" VARCHAR(100) NOT NULL, value TEXT NOT NULL, updated_at DATETIME, PRIMARY KEY (id), UNIQUE (\"key\") )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "key",
+     "type": "VARCHAR(100)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "value",
+     "type": "TEXT",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "system_tutorials",
+   "create_sql": "CREATE TABLE system_tutorials ( id INTEGER NOT NULL, title VARCHAR(255) NOT NULL, icon VARCHAR(50), category VARCHAR(50), content TEXT NOT NULL, urutan INTEGER, created_at DATETIME, updated_at DATETIME, PRIMARY KEY (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "VARCHAR(255)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "icon",
+     "type": "VARCHAR(50)",
+     "nullable": true,
+     "default": "'\ud83c\udf10'"
+    },
+    {
+     "name": "category",
+     "type": "VARCHAR(50)",
+     "nullable": true,
+     "default": "'Umum'"
+    },
+    {
+     "name": "content",
+     "type": "TEXT",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "urutan",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "created_at",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "turnamen",
+   "create_sql": "CREATE TABLE turnamen ( id INTEGER NOT NULL, nama VARCHAR(100) NOT NULL, deskripsi VARCHAR(255), status VARCHAR(20), dibuat_pada DATETIME, PRIMARY KEY (id), UNIQUE (nama) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "nama",
+     "type": "VARCHAR(100)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "deskripsi",
+     "type": "VARCHAR(255)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "VARCHAR(20)",
+     "nullable": true,
+     "default": "'draft'"
+    },
+    {
+     "name": "dibuat_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "user",
+   "create_sql": "CREATE TABLE user ( id INTEGER NOT NULL, username VARCHAR(50) NOT NULL, password_hash VARCHAR(256) NOT NULL, nama_lengkap VARCHAR(100), role VARCHAR(20), aktif BOOLEAN, dibuat_pada DATETIME, kuota_main_bulanan INTEGER, sisa_kuota_menit INTEGER, terakhir_reset_kuota VARCHAR(7), PRIMARY KEY (id), UNIQUE (username) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "username",
+     "type": "VARCHAR(50)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "password_hash",
+     "type": "VARCHAR(256)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "nama_lengkap",
+     "type": "VARCHAR(100)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "role",
+     "type": "VARCHAR(20)",
+     "nullable": true,
+     "default": "'kasir'"
+    },
+    {
+     "name": "aktif",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "1"
+    },
+    {
+     "name": "dibuat_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "kuota_main_bulanan",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "sisa_kuota_menit",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "terakhir_reset_kuota",
+     "type": "VARCHAR(7)",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "member",
+   "create_sql": "CREATE TABLE member ( id INTEGER NOT NULL, username VARCHAR(50) NOT NULL, password_hash VARCHAR(256) NOT NULL, nama_lengkap VARCHAR(100), email VARCHAR(120), no_hp VARCHAR(20), grup_id INTEGER NOT NULL, aktif BOOLEAN, dibuat_pada DATETIME, waktu_tersimpan INTEGER, kadaluarsa_pada DATETIME, PRIMARY KEY (id), UNIQUE (username), FOREIGN KEY(grup_id) REFERENCES grup (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "username",
+     "type": "VARCHAR(50)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "password_hash",
+     "type": "VARCHAR(256)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "nama_lengkap",
+     "type": "VARCHAR(100)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "email",
+     "type": "VARCHAR(120)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "no_hp",
+     "type": "VARCHAR(20)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "grup_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "aktif",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "1"
+    },
+    {
+     "name": "dibuat_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "waktu_tersimpan",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "kadaluarsa_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "menu_stock_log",
+   "create_sql": "CREATE TABLE menu_stock_log ( id INTEGER NOT NULL, menu_id INTEGER, menu_nama VARCHAR(100) NOT NULL, tipe VARCHAR(20) NOT NULL, jumlah_masuk INTEGER NOT NULL, stok_sebelum INTEGER NOT NULL, stok_sesudah INTEGER NOT NULL, operator VARCHAR(100) NOT NULL, catatan VARCHAR(255), created_at DATETIME NOT NULL, PRIMARY KEY (id), FOREIGN KEY(menu_id) REFERENCES menu_item (id) ON DELETE SET NULL )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "menu_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "menu_nama",
+     "type": "VARCHAR(100)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "tipe",
+     "type": "VARCHAR(20)",
+     "nullable": false,
+     "default": "'RESTOCK'"
+    },
+    {
+     "name": "jumlah_masuk",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "0"
+    },
+    {
+     "name": "stok_sebelum",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "0"
+    },
+    {
+     "name": "stok_sesudah",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "0"
+    },
+    {
+     "name": "operator",
+     "type": "VARCHAR(100)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "catatan",
+     "type": "VARCHAR(255)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "created_at",
+     "type": "DATETIME",
+     "nullable": false,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "paket",
+   "create_sql": "CREATE TABLE paket ( id INTEGER NOT NULL, nama VARCHAR(100) NOT NULL, durasi_menit INTEGER NOT NULL, harga INTEGER NOT NULL, kadaluarsa_hari INTEGER, grup_id INTEGER NOT NULL, aktif BOOLEAN, dibuat_pada DATETIME, PRIMARY KEY (id), UNIQUE (nama), FOREIGN KEY(grup_id) REFERENCES grup (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "nama",
+     "type": "VARCHAR(100)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "durasi_menit",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "harga",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "kadaluarsa_hari",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "30"
+    },
+    {
+     "name": "grup_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "aktif",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "1"
+    },
+    {
+     "name": "dibuat_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "pc",
+   "create_sql": "CREATE TABLE pc ( id INTEGER NOT NULL, kode VARCHAR(20) NOT NULL, nama VARCHAR(50), ip_address VARCHAR(15), mac_address VARCHAR(17), grup_id INTEGER NOT NULL, zona VARCHAR(50), last_activity DATETIME, aktif BOOLEAN, is_admin_mode BOOLEAN, pos_x INTEGER, pos_y INTEGER, PRIMARY KEY (id), UNIQUE (kode), FOREIGN KEY(grup_id) REFERENCES grup (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "kode",
+     "type": "VARCHAR(20)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "nama",
+     "type": "VARCHAR(50)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "ip_address",
+     "type": "VARCHAR(15)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "mac_address",
+     "type": "VARCHAR(17)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "grup_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "zona",
+     "type": "VARCHAR(50)",
+     "nullable": true,
+     "default": "'reguler'"
+    },
+    {
+     "name": "last_activity",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "aktif",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "1"
+    },
+    {
+     "name": "is_admin_mode",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "pos_x",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "-1"
+    },
+    {
+     "name": "pos_y",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "-1"
+    }
+   ]
+  },
+  {
+   "name": "shift_record",
+   "create_sql": "CREATE TABLE shift_record ( id INTEGER NOT NULL, kasir_id INTEGER NOT NULL, waktu_mulai DATETIME NOT NULL, waktu_selesai DATETIME, modal_awal INTEGER NOT NULL, total_billing INTEGER, total_kantin INTEGER, total_qris INTEGER, total_refund INTEGER, uang_fisik INTEGER, selisih INTEGER, catatan VARCHAR(255), detail_metode_json TEXT, status VARCHAR(10) NOT NULL, PRIMARY KEY (id), FOREIGN KEY(kasir_id) REFERENCES user (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "kasir_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "waktu_mulai",
+     "type": "DATETIME",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "waktu_selesai",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "modal_awal",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "0"
+    },
+    {
+     "name": "total_billing",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "total_kantin",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "total_qris",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "total_refund",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "uang_fisik",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "selisih",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "catatan",
+     "type": "VARCHAR(255)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "detail_metode_json",
+     "type": "TEXT",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "VARCHAR(10)",
+     "nullable": false,
+     "default": "'AKTIF'"
+    }
+   ]
+  },
+  {
+   "name": "transaksi_menu",
+   "create_sql": "CREATE TABLE transaksi_menu ( id INTEGER NOT NULL, no_nota VARCHAR(50) NOT NULL, menu_id INTEGER NOT NULL, jumlah INTEGER NOT NULL, total_harga INTEGER NOT NULL, pc_kode VARCHAR(20), tanggal DATETIME, kasir_id INTEGER, tunai INTEGER, kembalian INTEGER, metode_pembayaran VARCHAR(50), operator VARCHAR(100), PRIMARY KEY (id), FOREIGN KEY(menu_id) REFERENCES menu_item (id), FOREIGN KEY(kasir_id) REFERENCES user (id) ON DELETE SET NULL )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "no_nota",
+     "type": "VARCHAR(50)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "menu_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "jumlah",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "1"
+    },
+    {
+     "name": "total_harga",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "0"
+    },
+    {
+     "name": "pc_kode",
+     "type": "VARCHAR(20)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "tanggal",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "kasir_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "tunai",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "kembalian",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "metode_pembayaran",
+     "type": "VARCHAR(50)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "operator",
+     "type": "VARCHAR(100)",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "turnamen_tahap",
+   "create_sql": "CREATE TABLE turnamen_tahap ( id INTEGER NOT NULL, turnamen_id INTEGER NOT NULL, nama VARCHAR(50) NOT NULL, tipe_format VARCHAR(20) NOT NULL, urutan INTEGER NOT NULL, status VARCHAR(20), dibuat_pada DATETIME, PRIMARY KEY (id), FOREIGN KEY(turnamen_id) REFERENCES turnamen (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "turnamen_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "nama",
+     "type": "VARCHAR(50)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "tipe_format",
+     "type": "VARCHAR(20)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "urutan",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "1"
+    },
+    {
+     "name": "status",
+     "type": "VARCHAR(20)",
+     "nullable": true,
+     "default": "'draft'"
+    },
+    {
+     "name": "dibuat_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "turnamen_tim",
+   "create_sql": "CREATE TABLE turnamen_tim ( id INTEGER NOT NULL, turnamen_id INTEGER NOT NULL, nama_tim VARCHAR(100) NOT NULL, status_aktif BOOLEAN, dibuat_pada DATETIME, PRIMARY KEY (id), FOREIGN KEY(turnamen_id) REFERENCES turnamen (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "turnamen_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "nama_tim",
+     "type": "VARCHAR(100)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "status_aktif",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "1"
+    },
+    {
+     "name": "dibuat_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "hardware_monitor",
+   "create_sql": "CREATE TABLE hardware_monitor ( id INTEGER NOT NULL, pc_id INTEGER NOT NULL, cpu_usage FLOAT, cpu_temp FLOAT, gpu_temp FLOAT, total_ram VARCHAR(20), nic_speed VARCHAR(20), motherboard VARCHAR(100), cpu_name VARCHAR(100), gpu_name VARCHAR(100), active_window VARCHAR(255), hardware_baseline TEXT, hardware_current_specs TEXT, hardware_mismatch BOOLEAN, hardware_mismatch_desc TEXT, hardware_mismatch_time DATETIME, hardware_cctv_window TEXT, hardware_last_sync DATETIME, last_update DATETIME, PRIMARY KEY (id), UNIQUE (pc_id), FOREIGN KEY(pc_id) REFERENCES pc (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "pc_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "cpu_usage",
+     "type": "FLOAT",
+     "nullable": true,
+     "default": "0.0"
+    },
+    {
+     "name": "cpu_temp",
+     "type": "FLOAT",
+     "nullable": true,
+     "default": "0.0"
+    },
+    {
+     "name": "gpu_temp",
+     "type": "FLOAT",
+     "nullable": true,
+     "default": "0.0"
+    },
+    {
+     "name": "total_ram",
+     "type": "VARCHAR(20)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "nic_speed",
+     "type": "VARCHAR(20)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "motherboard",
+     "type": "VARCHAR(100)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "cpu_name",
+     "type": "VARCHAR(100)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "gpu_name",
+     "type": "VARCHAR(100)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "active_window",
+     "type": "VARCHAR(255)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "hardware_baseline",
+     "type": "TEXT",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "hardware_current_specs",
+     "type": "TEXT",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "hardware_mismatch",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "hardware_mismatch_desc",
+     "type": "TEXT",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "hardware_mismatch_time",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "hardware_cctv_window",
+     "type": "TEXT",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "hardware_last_sync",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "last_update",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "maintenance_ticket",
+   "create_sql": "CREATE TABLE maintenance_ticket ( id INTEGER NOT NULL, pc_id INTEGER NOT NULL, reporter VARCHAR(50) NOT NULL, kategori VARCHAR(30) NOT NULL, prioritas VARCHAR(10), judul VARCHAR(150) NOT NULL, deskripsi TEXT, status VARCHAR(20), resolusi TEXT, biaya INTEGER, created_at DATETIME, updated_at DATETIME, resolved_at DATETIME, resolved_by VARCHAR(50), PRIMARY KEY (id), FOREIGN KEY(pc_id) REFERENCES pc (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "pc_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "reporter",
+     "type": "VARCHAR(50)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "kategori",
+     "type": "VARCHAR(30)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "prioritas",
+     "type": "VARCHAR(10)",
+     "nullable": true,
+     "default": "'SEDANG'"
+    },
+    {
+     "name": "judul",
+     "type": "VARCHAR(150)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "deskripsi",
+     "type": "TEXT",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "status",
+     "type": "VARCHAR(20)",
+     "nullable": true,
+     "default": "'BARU'"
+    },
+    {
+     "name": "resolusi",
+     "type": "TEXT",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "biaya",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "created_at",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "updated_at",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "resolved_at",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "resolved_by",
+     "type": "VARCHAR(50)",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "pc_process",
+   "create_sql": "CREATE TABLE pc_process ( id INTEGER NOT NULL, pc_id INTEGER NOT NULL, name VARCHAR(100) NOT NULL, title VARCHAR(255), last_update DATETIME, PRIMARY KEY (id), FOREIGN KEY(pc_id) REFERENCES pc (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "pc_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "name",
+     "type": "VARCHAR(100)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "title",
+     "type": "VARCHAR(255)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "last_update",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "pc_uptime_log",
+   "create_sql": "CREATE TABLE pc_uptime_log ( id INTEGER NOT NULL, pc_id INTEGER NOT NULL, tanggal DATE NOT NULL, total_online_seconds INTEGER NOT NULL, total_billing_seconds INTEGER NOT NULL, first_seen DATETIME, last_seen DATETIME, PRIMARY KEY (id), CONSTRAINT uq_pc_uptime_pc_tanggal UNIQUE (pc_id, tanggal), FOREIGN KEY(pc_id) REFERENCES pc (id) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "pc_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "tanggal",
+     "type": "DATE",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "total_online_seconds",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "0"
+    },
+    {
+     "name": "total_billing_seconds",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "0"
+    },
+    {
+     "name": "first_seen",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "last_seen",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "sesi",
+   "create_sql": "CREATE TABLE sesi ( id INTEGER NOT NULL, tipe VARCHAR(10) NOT NULL, member_id INTEGER, user_id INTEGER, pc_id INTEGER, paket_id INTEGER, sesi_asal_id INTEGER, nama_guest VARCHAR(100), token_sesi VARCHAR(64), mulai_pada DATETIME, selesai_pada DATETIME, durasi_beli_menit INTEGER, total_bayar INTEGER, status VARCHAR(10), is_admin BOOLEAN, waktu_mulai_sesi DATETIME, waktu_tersimpan_awal INTEGER, last_sync DATETIME, menit_pause_total INTEGER, sisa_menit_saat_mati INTEGER, is_blackout_suspect BOOLEAN, is_blackout_resolved BOOLEAN, waktu_resolved DATETIME, is_afk BOOLEAN NOT NULL, afk_pin VARCHAR(100), afk_sejak DATETIME, PRIMARY KEY (id), FOREIGN KEY(member_id) REFERENCES member (id), FOREIGN KEY(user_id) REFERENCES user (id) ON DELETE SET NULL, FOREIGN KEY(pc_id) REFERENCES pc (id) ON DELETE SET NULL, FOREIGN KEY(paket_id) REFERENCES paket (id), FOREIGN KEY(sesi_asal_id) REFERENCES sesi (id) ON DELETE SET NULL, UNIQUE (token_sesi) )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "tipe",
+     "type": "VARCHAR(10)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "member_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "pc_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "paket_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "sesi_asal_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "nama_guest",
+     "type": "VARCHAR(100)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "token_sesi",
+     "type": "VARCHAR(64)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "mulai_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "selesai_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "durasi_beli_menit",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "total_bayar",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "status",
+     "type": "VARCHAR(10)",
+     "nullable": true,
+     "default": "'aktif'"
+    },
+    {
+     "name": "is_admin",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "waktu_mulai_sesi",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "waktu_tersimpan_awal",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "last_sync",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "menit_pause_total",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "sisa_menit_saat_mati",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "is_blackout_suspect",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "is_blackout_resolved",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "waktu_resolved",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "is_afk",
+     "type": "BOOLEAN",
+     "nullable": false,
+     "default": "0"
+    },
+    {
+     "name": "afk_pin",
+     "type": "VARCHAR(100)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "afk_sejak",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "turnamen_match",
+   "create_sql": "CREATE TABLE turnamen_match ( id INTEGER NOT NULL, turnamen_id INTEGER NOT NULL, tahap_id INTEGER NOT NULL, round_number INTEGER NOT NULL, match_number INTEGER NOT NULL, tim1_id INTEGER, tim2_id INTEGER, skor1 INTEGER, skor2 INTEGER, pemenang_id INTEGER, bo_format INTEGER, next_match_id INTEGER, dibuat_pada DATETIME, PRIMARY KEY (id), FOREIGN KEY(turnamen_id) REFERENCES turnamen (id), FOREIGN KEY(tahap_id) REFERENCES turnamen_tahap (id), FOREIGN KEY(tim1_id) REFERENCES turnamen_tim (id) ON DELETE SET NULL, FOREIGN KEY(tim2_id) REFERENCES turnamen_tim (id) ON DELETE SET NULL, FOREIGN KEY(pemenang_id) REFERENCES turnamen_tim (id) ON DELETE SET NULL, FOREIGN KEY(next_match_id) REFERENCES turnamen_match (id) ON DELETE SET NULL )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "turnamen_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "tahap_id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "round_number",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "1"
+    },
+    {
+     "name": "match_number",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": "1"
+    },
+    {
+     "name": "tim1_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "tim2_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "skor1",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "skor2",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "pemenang_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "bo_format",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "1"
+    },
+    {
+     "name": "next_match_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "dibuat_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  },
+  {
+   "name": "transaksi",
+   "create_sql": "CREATE TABLE transaksi ( id INTEGER NOT NULL, sesi_id INTEGER, member_id INTEGER, paket_id INTEGER, user_id INTEGER, jenis VARCHAR(30) NOT NULL, jumlah INTEGER, menit INTEGER, keterangan VARCHAR(200), dibuat_pada DATETIME, no_nota VARCHAR(50), is_refunded BOOLEAN, metode_pembayaran VARCHAR(50), operator VARCHAR(100), PRIMARY KEY (id), FOREIGN KEY(sesi_id) REFERENCES sesi (id), FOREIGN KEY(member_id) REFERENCES member (id) ON DELETE SET NULL, FOREIGN KEY(paket_id) REFERENCES paket (id), FOREIGN KEY(user_id) REFERENCES user (id) ON DELETE SET NULL )",
+   "columns": [
+    {
+     "name": "id",
+     "type": "INTEGER",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "sesi_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "member_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "paket_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "user_id",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "jenis",
+     "type": "VARCHAR(30)",
+     "nullable": false,
+     "default": null
+    },
+    {
+     "name": "jumlah",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "menit",
+     "type": "INTEGER",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "keterangan",
+     "type": "VARCHAR(200)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "dibuat_pada",
+     "type": "DATETIME",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "no_nota",
+     "type": "VARCHAR(50)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "is_refunded",
+     "type": "BOOLEAN",
+     "nullable": true,
+     "default": "0"
+    },
+    {
+     "name": "metode_pembayaran",
+     "type": "VARCHAR(50)",
+     "nullable": true,
+     "default": null
+    },
+    {
+     "name": "operator",
+     "type": "VARCHAR(100)",
+     "nullable": true,
+     "default": null
+    }
+   ]
+  }
+ ],
+ "indexes": [
+  {
+   "name": "ix_transaksi_menu_tanggal",
+   "sql": "CREATE INDEX ix_transaksi_menu_tanggal ON transaksi_menu (tanggal)"
+  },
+  {
+   "name": "ix_menu_stock_log_created_at",
+   "sql": "CREATE INDEX ix_menu_stock_log_created_at ON menu_stock_log (created_at)"
+  },
+  {
+   "name": "ix_menu_stock_log_menu_id",
+   "sql": "CREATE INDEX ix_menu_stock_log_menu_id ON menu_stock_log (menu_id)"
+  },
+  {
+   "name": "uq_aktif_shift",
+   "sql": "CREATE UNIQUE INDEX uq_aktif_shift ON shift_record (status) WHERE status = 'AKTIF'"
+  },
+  {
+   "name": "ix_sesi_status",
+   "sql": "CREATE INDEX ix_sesi_status ON sesi (status)"
+  },
+  {
+   "name": "uq_aktif_sesi_member",
+   "sql": "CREATE UNIQUE INDEX uq_aktif_sesi_member ON sesi (member_id) WHERE status = 'aktif' AND member_id IS NOT NULL"
+  },
+  {
+   "name": "uq_aktif_sesi_pc",
+   "sql": "CREATE UNIQUE INDEX uq_aktif_sesi_pc ON sesi (pc_id) WHERE status = 'aktif' AND pc_id IS NOT NULL"
+  },
+  {
+   "name": "ix_sesi_pc_id",
+   "sql": "CREATE INDEX ix_sesi_pc_id ON sesi (pc_id)"
+  },
+  {
+   "name": "ix_pc_process_pc_id",
+   "sql": "CREATE INDEX ix_pc_process_pc_id ON pc_process (pc_id)"
+  },
+  {
+   "name": "ix_pc_uptime_log_tanggal",
+   "sql": "CREATE INDEX ix_pc_uptime_log_tanggal ON pc_uptime_log (tanggal)"
+  },
+  {
+   "name": "ix_transaksi_no_nota",
+   "sql": "CREATE UNIQUE INDEX ix_transaksi_no_nota ON transaksi (no_nota)"
+  },
+  {
+   "name": "ix_transaksi_dibuat_pada",
+   "sql": "CREATE INDEX ix_transaksi_dibuat_pada ON transaksi (dibuat_pada)"
+  },
+  {
+   "name": "ix_transaksi_sesi_id",
+   "sql": "CREATE INDEX ix_transaksi_sesi_id ON transaksi (sesi_id)"
+  }
+ ]
+}
