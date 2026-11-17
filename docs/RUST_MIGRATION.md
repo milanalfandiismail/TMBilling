@@ -17,8 +17,9 @@ Rust `tmbilling-server` 2.0.0.
 
 - Format cookie sesi tidak kompatibel dengan Flask: semua kasir/member login sekali setelah cutover.
 - `websockify` diganti proxy WebSocket RFB di dalam biner (TightVNC tetap eksternal per PC).
-- Backup cloud (Discord/WebDAV/Google Drive/NAS) baru memverifikasi keterjangkauan host; unggah
-  arsip ke provider belum diport.
+- Backup cloud (Discord/WebDAV/Google Drive/NAS) memakai `ureq` (rustls) di dalam biner:
+  unggah multipart/WebDAV PUT/Drive refresh-token berjalan seperti Python `providers.py`, termasuk
+  tes koneksi HTTP sungguhan.
 - PDF laporan memakai tata letak A4 generik (bukan golden 58/80 mm); struk thermal tetap memakai
   payload JSON yang sama.
 - Portal member (`/member/*`) memakai cookie `tm_member` (HMAC) dan endpoint

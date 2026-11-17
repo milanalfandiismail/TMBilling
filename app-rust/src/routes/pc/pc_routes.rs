@@ -1,6 +1,6 @@
 //! CRUD PC + batch, posisi denah, reset admin, Wake-on-LAN.
 
-use crate::middleware::auth::{admin_only, Kasir};
+use crate::middleware::auth::{admin_only, shift_required, Kasir};
 use crate::repositories::pc as pc_repo;
 use crate::services::pc::pc_service;
 use crate::state::AppState;
@@ -144,8 +144,11 @@ pub async fn restore(State(state): St, kasir: Kasir, Path(id): Path<i64>) -> Res
     }
 }
 
-/// `shift_required` di Python; shift belum diport (Task 8) → cukup login.
 pub async fn reset_admin(State(state): St, kasir: Kasir, Path(id): Path<i64>) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     match pc_service::reset_admin_mode(&state, id, &kasir.user.username).await {
         Ok(()) => http::json(
             200,
@@ -189,6 +192,10 @@ pub async fn batch(State(state): St, kasir: Kasir, body: Bytes) -> Response {
 }
 
 pub async fn wol(State(state): St, kasir: Kasir, body: Bytes) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let data: Value = http::parse_json(&body);
     let ids: Vec<i64> = data
         .get("pc_ids")

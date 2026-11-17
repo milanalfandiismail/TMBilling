@@ -9,7 +9,7 @@ use crate::utils::http;
 use axum::body::Bytes;
 use axum::extract::{ConnectInfo, State};
 use axum::http::{HeaderMap, StatusCode};
-use axum::response::{IntoResponse, Response};
+use axum::response::Response;
 use serde_json::json;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -177,12 +177,14 @@ pub async fn admin_check(
     }
 }
 
-/// Halaman login: kirim cookie CSRF agar form bisa mengirim header.
+/// Halaman login: render template dan kirim cookie CSRF yang sama dengan meta.
 pub async fn login_page(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Response {
-    let mut res = "TMBilling".into_response();
-    let _ = &state;
-    if let Some(c) = csrf::ensure_cookie(&headers) {
-        if let Ok(v) = c.parse() {
+    use crate::routes::pages::{dasar, halaman};
+    let ada_cookie = crate::utils::http::cookie(&headers, csrf::COOKIE).is_some();
+    let token = crate::utils::http::cookie(&headers, csrf::COOKIE).unwrap_or_else(csrf::new_token);
+    let mut res = halaman("kasir/login.html", dasar(&state).await, &token);
+    if !ada_cookie {
+        if let Ok(v) = csrf::cookie_header(&token).parse() {
             res.headers_mut().append(axum::http::header::SET_COOKIE, v);
         }
     }

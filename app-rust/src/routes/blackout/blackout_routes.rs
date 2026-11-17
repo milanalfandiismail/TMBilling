@@ -1,6 +1,6 @@
 //! Audit & pemulihan sesi blackout (pasca mati lampu).
 
-use crate::middleware::auth::{admin_only, Kasir};
+use crate::middleware::auth::{admin_only, shift_required, Kasir};
 use crate::services::blackout::blackout_service;
 use crate::state::AppState;
 use crate::utils::http;
@@ -26,6 +26,10 @@ fn angka(v: &Value, key: &str) -> Option<i64> {
 }
 
 pub async fn deteksi(State(state): St, kasir: Kasir, headers: HeaderMap, body: Bytes) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let v = http::parse_body(&headers, body).await;
     let threshold = angka(&v, "threshold_menit");
     if let Some(nilai) = threshold {
@@ -68,6 +72,10 @@ pub async fn dates(State(state): St, _kasir: Kasir) -> Response {
 }
 
 pub async fn resolve_member(State(state): St, kasir: Kasir, Path(id): Path<i64>) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     match blackout_service::resolve_member(&state, id, &kasir.user.username).await {
         Ok(hasil) => {
             let saldo = hasil["saldo_kembali"].as_i64().unwrap_or(0);
@@ -85,6 +93,10 @@ pub async fn resolve_member(State(state): St, kasir: Kasir, Path(id): Path<i64>)
 }
 
 pub async fn resolve_guest_sama(State(state): St, kasir: Kasir, Path(id): Path<i64>) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     match blackout_service::resolve_guest_sama(&state, id, &kasir.user.username).await {
         Ok(hasil) => {
             let nama = hasil["nama_guest"].as_str().unwrap_or("Guest");
@@ -109,6 +121,10 @@ pub async fn resolve_guest_lanjut(
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let v = http::parse_body(&headers, body).await;
     let pc_baru = angka(&v, "pc_baru_id");
     if pc_baru.is_none() {
@@ -132,6 +148,10 @@ pub async fn resolve_guest_lanjut(
 }
 
 pub async fn resolve_tutup(State(state): St, kasir: Kasir, Path(id): Path<i64>) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     match blackout_service::resolve_tutup(&state, id, &kasir.user.username).await {
         Ok(hasil) => {
             let target = hasil["target"].as_str().unwrap_or("-");
@@ -148,6 +168,10 @@ pub async fn resolve_tutup(State(state): St, kasir: Kasir, Path(id): Path<i64>) 
 }
 
 pub async fn force_all(State(state): St, kasir: Kasir) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     match blackout_service::force_all_and_detect(&state, &kasir.user.username).await {
         Ok((tutup, deteksi)) => http::json(
             200,
@@ -162,8 +186,11 @@ pub async fn force_all(State(state): St, kasir: Kasir) -> Response {
     }
 }
 
-/// Gate `shift_required` menyusul Task 8 (shift service belum ada).
 pub async fn clear(State(state): St, kasir: Kasir, headers: HeaderMap, body: Bytes) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     if let Err(resp) = admin_only(&kasir) {
         return resp;
     }

@@ -94,7 +94,7 @@ pub async fn create(state: &AppState, data: &Value, operator: &str) -> Result<Va
     .bind(&nama)
     .bind(&role)
     .bind(aktif as i64)
-    .bind(time::format_local_now(&state.cfg.timezone))
+    .bind(time::db_str(time::now_db()))
     .bind(kuota)
     .bind(sisa)
     .bind(&reset)

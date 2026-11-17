@@ -23,6 +23,27 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - **Jalur Python 1.6.5 dibekukan** sebagai acuan 1:1: `app/`, `run.py`, dan `install_scripts/*.py`
   tetap ada untuk referensi/perbaikan darurat, tanpa pengembangan fitur baru.
 
+### Perbaikan hasil E2E Playwright (2026-11-17)
+
+- **Login & render dashboard**: `/kasir/login` kembali merender halaman HTML penuh (bukan teks
+  polos), `kasir/base.html` menerima konteks `session`, dan `url_for('static', filename=...)` serta
+  `mapping.get()` didukung minijinja (`app-rust/src/templates.rs`).
+- **Timestamp UTC**: `transaksi_menu.tanggal`, `menu_stock_log.created_at`, dan
+  `user.dibuat_pada` disimpan naive UTC seperti Python, sehingga rekap shift dan laporan harian F&B
+  tidak lagi kosong (`app-rust/src/services/menu/menu_service.rs`).
+- **Analitik Owner**: `/api/v1/kasir/dashboard/analytics` mengembalikan enam payload nyata
+  (pendapatan harian, heatmap jam, tren member, top paket, per kasir, refund rate) lewat
+  `app-rust/src/services/owner/analytics.rs`.
+- **Billboard TV**: `/api/v1/public/tv/data` kini mengisi `tournament` (tahap aktif, klasemen,
+  match) dan `promos` paket aktif; kunci pengumuman memakai `warnet_announcement`.
+- **Backup cloud**: unggah nyata ke Discord Webhook (multipart, batas 24 MB), WebDAV (PUT),
+  Google Drive (refresh token + multipart), dan NAS, plus tes koneksi HTTP sungguhan
+  (`app-rust/src/services/backup/cloud.rs`, dependensi `ureq`).
+- **Gate shift**: `shift_required` dipasang pada 20 endpoint uang/sesi (sesi, menu, blackout, PC)
+  yang sebelumnya hanya login.
+- **Reset mode admin** menutup sesi lewat `sesi_service::tutup_locked` sehingga nota `tutup_sesi`
+  tercatat dan perintah `lock` terkirim ke client.
+
 ---
 
 ## [1.6.5] - 2026-11-16 - Autonomous Offline Studio

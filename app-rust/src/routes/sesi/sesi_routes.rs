@@ -1,8 +1,7 @@
 //! Siklus hidup sesi: buka, tambah waktu, pindah PC, tutup, refund.
 //!
-//! shortcut: gate `shift_required` belum dipasang, dipasang di Task 8 (shift service).
 
-use crate::middleware::auth::Kasir;
+use crate::middleware::auth::{shift_required, Kasir};
 use crate::services::sesi::sesi_service;
 use crate::state::AppState;
 use crate::utils::http;
@@ -36,6 +35,10 @@ pub async fn buka_guest(
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let v = http::parse_body(&headers, body).await;
     match sesi_service::buka_guest(
         &state,
@@ -69,6 +72,10 @@ pub async fn buka_member(
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let v = http::parse_body(&headers, body).await;
     let username = teks(&v, "username").unwrap_or("").to_string();
     match sesi_service::buka_member(
@@ -99,6 +106,10 @@ pub async fn buka_guest_batch(
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let v = http::parse_body(&headers, body).await;
     let kodes: Vec<String> = v
         .get("pc_kodes")
@@ -173,6 +184,10 @@ pub async fn tambah_waktu_batch(
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let v = http::parse_body(&headers, body).await;
     let sesi_ids: Vec<i64> = v
         .get("sesi_ids")
@@ -255,6 +270,10 @@ pub async fn tambah_waktu_sesi(
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let v = http::parse_body(&headers, body).await;
     let selections: Vec<(i64, i64)> = v
         .get("selections")
@@ -320,6 +339,10 @@ pub async fn pindah_pc(
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let v = http::parse_body(&headers, body).await;
     match sesi_service::pindah_pc(
         &state,
@@ -343,6 +366,10 @@ pub async fn pindah_pc(
 }
 
 pub async fn tutup(State(state): St, kasir: Kasir, Path(sesi_id): Path<i64>) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     match sesi_service::tutup(&state, sesi_id, &kasir.user.username).await {
         Ok(()) => http::json(
             200,
@@ -358,6 +385,10 @@ pub async fn tutup_batch(
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let v = http::parse_body(&headers, body).await;
     let sesi_ids: Vec<i64> = v
         .get("sesi_ids")
@@ -412,6 +443,10 @@ pub async fn refund_paket(
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let v = http::parse_body(&headers, body).await;
     match sesi_service::refund_paket_guest(
         &state,

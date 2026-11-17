@@ -622,3 +622,4 @@ audit-screenshots/
 # Pesan commit/tag sementara untuk rilis
 .commitmsg.txt
 .tagmsg.txt
+tests/e2e/mcp/results/

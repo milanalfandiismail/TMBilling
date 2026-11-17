@@ -320,7 +320,6 @@ pub async fn tambah_stok(
     repo::set_stok(&st.pool, menu.id, stok_baru)
         .await
         .map_err(|e| e.to_string())?;
-    let tz = tz_name(st).await;
     repo::insert_stock_log(
         &st.pool,
         &repo::StockLogBaru {
@@ -331,7 +330,7 @@ pub async fn tambah_stok(
             stok_sesudah: stok_baru,
             operator,
             catatan: catatan_clean.as_deref(),
-            created_at: &time::format_local_now(&tz),
+            created_at: &time::db_str(time::now_db()),
         },
     )
     .await
@@ -543,7 +542,7 @@ pub async fn checkout(st: &AppState, data: &Value, kasir: &User) -> Result<Vec<V
 
     let no_nota = generate_nota_menu(st).await?;
     let tz = tz_name(st).await;
-    let tanggal = time::format_local_now(&tz);
+    let tanggal = time::db_str(time::now_db());
 
     struct Baris {
         menu: MenuItem,

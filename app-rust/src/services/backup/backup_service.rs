@@ -291,6 +291,21 @@ pub async fn create(st: &AppState, manual: bool) -> Result<String> {
     zip_db(&tmp, &dest)?;
     let _ = fs::remove_file(&tmp);
     logger::rec("SYSTEM", "DATABASE_BACKUP", &format!("File: {name}"));
+    let (unggah, gagal) = super::cloud::upload(st, &dest).await;
+    for nama in &unggah {
+        logger::rec(
+            "SYSTEM",
+            "BACKUP_CLOUD_SUCCESS",
+            &format!("Berhasil mengunggah ke {nama}"),
+        );
+    }
+    for nama in &gagal {
+        logger::rec(
+            "SYSTEM",
+            "BACKUP_CLOUD_FAILED",
+            &format!("Gagal mengunggah ke {nama}"),
+        );
+    }
     Ok(name)
 }
 

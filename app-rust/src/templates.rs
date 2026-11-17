@@ -19,6 +19,54 @@ fn env() -> &'static Environment<'static> {
         env.set_loader(|name: &str| {
             Ok(TemplateAssets::get(name).map(|f| String::from_utf8_lossy(&f.data).to_string()))
         });
+        // Jinja memakai `mapping.get(kunci, bawaan)`; minijinja tidak punya method itu.
+        env.set_unknown_method_callback(|_st, value, method, args| {
+            if method == "get" && value.kind() == minijinja::value::ValueKind::Map {
+                let key = args.first().cloned().unwrap_or_default();
+                let bawaan = args.get(1).cloned().unwrap_or_default();
+                let v = value.get_item(&key)?;
+                return Ok(if v.is_undefined() { bawaan } else { v });
+            }
+            // Jinja memakai method str bawaan Python; minijinja tidak punya.
+            // shortcut: hanya "{:,}" dan "{}" yang dipakai template, perluas bila ada spec lain.
+            if method == "format" {
+                if let Some(t) = value.as_str() {
+                    let mut hasil = String::new();
+                    let mut sisa = t;
+                    for (i, arg) in args.iter().enumerate() {
+                        let _ = i;
+                        if let Some(pos) = sisa.find("{:,}").or_else(|| sisa.find("{}")) {
+                            let ribuan = sisa[pos..].starts_with("{:,}");
+                            hasil.push_str(&sisa[..pos]);
+                            let angka = arg.to_string();
+                            if ribuan {
+                                hasil.push_str(&pisah_ribuan(&angka));
+                            } else {
+                                hasil.push_str(&angka);
+                            }
+                            sisa = &sisa[pos + if ribuan { 4 } else { 2 }..];
+                        }
+                    }
+                    hasil.push_str(sisa);
+                    return Ok(Value::from(hasil));
+                }
+            }
+            if let Some(t) = value.as_str() {
+                let hasil = match method {
+                    "lower" => t.to_lowercase(),
+                    "upper" => t.to_uppercase(),
+                    "strip" => t.trim().to_string(),
+                    "replace" => {
+                        let dari = args.first().map(|a| a.to_string()).unwrap_or_default();
+                        let ke = args.get(1).map(|a| a.to_string()).unwrap_or_default();
+                        t.replace(&dari, &ke)
+                    }
+                    _ => return Err(minijinja::Error::from(minijinja::ErrorKind::UnknownMethod)),
+                };
+                return Ok(Value::from(hasil));
+            }
+            Err(minijinja::Error::from(minijinja::ErrorKind::UnknownMethod))
+        });
         env.add_function("url_for", url_for);
         env.add_function("csrf_token", || CSRF.with(|c| c.borrow().clone()));
         env
@@ -37,22 +85,28 @@ fn routes() -> &'static HashMap<&'static str, &'static str> {
             ("public.games", "/games"),
             ("public.tv", "/tv"),
             ("public.tv_static", "/tv/static"),
+            ("static", "/static"),
             ("kasir.login", "/kasir/login"),
             ("kasir.index", "/kasir/"),
         ])
     })
 }
 
-pub fn url_for(args: minijinja::value::Rest<Value>) -> String {
+pub fn url_for(args: minijinja::value::Rest<Value>, kwargs: minijinja::value::Kwargs)
+    -> Result<String, minijinja::Error> {
     let name = args.0.first().map(|v| v.to_string()).unwrap_or_default();
     let base = routes().get(name.as_str()).copied().unwrap_or("/");
-    match args.0.get(1) {
+    // Jinja memanggil url_for('static', filename='…') dengan argumen kata kunci.
+    if let Some(f) = kwargs.get::<Option<String>>("filename")? {
+        return Ok(format!("{base}/{f}"));
+    }
+    Ok(match args.0.get(1) {
         None => base.to_string(),
         Some(v) => match v.as_str() {
             Some(s) => format!("{base}/{s}"),
             None => base.to_string(),
         },
-    }
+    })
 }
 
 pub fn render_with(name: &str, ctx: Value, csrf: &str) -> Result<String> {
@@ -62,4 +116,18 @@ pub fn render_with(name: &str, ctx: Value, csrf: &str) -> Result<String> {
 
 pub fn render(name: &str, ctx: Value) -> Result<String> {
     Ok(env().get_template(name)?.render(ctx)?)
+}
+
+/// `"{:,}".format(n)` Jinja: pemisah ribuan koma (template lalu mengganti ',' jadi '.').
+fn pisah_ribuan(angka: &str) -> String {
+    let negatif = angka.starts_with('-');
+    let digit: String = angka.chars().filter(char::is_ascii_digit).collect();
+    let mut out = String::new();
+    for (i, c) in digit.chars().enumerate() {
+        if i > 0 && (digit.len() - i) % 3 == 0 {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    if negatif { format!("-{out}") } else { out }
 }

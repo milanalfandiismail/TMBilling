@@ -12,12 +12,12 @@ use crate::services::settings::settings_service as set;
 use crate::state::AppState;
 use crate::templates;
 
-async fn dasar(st: &AppState) -> Value {
+pub(crate) async fn dasar(st: &AppState) -> Value {
     let ambil = |kunci: &'static str, bawaan: &'static str| set::get_or(st, kunci, bawaan);
     json!({
         "warnet_title": ambil("warnet_title", "TMBilling").await,
         "warnet_address": ambil("warnet_address", "").await,
-        "warnet_rules": ambil("warnet_rules", "").await,
+        "warnet_rules": ambil("warnet_announcement", "").await,
         "footer_label": ambil("warnet_title", "TMBilling").await,
         "gmaps_info": ambil("warnet_gmaps", "").await,
         "page_title": "TMBilling",
@@ -34,7 +34,7 @@ fn gagal_page(pesan: &str) -> Response {
         .into_response()
 }
 
-fn halaman(nama: &str, ctx: Value, csrf: &str) -> Response {
+pub(crate) fn halaman(nama: &str, ctx: Value, csrf: &str) -> Response {
     match templates::render_with(nama, minijinja::Value::from_serialize(&ctx), csrf) {
         Ok(html) => Html(html).into_response(),
         Err(e) => gagal_page(&format!("Render gagal: {e}")),
@@ -231,6 +231,11 @@ pub async fn kasir_index(
             "user_timezone": st.cfg.timezone,
             "user_timezone_label": crate::utils::time::tz_label(&st.cfg.timezone),
             "username": sesi.uname,
+            "session": {
+                "username": sesi.uname,
+                "kasir_role": sesi.role,
+                "user_id": sesi.uid,
+            },
         }),
     );
     halaman(

@@ -460,13 +460,22 @@ pub async fn reset_admin_mode(st: &AppState, id: i64, operator: &str) -> Result<
         .execute(&st.pool)
         .await
         .map_err(|e| e.to_string())?;
-    // shortcut: sesi ditutup tanpa nota `tutup_sesi`; lengkapi saat mesin sesi (Task 7) tersedia.
-    sqlx::query("UPDATE sesi SET status = 'selesai', selesai_pada = ? WHERE pc_id = ? AND status = 'aktif' AND tipe IN ('admin','guest')")
-        .bind(crate::utils::time::now_local(&st.cfg.timezone).format("%Y-%m-%d %H:%M:%S").to_string())
-        .bind(id)
-        .execute(&st.pool)
-        .await
-        .map_err(|e| e.to_string())?;
+    // Tutup lewat service agar nota `tutup_sesi` (Rp0) dan uptime tercatat, seperti Python.
+    let sesi_aktif: Option<(i64, Option<String>)> = sqlx::query_as(
+        "SELECT id, tipe FROM sesi WHERE pc_id = ? AND status = 'aktif' ORDER BY id DESC LIMIT 1",
+    )
+    .bind(id)
+    .fetch_optional(&st.pool)
+    .await
+    .map_err(|e| e.to_string())?;
+    if let Some((sesi_id, tipe)) = sesi_aktif {
+        let tipe = tipe.unwrap_or_default();
+        if tipe == "admin" || tipe == "guest" {
+            crate::services::sesi::sesi_service::tutup_locked(st, sesi_id, operator).await?;
+        }
+    }
+    // Client kembali ke kiosk segera.
+    st.commands.regular.push(id, "lock");
     st.pc_network.invalidate();
     logger::audit_json(
         operator,

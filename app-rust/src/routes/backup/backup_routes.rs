@@ -2,6 +2,7 @@
 
 use crate::middleware::auth::{admin_only, Kasir};
 use crate::services::backup::backup_service as svc;
+use crate::services::backup::cloud;
 use crate::state::AppState;
 use crate::utils::http;
 use axum::{
@@ -77,12 +78,7 @@ pub async fn test_connection(
         return http::err(400, wajib.0);
     }
     let nama = svc::provider_name(kind).unwrap_or(kind);
-    let ok = if kind == "nas" {
-        std::path::Path::new(target).is_dir()
-    } else {
-        svc::reachable(target)
-    };
-    // shortcut: provider cloud hanya diuji keterjangkauan host, upload/OTP belum diport.
+    let ok = cloud::test(kind, &data).await;
     crate::utils::logger::audit_json(
         "admin",
         "BACKUP_TEST_CONNECTION",

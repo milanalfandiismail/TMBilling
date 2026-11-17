@@ -399,5 +399,8 @@ Untuk menjaga agar penggunaan CPU browser (Brave, Chrome, Edge) tetap sangat ren
 - **Paritas**: `.venv\Scripts\python.exe scripts\rust_parity.py` membandingkan `app.url_map`
   dengan router Rust; wajib `Hanya di Python : 0` sebelum rilis.
 - **Peta modul Rust**: `app-rust/src/{routes,services,repositories,models,middleware,utils}` dengan
-  pembagian yang sama seperti Python; spec & plan di `docs/superpowers/`.
+  pembagian yang sama seperti Python; spec & plan di `docs/superpowers/`. Modul yang ditambahkan saat
+  perbaikan pasca-E2E: `services/owner/analytics.rs` (padanan `app/services/owner/analytics_service.py`)
+  dan `services/backup/cloud.rs` (padanan `app/services/backup/providers.py`, via `ureq`). Gate
+  `middleware::auth::shift_required` wajib dipasang pada setiap endpoint uang/sesi baru.
 - **Dokumen migrasi & cutover**: `docs/RUST_MIGRATION.md`.

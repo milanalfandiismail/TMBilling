@@ -2,6 +2,7 @@
 
 use crate::middleware::auth::{admin_only, Kasir};
 use crate::services::dashboard::dashboard_service;
+use crate::services::owner;
 use crate::state::AppState;
 use crate::utils::http;
 use axum::extract::{Query, State};
@@ -28,17 +29,16 @@ pub async fn server_metrics(State(state): St, kasir: Kasir) -> Response {
     http::json(200, json!({"success": true, "data": data}))
 }
 
-/// shortcut: analytics owner belum diport, balas payload kosong sampai Task 15.
 pub async fn analytics(
-    State(_state): St,
+    State(state): St,
     kasir: Kasir,
-    Query(_q): Query<HashMap<String, String>>,
+    Query(q): Query<HashMap<String, String>>,
 ) -> Response {
     if let Err(res) = admin_only(&kasir) {
         return res;
     }
-    http::json(
-        200,
-        json!({"success": true, "data": {"pendapatan": [], "top_paket": [], "per_kasir": [], "refund_rate": 0}}),
-    )
+    match owner::analytics::analytics(&state, q.get("start").map(String::as_str), q.get("end").map(String::as_str)).await {
+        Ok(data) => http::json(200, json!({"success": true, "data": data})),
+        Err(pesan) => http::json(400, json!({"success": false, "error": pesan})),
+    }
 }

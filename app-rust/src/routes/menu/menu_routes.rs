@@ -1,6 +1,6 @@
 //! Rute katalog F&B: `/api/v1/kasir/menu`.
 
-use crate::middleware::auth::{admin_only, Kasir};
+use crate::middleware::auth::{admin_only, shift_required, Kasir};
 use crate::services::menu::menu_service;
 use crate::state::AppState;
 use crate::utils::http;
@@ -86,7 +86,6 @@ pub async fn update(
     }
 }
 
-/// Restock butuh shift aktif di Python (`@shift_required`); gate shift menyusul di Task 8.
 // shortcut: tambah-stok belum memeriksa shift aktif, pasang saat ShiftService tersedia (Task 8).
 pub async fn tambah_stok(
     State(state): St,
@@ -95,6 +94,10 @@ pub async fn tambah_stok(
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let data: Value = http::parse_body(&headers, body).await;
     let jumlah = data.get("jumlah_tambah").or_else(|| data.get("jumlah"));
     if jumlah.map(|v| v.is_null()).unwrap_or(true) || jumlah.and_then(Value::as_str) == Some("") {
@@ -167,6 +170,10 @@ pub async fn permanent(State(state): St, kasir: Kasir, Path(id): Path<i64>) -> R
 }
 
 pub async fn checkout(State(state): St, kasir: Kasir, body: Bytes) -> Response {
+    if let Err(res) = shift_required(&state, &kasir).await {
+        return res;
+    }
+
     let data: Value = http::parse_json(&body);
     if data.as_object().map(|o| o.is_empty()).unwrap_or(true) {
         return gagal(400, "Payload JSON kosong");
