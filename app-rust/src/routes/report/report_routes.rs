@@ -17,7 +17,7 @@ type St = State<Arc<AppState>>;
 #[derive(Deserialize)]
 pub struct LaporanQuery {
     pub tanggal: Option<String>,
-    pub kasir_id: Option<i64>,
+    pub kasir_id: Option<String>,
     pub metode_pembayaran: Option<String>,
     pub page: Option<i64>,
     pub per_page: Option<i64>,
@@ -40,12 +40,34 @@ fn salah(e: rep::Salah) -> Response {
     http::json(e.status, json!({"error": e.pesan}))
 }
 
-fn kasir_filter(kasir: &Kasir, diminta: Option<i64>) -> Option<i64> {
-    if kasir.user.role.as_deref() == Some("kasir") {
-        Some(kasir.user.id)
-    } else {
-        diminta
+
+/// Salin `data` ke nama kunci yang dibaca frontend (padanan respons Python).
+fn alias_data(v: &mut serde_json::Value, key: &str) {
+    if let Some(d) = v.get("data").cloned() {
+        v[key] = d;
     }
+}
+
+async fn kasir_filter(st: &AppState, kasir: &Kasir, diminta: Option<String>) -> Option<i64> {
+    if kasir.user.role.as_deref() == Some("kasir") {
+        return Some(kasir.user.id);
+    }
+    let raw = diminta.unwrap_or_default();
+    let s = raw.trim();
+    if s.is_empty() || s.eq_ignore_ascii_case("semua") || s.eq_ignore_ascii_case("none") {
+        return None;
+    }
+    if let Ok(id) = s.parse::<i64>() {
+        return Some(id);
+    }
+    // shortcut: filter operator dipetakan ke user_id lewat username; upgrade ke kolom operator bila operator remote dipakai
+    let nama = s.strip_prefix("operator:").unwrap_or(s);
+    sqlx::query_scalar::<_, i64>("SELECT id FROM user WHERE username = ? LIMIT 1")
+        .bind(nama)
+        .fetch_optional(&st.pool)
+        .await
+        .ok()
+        .flatten()
 }
 
 fn pdf_response(bytes: Vec<u8>, filename: &str) -> Response {
@@ -70,7 +92,7 @@ pub async fn laporan(State(st): St, kasir: Kasir, Query(q): Query<LaporanQuery>)
     match rep::billing(
         &st,
         q.tanggal.as_deref(),
-        kasir_filter(&kasir, q.kasir_id),
+        kasir_filter(&st, &kasir, q.kasir_id).await,
         q.page,
         q.per_page,
         q.metode_pembayaran.as_deref().filter(|m| !m.is_empty()),
@@ -78,7 +100,11 @@ pub async fn laporan(State(st): St, kasir: Kasir, Query(q): Query<LaporanQuery>)
     )
     .await
     {
-        Ok(v) => http::json(200, v),
+        // Nama kunci mengikuti ReportService Python (history_struk) agar UI struk terisi.
+        Ok(mut v) => {
+            alias_data(&mut v, "history_struk");
+            http::json(200, v)
+        }
         Err(e) => salah(e),
     }
 }
@@ -91,7 +117,7 @@ pub async fn laporan_kantin(
     match rep::kantin(
         &st,
         q.tanggal.as_deref(),
-        kasir_filter(&kasir, q.kasir_id),
+        kasir_filter(&st, &kasir, q.kasir_id).await,
         q.page,
         q.per_page,
         q.metode_pembayaran.as_deref().filter(|m| !m.is_empty()),
@@ -99,7 +125,10 @@ pub async fn laporan_kantin(
     )
     .await
     {
-        Ok(v) => http::json(200, v),
+        Ok(mut v) => {
+            alias_data(&mut v, "history_menu");
+            http::json(200, v)
+        }
         Err(e) => salah(e),
     }
 }
@@ -351,7 +380,7 @@ pub async fn export_billing(
     let data = match rep::billing(
         &st,
         q.tanggal.as_deref(),
-        kasir_filter(&kasir, q.kasir_id),
+        kasir_filter(&st, &kasir, q.kasir_id).await,
         Some(1),
         Some(100),
         q.metode_pembayaran.as_deref().filter(|m| !m.is_empty()),
@@ -377,7 +406,7 @@ pub async fn export_kantin(State(st): St, kasir: Kasir, Query(q): Query<LaporanQ
     let data = match rep::kantin(
         &st,
         q.tanggal.as_deref(),
-        kasir_filter(&kasir, q.kasir_id),
+        kasir_filter(&st, &kasir, q.kasir_id).await,
         Some(1),
         Some(100),
         q.metode_pembayaran.as_deref().filter(|m| !m.is_empty()),

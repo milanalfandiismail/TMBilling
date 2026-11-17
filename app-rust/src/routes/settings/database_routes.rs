@@ -1,4 +1,4 @@
-//! Backup manual, unduh DB, QRIS, token uninstall, statistik & purge.
+﻿//! Backup manual, unduh DB, QRIS, token uninstall, statistik & purge.
 
 use crate::middleware::auth::{admin_only, Kasir};
 use crate::routes::client::client_routes::{kunci_sama, peer_ip};
@@ -159,6 +159,17 @@ pub async fn database_stats(State(st): State<Arc<AppState>>, k: Kasir) -> Respon
     )
 }
 
+fn ukuran_manusia(b: u64) -> String {
+    let mut v = b as f64;
+    for u in ["B", "KB", "MB", "GB"] {
+        if v < 1024.0 {
+            return format!("{v:.2} {u}");
+        }
+        v /= 1024.0;
+    }
+    format!("{v:.2} TB")
+}
+
 pub async fn purge_and_vacuum(
     State(st): State<Arc<AppState>>,
     k: Kasir,
@@ -188,12 +199,23 @@ pub async fn purge_and_vacuum(
     if let Err(e) = svc::create(&st, false).await {
         return http::json(500, json!({"success": false, "error": e.to_string()}));
     }
-    for sql in [
-        format!("DELETE FROM transaksi_menu WHERE tanggal < '{batas}'"),
-        format!("DELETE FROM transaksi WHERE tanggal < '{batas}'"),
-        format!("DELETE FROM sesi WHERE status <> 'aktif' AND mulai_pada < '{batas}'"),
-    ] {
-        let _ = sqlx::raw_sql(&sql).execute(&st.pool).await;
+    let daftar = [
+        ("pc_process", format!("DELETE FROM pc_process WHERE last_update < '{batas}'")),
+        ("pc_uptime_log", format!("DELETE FROM pc_uptime_log WHERE tanggal < '{batas}'")),
+        ("maintenance_ticket", format!("DELETE FROM maintenance_ticket WHERE status IN ('SELESAI', 'DITOLAK') AND created_at < '{batas}'")),
+        ("transaksi_menu", format!("DELETE FROM transaksi_menu WHERE tanggal < '{batas}'")),
+        ("transaksi", format!("DELETE FROM transaksi WHERE dibuat_pada < '{batas}'")),
+        ("sesi", format!("DELETE FROM sesi WHERE status = 'selesai' AND selesai_pada < '{batas}'")),
+        ("shift_record", format!("DELETE FROM shift_record WHERE status = 'SELESAI' AND waktu_mulai < '{batas}'")),
+    ];
+    let mut terhapus = serde_json::Map::new();
+    for (nama, sql) in daftar {
+        let n = sqlx::raw_sql(&sql)
+            .execute(&st.pool)
+            .await
+            .map(|r| r.rows_affected())
+            .unwrap_or(0);
+        terhapus.insert(nama.to_string(), json!(n));
     }
     let _ = sqlx::raw_sql("VACUUM").execute(&st.pool).await;
     let sesudah = std::fs::metadata(&st.cfg.db_path)
@@ -205,10 +227,15 @@ pub async fn purge_and_vacuum(
         json!({
             "success": true,
             "message": "Pembersihan database dan optimasi VACUUM berhasil dieksekusi.",
+            "retention_months": bulan,
+            "cutoff_date": batas,
+            "deleted_summary": terhapus,
             "storage_stats": {
-                "before_bytes": sebelum,
-                "after_bytes": sesudah,
-                "saved_space_human": format!("{:.2} MB", sebelum.saturating_sub(sesudah) as f64 / 1_048_576.0),
+                "initial_size_bytes": sebelum,
+                "final_size_bytes": sesudah,
+                "initial_size_human": ukuran_manusia(sebelum),
+                "final_size_human": ukuran_manusia(sesudah),
+                "saved_space_human": ukuran_manusia(sebelum.saturating_sub(sesudah)),
             }
         }),
     )
@@ -263,28 +290,98 @@ pub async fn scheduler_update(
     body: axum::body::Bytes,
 ) -> Response {
     let data = http::parse_json(&body);
-    let detik = data
+
+    // Bentuk lama (interval tick scheduler) tetap dilayani.
+    if let Some(detik) = data
         .get("interval_seconds")
         .or_else(|| data.get("interval"))
         .and_then(|v| v.as_i64())
-        .unwrap_or(crate::scheduler::TICK_SECONDS as i64);
-    if !(5..=3600).contains(&detik) {
-        return http::json(
-            400,
-            json!({"success": false, "error": "Interval harus antara 5 dan 3600 detik"}),
-        );
-    }
-    match crate::services::settings::settings_service::set(
-        &st,
-        "scheduler_interval_seconds",
-        &detik.to_string(),
-    )
-    .await
     {
-        Ok(_) => http::json(
-            200,
-            json!({"success": true, "message": format!("Interval scheduler diset {detik} detik")}),
-        ),
-        Err(e) => http::json(500, json!({"success": false, "error": e.to_string()})),
+        if !(5..=3600).contains(&detik) {
+            return http::json(
+                400,
+                json!({"success": false, "error": "Interval harus antara 5 dan 3600 detik"}),
+            );
+        }
+        return match crate::services::settings::settings_service::set(
+            &st,
+            "scheduler_interval_seconds",
+            &detik.to_string(),
+        )
+        .await
+        {
+            Ok(_) => http::json(
+                200,
+                json!({"success": true, "message": format!("Interval scheduler diset {detik} detik")}),
+            ),
+            Err(e) => http::json(500, json!({"success": false, "error": e.to_string()})),
+        };
     }
+
+    let angka = |kunci: &str| {
+        data.get(kunci).and_then(|v| {
+            v.as_i64()
+                .or_else(|| v.as_str().and_then(|s| s.trim().parse().ok()))
+        })
+    };
+    let satuan = |kunci: &str| data.get(kunci).and_then(|v| v.as_str()).map(str::to_string);
+
+    let Some(backup_value) = angka("backup_value") else {
+        return http::json(400, json!({"success": false, "error": "backup_value dan backup_unit wajib diisi"}));
+    };
+    let Some(backup_unit) = satuan("backup_unit") else {
+        return http::json(400, json!({"success": false, "error": "backup_value dan backup_unit wajib diisi"}));
+    };
+    let Some(cleanup_value) = angka("cleanup_value") else {
+        return http::json(400, json!({"success": false, "error": "cleanup_value dan cleanup_unit wajib diisi"}));
+    };
+    let Some(cleanup_unit) = satuan("cleanup_unit") else {
+        return http::json(400, json!({"success": false, "error": "cleanup_value dan cleanup_unit wajib diisi"}));
+    };
+    let Some(screenshot_value) = angka("screenshot_value") else {
+        return http::json(400, json!({"success": false, "error": "screenshot_value dan screenshot_unit wajib diisi"}));
+    };
+    let Some(screenshot_unit) = satuan("screenshot_unit") else {
+        return http::json(400, json!({"success": false, "error": "screenshot_value dan screenshot_unit wajib diisi"}));
+    };
+    let screenshot_enabled = data
+        .get("screenshot_enabled")
+        .map(|v| match v {
+            serde_json::Value::Bool(b) => *b,
+            serde_json::Value::String(s) => s == "1" || s.eq_ignore_ascii_case("true"),
+            _ => false,
+        })
+        .unwrap_or(false);
+
+    if backup_value < 1 || cleanup_value < 1 || screenshot_value < 1 {
+        return http::json(400, json!({"success": false, "error": "Nilai interval minimal 1"}));
+    }
+    let unit_valid = ["detik", "menit", "jam", "hari", "minggu", "bulan"];
+    for u in [&backup_unit, &cleanup_unit, &screenshot_unit] {
+        if !unit_valid.contains(&u.as_str()) {
+            return http::json(
+                400,
+                json!({"success": false, "error": format!("Unit tidak valid. Gunakan: {}", unit_valid.join(", "))}),
+            );
+        }
+    }
+
+    let pasangan = [
+        ("auto_backup_value", backup_value.to_string()),
+        ("auto_backup_unit", backup_unit),
+        ("auto_cleanup_value", cleanup_value.to_string()),
+        ("auto_cleanup_unit", cleanup_unit),
+        ("screenshot_auto_enabled", if screenshot_enabled { "1".to_string() } else { "0".to_string() }),
+        ("screenshot_auto_value", screenshot_value.to_string()),
+        ("screenshot_auto_unit", screenshot_unit),
+    ];
+    for (kunci, nilai) in pasangan {
+        if let Err(e) = crate::services::settings::settings_service::set(&st, kunci, &nilai).await {
+            return http::json(500, json!({"success": false, "error": e.to_string()}));
+        }
+    }
+    http::json(
+        200,
+        json!({"success": true, "message": "Konfigurasi scheduler berhasil disimpan"}),
+    )
 }

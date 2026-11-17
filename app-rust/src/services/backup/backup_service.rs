@@ -266,9 +266,11 @@ pub fn list(st: &AppState) -> Vec<Value> {
                     .format("%Y-%m-%d %H:%M:%S")
                     .to_string()
             });
+            let ukuran = meta.as_ref().map(|m| m.len()).unwrap_or(0);
             out.push(json!({
                 "filename": name,
-                "size": meta.as_ref().map(|m| m.len()).unwrap_or(0),
+                "size": ukuran,
+                "size_mb": format!("{:.2}", ukuran as f64 / 1_048_576.0),
                 "created_at": modified,
                 "is_manual": name.starts_with(MANUAL_PREFIX),
             }));

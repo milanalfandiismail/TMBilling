@@ -31,7 +31,10 @@ fn pilihan(nilai: &str, opsi: &[&str], field: &str) -> Hasil<String> {
 pub async fn create(st: &AppState, data: &Value, reporter: &str) -> Hasil<Value> {
     let pc_id = data
         .get("pc_id")
-        .and_then(|v| v.as_i64())
+        .and_then(|v| {
+            v.as_i64()
+                .or_else(|| v.as_str().and_then(|s| s.trim().parse().ok()))
+        })
         .ok_or_else(|| salah("PC tidak ditemukan"))?;
     let kategori = data.get("kategori").and_then(|v| v.as_str()).unwrap_or("");
     let prioritas = data.get("prioritas").and_then(|v| v.as_str()).unwrap_or("");
@@ -252,9 +255,21 @@ pub async fn report(st: &AppState, q: &Value) -> Hasil<Value> {
             }
         }
     };
-    let start = tanggal("start_date")?;
-    let end = tanggal("end_date")?;
-    let pc_id = q.get("pc_id").and_then(|v| v.as_i64());
+    let mut start = tanggal("start_date")?;
+    let mut end = tanggal("end_date")?;
+    if let Some(v) = q.get("tanggal").and_then(|v| v.as_str()).map(str::trim) {
+        if !v.is_empty() && !matches!(v.to_lowercase().as_str(), "all" | "semua" | "none") {
+            let d = chrono::NaiveDate::parse_from_str(v, "%Y-%m-%d")
+                .map_err(|_| salah("Format tanggal salah. Gunakan YYYY-MM-DD"))?;
+            let (mulai, akhir) = time::day_range_utc(d, &st.cfg.timezone);
+            start = Some(mulai);
+            end = Some(akhir);
+        }
+    }
+    let pc_id = q.get("pc_id").and_then(|v| {
+        v.as_i64()
+            .or_else(|| v.as_str().and_then(|s| s.trim().parse().ok()))
+    });
     let grup = q
         .get("grup")
         .and_then(|v| v.as_str())

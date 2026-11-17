@@ -119,13 +119,30 @@ pub async fn status(State(st): State<Arc<AppState>>, k: Kasir) -> Response {
     let sesi_aktif = crate::repositories::sesi::count_aktif(&st.pool)
         .await
         .unwrap_or(0);
+    let lengkap = revisi.map(|r| r.0).unwrap_or_default();
+    let current = lengkap.chars().take(8).collect::<String>();
+    let head = crate::db::migrate::HEAD_REVISION
+        .chars()
+        .take(8)
+        .collect::<String>();
+    let sesuai = !current.is_empty() && current == head;
     http::json(
         200,
         json!({
             "success": true,
             "app_version": st.cfg.version,
             "version_tag": st.cfg.version_tag(),
-            "schema_revision": revisi.map(|r| r.0),
+            "schema_revision": lengkap,
+            "current": current,
+            "head": head,
+            "needs_upgrade": !sesuai,
+            "history": [{
+                "revision": head,
+                "down_revision": Value::Null,
+                "description": "Skema awal TMBilling 2.0.0",
+                "is_current": sesuai,
+                "is_head": true,
+            }],
             "active_sessions": sesi_aktif,
             "db_path": st.cfg.db_path.to_string_lossy(),
         }),

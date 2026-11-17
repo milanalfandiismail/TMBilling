@@ -184,7 +184,7 @@ pub async fn sync_all(State(state): St, kasir: Kasir) -> Response {
     let (ok, msg) = client.test_connection();
     if !ok {
         SYNC_RUNNING.store(false, Ordering::SeqCst);
-        return http::json(400, json!({"error": format!("Koneksi gagal: {msg}")}));
+        return http::json(400, json!({"error": format!("Koneksi gagal: {}", msg.trim_start_matches("Koneksi gagal: "))}));
     }
     let members: Vec<String> = sqlx::query_scalar("SELECT username FROM member WHERE aktif = 1")
         .fetch_all(&state.pool)

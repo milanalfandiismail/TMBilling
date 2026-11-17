@@ -3,8 +3,7 @@
 use crate::models::game::{Game, GameKategori};
 use sqlx::SqlitePool;
 
-const KOLOM: &str = "SELECT id, nama, tipe, kategori, exe_path, argumen, icon, aktif, \\
-    created_at, updated_at, operator_id FROM game";
+const KOLOM: &str = "SELECT id, nama, tipe, kategori, exe_path, argumen, icon, aktif,      created_at, updated_at, operator_id FROM game";
 
 pub async fn get_all(
     pool: &SqlitePool,
@@ -72,8 +71,7 @@ pub async fn get_by_id(pool: &SqlitePool, id: i64) -> anyhow::Result<Option<Game
 
 pub async fn insert(pool: &SqlitePool, g: &Game) -> anyhow::Result<i64> {
     let res = sqlx::query(
-        "INSERT INTO game (nama, tipe, kategori, exe_path, argumen, icon, aktif, created_at, updated_at, operator_id) \\
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT INTO game (nama, tipe, kategori, exe_path, argumen, icon, aktif, created_at, updated_at, operator_id)           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&g.nama)
     .bind(&g.tipe)

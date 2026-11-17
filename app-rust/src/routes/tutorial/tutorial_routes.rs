@@ -18,7 +18,10 @@ fn gagal(e: (u16, String)) -> Response {
 
 pub async fn list(State(state): St, _kasir: Kasir) -> Response {
     match svc::list(&state).await {
-        Ok(data) => http::json(200, data),
+        Ok(mut data) => {
+            data["success"] = json!(true);
+            http::json(200, data)
+        }
         Err(e) => gagal(e),
     }
 }
@@ -77,7 +80,10 @@ pub async fn hapus(State(state): St, kasir: Kasir, Path(id): Path<i64>) -> Respo
 
 pub async fn categories(State(state): St, _kasir: Kasir) -> Response {
     match svc::categories(&state).await {
-        Ok(data) => http::json(200, data),
+        Ok(mut data) => {
+            data["success"] = json!(true);
+            http::json(200, data)
+        }
         Err(e) => gagal(e),
     }
 }

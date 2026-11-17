@@ -42,7 +42,7 @@ fn baca(st: &AppState, nilai: &str) -> Option<i64> {
     isi.strip_prefix("member:")?.parse().ok()
 }
 
-fn sesi(st: &AppState, headers: &HeaderMap) -> Option<i64> {
+pub(crate) fn sesi(st: &AppState, headers: &HeaderMap) -> Option<i64> {
     http::cookie(headers, "tm_member").and_then(|c| baca(st, &c))
 }
 
@@ -69,7 +69,7 @@ pub async fn login(
         .to_lowercase();
     let password = data.get("password").and_then(|v| v.as_str()).unwrap_or("");
     let ip = ip_of(&headers);
-    if !crate::services::auth::login_throttle::check(&ip, &username) {
+    if crate::services::auth::login_throttle::check(&ip, &username) {
         return http::err(
             429,
             "Terlalu banyak percobaan login. Coba lagi dalam 5 menit.",
@@ -82,15 +82,26 @@ pub async fn login(
             return http::err(401, "Username atau password salah");
         }
     };
-    if !member.aktif || !verify_password(password, &member.password_hash) {
+    if !member.aktif {
+        return http::err(403, "Akun member Anda dinonaktifkan oleh kasir");
+    }
+    if !verify_password(&member.password_hash, password) {
         crate::services::auth::login_throttle::fail(&ip, &username);
         return http::err(401, "Username atau password salah");
+    }
+    if let (Some(raw), Some(now)) = (
+        member.kadaluarsa_pada.as_deref().and_then(crate::utils::time::parse_dt),
+        Some(crate::utils::time::now_db()),
+    ) {
+        if now > raw {
+            return http::err(403, "Masa aktif member sudah kadaluarsa");
+        }
     }
     crate::services::auth::login_throttle::ok(&ip, &username);
     let nilai = token(&st, member.id);
     http::json_with_cookies(
         200,
-        json!({"success": true, "message": format!("Selamat datang, {}", member.username)}),
+        json!({"success": true, "message": format!("Selamat datang, {}", member.username), "redirect": "/member/dashboard"}),
         &[format!(
             "tm_member={nilai}; Path=/; Max-Age=86400; HttpOnly; SameSite=Lax"
         )],
@@ -100,7 +111,7 @@ pub async fn login(
 pub async fn logout() -> Response {
     http::json_with_cookies(
         200,
-        json!({"success": true, "message": "Logout berhasil"}),
+        json!({"success": true, "message": "Logout berhasil", "redirect": "/member/login"}),
         &["tm_member=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax".to_string()],
     )
 }

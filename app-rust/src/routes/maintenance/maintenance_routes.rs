@@ -65,7 +65,7 @@ pub async fn report(
 ) -> Response {
     let data = json!(q);
     match svc::report(&state, &data).await {
-        Ok(rows) => http::json(200, json!({"success": true, "data": rows})),
+        Ok(rows) => http::json(200, json!({"success": true, "report": rows})),
         Err(e) => gagal(e),
     }
 }

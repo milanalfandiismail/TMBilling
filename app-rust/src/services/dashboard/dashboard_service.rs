@@ -119,7 +119,17 @@ pub async fn pc_list(st: &AppState) -> Value {
             map.insert(
                 "sesi_detail".into(),
                 match &ringkas {
-                    Some(s) => json!({"id": s.id, "tipe": s.tipe, "nama": s.nama_guest, "is_afk": s.is_afk}),
+                    Some(s) => json!({
+                        "id": s.id,
+                        "tipe": s.tipe,
+                        "nama": s.nama_guest,
+                        "nama_guest": s.nama_guest,
+                        "is_afk": s.is_afk,
+                        "mulai_pada": s.mulai_pada,
+                        "durasi_beli_menit": s.durasi_beli_menit,
+                        "sisa_menit": s.sisa_menit,
+                        "sisa_waktu": s.sisa_menit,
+                    }),
                     None => Value::Null,
                 },
             );

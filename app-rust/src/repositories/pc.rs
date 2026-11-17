@@ -93,18 +93,30 @@ pub async fn find_mac_exclude(pool: &SqlitePool, mac: &str, id: i64) -> anyhow::
 pub async fn sesi_map(
     pool: &SqlitePool,
 ) -> anyhow::Result<std::collections::HashMap<i64, SesiRingkas>> {
-    let rows: Vec<(i64, i64, Option<String>, Option<String>, Option<bool>)> = sqlx::query_as(
-        "SELECT pc_id, id, tipe, nama_guest, is_afk FROM sesi WHERE status = 'aktif' AND pc_id IS NOT NULL ORDER BY id DESC",
+    let rows: Vec<(
+        i64,
+        i64,
+        Option<String>,
+        Option<String>,
+        Option<bool>,
+        Option<String>,
+        Option<i64>,
+        Option<i64>,
+    )> = sqlx::query_as(
+        "SELECT pc_id, id, tipe, nama_guest, is_afk, mulai_pada, durasi_beli_menit,          CASE WHEN mulai_pada IS NULL THEN durasi_beli_menit ELSE MAX(0, durasi_beli_menit - CAST((julianday('now') - julianday(mulai_pada)) * 1440 AS INTEGER)) END          FROM sesi WHERE status = 'aktif' AND pc_id IS NOT NULL ORDER BY id DESC",
     )
     .fetch_all(pool)
     .await?;
     let mut map = std::collections::HashMap::new();
-    for (pc_id, id, tipe, nama_guest, is_afk) in rows {
+    for (pc_id, id, tipe, nama_guest, is_afk, mulai_pada, durasi_beli_menit, sisa_menit) in rows {
         map.entry(pc_id).or_insert(SesiRingkas {
             id,
             tipe,
             nama_guest,
             is_afk,
+            mulai_pada,
+            durasi_beli_menit,
+            sisa_menit,
         });
     }
     Ok(map)

@@ -111,6 +111,7 @@ pub async fn billing(
                 "jumlah": r.jumlah,
                 "metode_pembayaran": r.metode_pembayaran.clone().unwrap_or_else(|| "Tunai".into()),
                 "operator": r.operator.clone().unwrap_or_default(),
+                "kasir_nama": r.operator.clone().unwrap_or_else(|| "System".into()),
                 "is_refunded": r.is_refunded,
             })
         })
@@ -182,10 +183,13 @@ pub async fn kantin(
             urutan.push(nota.clone());
             (
                 json!({
+                    "id": r.id,
                     "no_nota": nota,
                     "tanggal": r.tanggal.map(|d| time::format_display(d, tz)).unwrap_or_default(),
                     "pc_kode": r.pc_kode.clone().unwrap_or_else(|| "-".into()),
                     "kasir": r.kasir_nama.clone().or(r.operator.clone()).unwrap_or_else(|| "Kasir".into()),
+                    "kasir_nama": r.kasir_nama.clone().or(r.operator.clone()).unwrap_or_else(|| "Kasir".into()),
+                    "waktu": r.tanggal.map(|d| time::format_display(d, tz)).unwrap_or_default(),
                     "metode_pembayaran": r.metode_pembayaran.clone().unwrap_or_else(|| "Tunai".into()),
                 }),
                 Vec::new(),
@@ -193,10 +197,13 @@ pub async fn kantin(
             )
         });
         entri.1.push(json!({
+            "nama": nama,
             "menu": nama,
+            "menu_nama": nama,
             "jumlah": r.jumlah,
-            "total_harga": r.total_harga,
             "harga": r.menu_harga,
+            "harga_satuan": r.menu_harga,
+            "total_harga": r.total_harga,
         }));
         entri.2 += r.total_harga;
     }
@@ -212,6 +219,19 @@ pub async fn kantin(
             grup.get(n).map(|(meta, items, total)| {
                 let mut v: Map<String, Value> = meta.as_object().cloned().unwrap_or_default();
                 v.insert("items".into(), Value::Array(items.clone()));
+                v.insert("items_detail".into(), Value::Array(items.clone()));
+                let nama_gabung = items
+                    .iter()
+                    .filter_map(|i| i.get("nama").and_then(|n| n.as_str()))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                v.insert("menu_nama".into(), json!(nama_gabung));
+                let total_qty: i64 = items
+                    .iter()
+                    .filter_map(|i| i.get("jumlah").and_then(|n| n.as_i64()))
+                    .sum();
+                v.insert("jumlah".into(), json!(total_qty));
+                v.insert("total_harga".into(), json!(total));
                 v.insert("total".into(), json!(total));
                 Value::Object(v)
             })
@@ -232,6 +252,7 @@ pub async fn kantin(
         "has_next": page < pages,
         "has_prev": page > 1,
         "total_pendapatan": total_pendapatan,
+        "total_pendapatan_menu": total_pendapatan,
         "data": data,
     }))
 }

@@ -634,8 +634,7 @@ pub async fn create_batch(
     let mut added = Vec::new();
     for (kode, ip) in &rencana {
         sqlx::query(
-            "INSERT INTO pc (kode, nama, ip_address, mac_address, grup_id, aktif) VALUES (?, ?, ?, NULL, ?, 1) \\
-             ON CONFLICT(kode) DO UPDATE SET nama = excluded.nama, ip_address = excluded.ip_address, grup_id = excluded.grup_id, aktif = 1",
+            "INSERT INTO pc (kode, nama, ip_address, mac_address, grup_id, aktif) VALUES (?, ?, ?, NULL, ?, 1)              ON CONFLICT(kode) DO UPDATE SET nama = excluded.nama, ip_address = excluded.ip_address, grup_id = excluded.grup_id, aktif = 1",
         )
         .bind(kode)
         .bind(kode)

@@ -28,6 +28,9 @@ pub struct SesiRingkas {
     pub tipe: Option<String>,
     pub nama_guest: Option<String>,
     pub is_afk: Option<bool>,
+    pub mulai_pada: Option<String>,
+    pub durasi_beli_menit: Option<i64>,
+    pub sisa_menit: Option<i64>,
 }
 
 impl Pc {

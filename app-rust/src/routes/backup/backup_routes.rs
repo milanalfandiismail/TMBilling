@@ -33,13 +33,43 @@ pub async fn test_connection(
     _k: Kasir,
     body: axum::body::Bytes,
 ) -> Response {
-    let data = http::parse_json(&body);
-    let kind = data
-        .get("provider_type")
+    let mut data = http::parse_json(&body);
+    let mentah = data
+        .get("provider")
+        .or_else(|| data.get("provider_type"))
         .and_then(|v| v.as_str())
-        .unwrap_or("");
+        .unwrap_or("")
+        .to_string();
+    let kind = match mentah.to_lowercase().as_str() {
+        "discord" | "webhook" => "webhook",
+        "webdav" => "webdav",
+        "gdrive" => "gdrive",
+        "nas" => "nas",
+        _ => "",
+    };
     if kind.is_empty() {
         return http::err(400, "Provider type is required");
+    }
+    if kind == "webhook" {
+        if let Some(v) = data.get("url").cloned() {
+            data["webhook_url"] = v;
+        }
+    }
+    if kind == "webdav" {
+        for (dari, ke) in [
+            ("url", "webdav_url"),
+            ("username", "webdav_username"),
+            ("password", "webdav_password"),
+        ] {
+            if let Some(v) = data.get(dari).cloned() {
+                data[ke] = v;
+            }
+        }
+    }
+    if kind == "nas" {
+        if let Some(v) = data.get("path").cloned() {
+            data["nas_path"] = v;
+        }
     }
     let target = match kind {
         "webhook" => data
@@ -167,6 +197,26 @@ pub async fn restore(
         return http::json(
             400,
             json!({"success": false, "error": "Konfirmasi restore diperlukan"}),
+        );
+    }
+    let aktif: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sesi WHERE status = 'aktif'")
+        .fetch_one(&st.pool)
+        .await
+        .unwrap_or(0);
+    if aktif > 0
+        && data
+            .get("confirm_active_sessions")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
+            != true
+    {
+        return http::json(
+            409,
+            json!({
+                "success": false,
+                "error": format!("Masih ada {aktif} sesi aktif. Tutup sesi lebih dulu, atau konfirmasi bahwa sesi akan hilang."),
+                "active_sessions": aktif,
+            }),
         );
     }
     let path = match berkas(&st, &filename) {

@@ -51,6 +51,12 @@ fn env() -> &'static Environment<'static> {
                     return Ok(Value::from(hasil));
                 }
             }
+            // Method ORM Python (mis. `s.menit_terpakai()`) dipetakan ke kunci tersembunyi `__nama`.
+            if let Ok(v) = value.get_attr(&format!("__{method}")) {
+                if !v.is_undefined() {
+                    return Ok(v);
+                }
+            }
             if let Some(t) = value.as_str() {
                 let hasil = match method {
                     "lower" => t.to_lowercase(),
@@ -69,6 +75,25 @@ fn env() -> &'static Environment<'static> {
         });
         env.add_function("url_for", url_for);
         env.add_function("csrf_token", || CSRF.with(|c| c.borrow().clone()));
+        // Jinja memanggil format_display(...) sebagai global; padanan filter Python.
+        env.add_function(
+            "format_display",
+            |raw: Value, kwargs: minijinja::value::Kwargs| -> Result<String, minijinja::Error> {
+                let s = raw.as_str().map(|v| v.to_string()).unwrap_or_default();
+                let fmt = kwargs
+                    .get::<Option<String>>("fmt")?
+                    .unwrap_or_else(|| "%d/%m/%Y %H:%M".to_string());
+                let tz_name = std::env::var("TIMEZONE").unwrap_or_else(|_| "Asia/Makassar".to_string());
+                Ok(crate::utils::time::parse_dt(&s)
+                    .map(|d| {
+                        chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(d, chrono::Utc)
+                            .with_timezone(&crate::utils::time::tz(&tz_name))
+                            .format(&fmt)
+                            .to_string()
+                    })
+                    .unwrap_or(s))
+            },
+        );
         env
     })
 }

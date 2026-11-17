@@ -407,3 +407,27 @@ async fn blackout_deteksi_lalu_tutup_tanpa_kompensasi() {
     .await;
     assert_eq!(resolved, 1);
 }
+
+#[tokio::test]
+async fn dashboard_pc_menyertakan_sisa_menit_sesi() {
+    let (_dir, st) = state("dash_sisa").await;
+    let (cookies, csrf) = admin_session(st.clone()).await;
+    let (paket_id, _pc_id) = siapkan(st.clone(), &cookies, &csrf).await;
+    buka_guest(st.clone(), &cookies, &csrf, paket_id).await;
+
+    let reply = send(
+        st.clone(),
+        "GET",
+        "/api/v1/kasir/dashboard/pc",
+        &cookies,
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+    let v: Value = serde_json::from_str(&reply.body).unwrap();
+    let sesi = &v["pc_list"][0]["sesi_detail"];
+    assert_eq!(sesi["sisa_menit"].as_i64(), Some(60));
+    assert_eq!(sesi["durasi_beli_menit"].as_i64(), Some(60));
+    assert!(sesi["mulai_pada"].as_str().is_some());
+}
