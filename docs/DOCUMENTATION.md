@@ -4,8 +4,8 @@
 
 # Master Dokumentasi Teknis & Operasional TMBilling (Single Source of Truth)
 
-> **Versi Rilis:** v2.0.3 (backend Rust; jalur Python 1.6.5 dibekukan)  
-> **Branch:** `rust` (rilis 2.0.x, aktif), `main` (Python 1.6.5, beku)  
+> **Versi Rilis:** v2.0.3  
+> **Branch:** `rust` (rilis aktif)  
 > **Status:** Single Source of Truth Resmi Repositori TMBilling  
 > **Target Audiens:** Pengembang Backend/Frontend, Pengembang Rust/Tauri, Operator/Kasir, dan Administrator Sistem Warnet & Game Center.
 
@@ -68,7 +68,7 @@
    - [7.6 Deploy Scripts & Configuration](#76-deploy-scripts--configuration)
 8. [Spesifikasi Protokol API & VNC Bridge](#8-spesifikasi-protokol-api--vnc-bridge)
 9. [Panduan Operasional Kasir & Troubleshooting](#9-panduan-operasional-kasir--troubleshooting)
-10. [Panduan Kontribusi, Testing & SOP Dual-Engine (248 Test Files / 686 Test)](#10-panduan-kontribusi-testing--sop-dual-engine)
+10. [Panduan Kontribusi, Testing & Verifikasi](#10-panduan-kontribusi-testing--verifikasi)
 
 ---
 
@@ -146,7 +146,7 @@ c:\Project GIT\TMBilling
 │   ├── tests/                          # 12 suite contract + 6 suite unit
 │   ├── instance/                       # Runtime: warnet.db, server.lock, backups (tidak di-commit)
 │   └── target/                         # Artefak cargo (tidak di-commit)
-├── app/                                # Backend Python 1.6.5 (BEKU, acuan 1:1)
+├── app/                                # Aset frontend bersama (di-embed ke biner)
 │   └── static/, templates/             # Frontend bersama, di-embed ke biner Rust
 │       ├── static/css/                 # TailwindCSS build & custom styling
 │       ├── static/js/kasir/            # Modular ES6 (app.js, core/, components/, modules/)
@@ -157,11 +157,9 @@ c:\Project GIT\TMBilling
 │   ├── RUST_MIGRATION.md               # Keputusan migrasi & cutover
 │   └── superpowers/                    # Specs & plans agent
 ├── tools/ckeditor-builder/             # Custom CKEditor 5 build untuk CMS
-├── tests/                              # Pytest Python (beku) + 15 suite E2E Playwright
+├── tests/                              # 15 suite E2E Playwright
 ├── WarnetAgent/                        # Klien: Tauri, watchdog C++/C#, monitor, uninstaller, Deploy
-├── build_release.py                    # ZIP TMBilling_Server_v<versi>.zip
 ├── build_and_deploy.bat                # Build biner klien & aset CSS
-├── scripts/rust_parity.py              # Gate paritas endpoint Python vs Rust
 ├── CHANGELOG.md
 └── README.md
 ```
@@ -234,7 +232,7 @@ c:\Project GIT\TMBilling
   - Jika data log shutdown tersedia: `"22/09/2026 16:38 WITA s/d 23/09/2026 00:38 WITA (rentang PC mati sebelum boot)"`
   - Jika log shutdown tidak tersedia (estimasi otomatis 8 jam sebelum boot): `"17/09/2026 11:33 WITA s/d 19:33 WITA (rentang PC mati sebelum boot)"`
 - **Panduan CCTV untuk PC Tidak Bisa Boot (Agent Offline)**: Jika PC tidak bisa booting sama sekali (seluruh komponen penting dicuri sehingga tidak ada data telemetry), modal detail PC di dashboard menampilkan field **"Terakhir PC Aktif / Sinkron"** dengan catatan: *`> [Waktu PC Terakhir Dimatikan]`* sebagai panduan batas awal pengecekan rekaman CCTV.
-- **Implementasi**: Fungsi `format_cctv_internal_window()` di `app/services/hardware/hardware_service.py`.
+- **Implementasi**: `app-rust/src/services/hardware/` menghitung rentang dari log shutdown/boot perangkat.
 
 #### C. Indikator Kecepatan NIC (Network Interface Card)
 - NIC speed terdeteksi dari agent dan ditampilkan di baris bawah kartu hardware:
@@ -260,7 +258,7 @@ c:\Project GIT\TMBilling
 - **Live Zoom**: Klik thumbnail untuk memperbesar screenshot secara instan tanpa lag.
 - **Nama Berkas Aman**: `_screenshot_filename()` membuang pemisah path sebelum `secure_filename`, sehingga kode PC seperti `PC/01` tetap menjadi `PC01.png` dan tidak bisa menulis di luar folder screenshot.
 - **Identitas & Validasi Unggah**: Endpoint unggah menentukan PC dari IP koneksi peer (`IpWhitelistService.extract_client_ip`), bukan header `X-IP-Address`, sehingga satu PC tidak bisa menimpa screenshot PC lain. Byte gambar divalidasi Pillow (`verify()` lalu dibuka ulang), dinormalkan ke PNG dengan sisi maksimum 1280 px, disimpan di `instance/uploads/screenshots` (folder privat, **bukan** static publik), dan data tidak valid ditolak `400`.
-- **Akses Admin-Only**: `GET /api/v1/kasir/monitor/screenshot/all`, `.../screenshot/status/<pc_id>`, dan `.../screenshot/image/<pc_id>` memakai `@login_required` + `@admin_required`, sehingga kasir tidak bisa membaca metadata maupun byte gambar. JSON tetap memuat kunci `screenshot_url`, kini menunjuk route gambar terproteksi; helper `migrate_legacy_screenshots(app)` memindahkan screenshot lama dari `static/uploads/screenshots` ke folder instance saat startup (dilewati saat `TESTING`). Folder `app/static/uploads/screenshots` tidak ikut dipaketkan `build_release.py`, disk guard auto-screenshot memakai volume `instance_path` dan gagal tertutup bila kapasitas tidak terbaca, serta hard-delete PC ikut menghapus berkas screenshot privatnya.
+- **Akses Admin-Only**: `GET /api/v1/kasir/monitor/screenshot/all`, `.../screenshot/status/<pc_id>`, dan `.../screenshot/image/<pc_id>` memakai `@login_required` + `@admin_required`, sehingga kasir tidak bisa membaca metadata maupun byte gambar. JSON tetap memuat kunci `screenshot_url`, kini menunjuk route gambar terproteksi; folder privat `instance/uploads/screenshots` tidak pernah disajikan sebagai static, disk guard auto-screenshot gagal tertutup bila kapasitas tidak terbaca, dan hard-delete PC ikut menghapus berkas screenshot privatnya.
 
 ### 4.8 POS Kantin & Billing FnB Multi-Payment (Cash/QRIS/Bank + Struk Thermal)
 - **Deskripsi**: Modul kasir kantin / FnB lengkap yang terintegrasi langsung dengan billing PC.
@@ -296,14 +294,13 @@ c:\Project GIT\TMBilling
 
 ### 4.11 Centralized Versioning System (`Cargo.toml` Truth)
 - **Deskripsi**: Versi backend bersumber dari `app-rust/Cargo.toml` (`version = "2.0.3"`) dan menjadi satu-satunya versi rilis aktif.
-- **Penyebaran Otomatis**: Versi dipakai endpoint `/api/health`, footer UI kasir, dan nama ZIP rilis dari `build_release.py`.
-- **Jalur Python**: `app/config.py` tetap `VERSION = "1.6.5"` sebagai acuan beku; `tests/test_version_consistency.py` menjaga keduanya tidak saling menyimpang.
+- **Penyebaran Otomatis**: Versi dipakai endpoint `/api/health`, footer UI kasir, dan artefak rilis `tmbilling-server.exe`.
 
 ### 4.12 RBAC Kasir & Centralized Audit Log System
 - **Deskripsi**: Role-Based Access Control dengan 3 tingkatan pengguna: `Super Admin`, `Admin`, dan `Kasir`.
-- **Audit Logs**: Seluruh aktivitas krusial (buka sesi, tambah waktu, hapus member, edit harga paket, diskon, refund, pembukaan laci kas) dicatat sebagai JSON line di `logs/warnet.log` melalui `app/utils/logger.py` (rotasi gzip; tanpa tabel database).
+- **Audit Logs**: Seluruh aktivitas krusial (buka sesi, tambah waktu, hapus member, edit harga paket, diskon, refund, pembukaan laci kas) dicatat sebagai JSON line di `logs/warnet.log` melalui `app-rust/src/utils/logger.rs` (rotasi gzip; tanpa tabel database).
 - **Pembersihan Log dengan Otorisasi Supervisor**: Riwayat audit log tidak dapat dihapus sembarangan dan membutuhkan verifikasi password level Administrator/Super Admin.
-- **Anti Brute-Force Login**: `services/auth/login_throttle.py` membatasi 5 kegagalan per kombinasi (IP, username) dalam 5 menit dan membalas HTTP 429; berlaku pada login kasir, `admin-check`, `client/admin-login`, dan portal member. Logout wajib menyertakan token sesi yang cocok, dan setiap login sukses memanggil `session.clear()` agar sesi lama tidak menempel.
+- **Anti Brute-Force Login**: `app-rust/src/services/auth/login_throttle.rs` membatasi 5 kegagalan per kombinasi (IP, username) dalam 5 menit dan membalas HTTP 429; berlaku pada login kasir, `admin-check`, `client/admin-login`, dan portal member. Logout wajib menyertakan cookie sesi yang cocok, dan setiap login sukses menerbitkan sesi baru sehingga sesi lama tidak menempel.
 - **Batas Unggah & Nama Berkas**: `MAX_CONTENT_LENGTH = 64 MB` mencegah unggahan raksasa; nama file screenshot dibersihkan dengan `secure_filename` setelah membuang pemisah path sehingga kode PC tidak bisa keluar dari folder upload.
 - **Toggle Whitelist**: `POST /api/v1/kasir/settings/ip-whitelist/toggle` menormalkan string boolean; `"false"` benar-benar menonaktifkan whitelist, bukan dianggap truthy.
 - **Pengecualian Admin Divalidasi ke Database**: Middleware whitelist hanya membebaskan sesi yang user-nya masih ada, `aktif=True`, dan ber-role `admin` di database. Sesi dengan cookie lama ber-role admin yang sudah diturunkan/dinonaktifkan tidak lagi mendapat bypass (role sesi disegarkan dari DB atau sesi dibersihkan), sehingga pengecualian admin tidak bisa dipakai satu request pun setelah demosi.
@@ -327,12 +324,12 @@ c:\Project GIT\TMBilling
 - **Fitur**:
   - *Auto Backup Lokal*: Backup terjadwal berkala ke folder arsip lokal.
   - *Cloud Backup Rotation*: Sinkronisasi backup ke penyimpanan cloud eksternal dengan retensi rotasi otomatis; seluruh panggilan HTTP provider memakai `timeout=30` agar job tidak menggantung.
-  - *Unduhan Database Aman WAL*: `GET /api/v1/kasir/settings/backup/download` memakai snapshot SQLite Online Backup API + `PRAGMA integrity_check` ke file sementara (isi `-wal` ikut tersalin), lalu dihapus via `after_this_request`. Tidak lagi men-stream file `warnet.db` hidup.
+  - *Unduhan Database Aman WAL*: `GET /api/v1/kasir/settings/backup/download` memakai snapshot SQLite Online Backup API + `PRAGMA integrity_check` ke file sementara (isi `-wal` ikut tersalin), lalu file sementara dihapus setelah respons dikirim. Tidak lagi men-stream file `warnet.db` hidup.
   - *SQLite VACUUM & Optimize*: Mengompresi dan merapikan indeks database langsung dari tombol di pengaturan.
   - *Arsip Pra-Purge Konsisten*: sebelum menghapus riwayat, `DBMaintenanceService` menyimpan snapshot Online Backup API + `PRAGMA integrity_check` ke `default_backup_dir()/archive` (bukan `copy2` berkas WAL yang bisa kehilangan isi `-wal`).
   - *Database Restore Modal*: Antarmuka pemulihan database dengan proteksi konfirmasi ganda.
-  - *Migrasi Setelah Restore*: arsip divalidasi lebih dulu — file SQLite yang utuh tetapi bukan database TMBilling (tabel inti `grup`/`pc`/`sesi`/`transaksi` tidak lengkap) ditolak `400` sebelum database aktif ditimpa. Setelah dipasang, DB berversi `alembic_version` **atau** berskema lama tanpa revisi dimigrasikan ke revisi `head` (`run_migration.run(app)`) selama maintenance mode masih aktif, lalu skema hasil migrasi diverifikasi ulang; bila migrasi gagal atau skema masih tidak lengkap, DB dikembalikan otomatis dari backup pengaman yang dibuat sebelum restore dan request dibalas `400` dengan pesan yang jelas. Skema tanpa `alembic_version` yang sudah identik dengan model (mis. database hasil `db.create_all()` di test/sandbox) tetap dipulihkan tanpa migrasi.
-  - *Gerbang Maintenance Tahan Tumpang Tindih*: `services/maintenance_mode.py` memakai hitungan konteks aktif di bawah lock, sehingga dua restore yang berjalan bersamaan tidak membuka kembali API publik saat konteks pertama selesai.
+  - *Migrasi Setelah Restore*: arsip divalidasi lebih dulu — file SQLite yang utuh tetapi bukan database TMBilling (tabel inti `grup`/`pc`/`sesi`/`transaksi` tidak lengkap) ditolak `400` sebelum database aktif ditimpa. Setelah dipasang, skema dinaikkan ke head aditif di dalam proses (`app-rust/src/db/migrate.rs`) selama maintenance mode aktif, lalu diverifikasi ulang; bila gagal atau skema masih tidak lengkap, DB dikembalikan otomatis dari backup pengaman yang dibuat sebelum restore dan request dibalas `400` dengan pesan yang jelas.
+  - *Gerbang Maintenance Tahan Tumpang Tindih*: gerbang di dalam proses (`app-rust/src/services/backup/`) memakai hitungan konteks aktif di bawah lock, sehingga dua restore yang berjalan bersamaan tidak membuka kembali API publik saat konteks pertama selesai.
 
 ### 4.15 Manajemen Member, Paket & Billing Rates
 - **Deskripsi**: Pengelolaan akun pelanggan member, saldo deposit, dan paket promosi warnet.
@@ -345,7 +342,7 @@ c:\Project GIT\TMBilling
   - Satu Sesi Aktif per PC & Member: Unique index parsial `uq_aktif_sesi_pc` (`pc_id` WHERE `status='aktif'`) dan `uq_aktif_sesi_member` (`member_id` WHERE `status='aktif'`) menolak sesi ganda; pelanggaran dipetakan menjadi `ValueError("PC sedang dipakai")`.
   - Top-up Multi-Paket Atomik: `tambah_waktu_batch` membungkus `WRITE_LOCK`, menulis seluruh item dengan `commit=False`, lalu satu commit; kegagalan salah satu item me-rollback semuanya dan audit log ditulis setelah commit.
   - Arsip vs Hapus Member: `POST /api/v1/kasir/member/<id>/archive` menonaktifkan member (ditolak bila masih punya sesi aktif). `DELETE /api/v1/kasir/member/<id>` menghapus permanen dengan body `{"confirm": "<nama member>"}`; referensi `Sesi.member_id` dan `Transaksi.member_id` dilepas menjadi NULL sehingga riwayat sesi/transaksi tetap ada tanpa identitas member.
-  - Serialisasi Tulis Saldo: `app/services/write_lock.py` (`WRITE_LOCK`) membungkus `tambah_waktu`/`refund_paket`/`tambah_waktu_batch` member dan `tambah_waktu_sesi` agar dua request bersamaan tidak saling menimpa saldo (read-modify-write) pada satu proses server.
+  - Serialisasi Tulis Saldo: `state.write()` (`app-rust/src/db/write_lock.rs`) membungkus `tambah_waktu`/`refund_paket`/`tambah_waktu_batch` member dan `tambah_waktu_sesi` agar dua request bersamaan tidak saling menimpa saldo (read-modify-write) pada satu proses server.
   - Paket Tidak Ditemukan: edit/hapus paket yang sudah tidak ada dibalas `404` ("Paket tidak ditemukan"), bukan `500`.
   - Parsing Boolean Paket: flag `aktif` menerima string `"true"`/`"1"`/`"yes"` dan `"false"` benar-benar menonaktifkan; nilai string tidak lagi dianggap truthy mentah.
   - Paket Nonaktif Ditolak: top-up sesi guest maupun member dengan paket `aktif=False` dibalas `ValueError("Paket tidak aktif")` sebelum durasi, saldo, atau transaksi diubah; paket nonaktif tidak bisa dijual lewat request lama/tamper.
@@ -499,9 +496,9 @@ c:\Project GIT\TMBilling
   - Berkas `initial_admin.txt` otomatis dilindungi oleh `.gitignore` agar tidak sengaja ter-commit ke repositori publik.
   - Operator diarahkan untuk mengganti password di menu **Manajemen Staff > Akun Kasir & Admin**.
 - **Bootstrap Skema & Seed Terkontrol**:
-  - `bootstrap_app_data(app)` menjalankan seed pengaturan/whitelist/tutorial dan bootstrap superadmin hanya setelah tabel `user` tersedia.
-  - Factory hanya memanggil `db.create_all()` bila database benar-benar baru (belum ada tabel `user` maupun `alembic_version`); database yang sudah ber-`alembic_version` tidak disentuh factory dan wajib melalui `run_migration.py`, sehingga upgrade legacy tidak bentrok dengan tabel yang sudah ada.
-  - `install_scripts/init_db.py` memanggil `db.create_all()` + `bootstrap_app_data()` untuk instalasi awal.
+  - `AppState::new` menjalankan `db::migrate::ensure_schema` sebelum seed pengaturan/whitelist/admin/tutorial: database baru dibangun dari `migrations/0001_schema_head.sql`, database lama hanya menerima perubahan aditif lalu di-stamp `HEAD_REVISION`.
+  - Seed hanya mengisi baris yang belum ada; data operator tidak pernah ditimpa dan tidak ada `DROP TABLE`.
+  - Bootstrap superadmin berjalan saat tabel `user` kosong, dengan kredensial dicetak ke terminal dan `initial_admin.txt`.
 - **Dynamic Random VNC Password**:
   - Pengaturan password VNC otomatis di-generate acak 8 karakter (`secrets.token_urlsafe(8)`) saat pertama kali diakses jika belum disetel di tabel database settings.
 - **Anti-SSRF Protection & Active Session Guard**:
@@ -749,100 +746,75 @@ Total registrasi `.route(` di `app-rust/src/app.rs`: **245 route**. Sumber keben
   - *Penanganan*: Pastikan file `allow_firewall.bat` sudah dijalankan di PC klien dan service TightVNC berjalan pada port 5900.
 
 ### 9.3 Update Server: Otomatis, `update.bat`, dan Manual Total
-
-Semua jalur update server bermuara ke `install_scripts/updater.bat`, sehingga pengamanannya sama:
-
+Semua jalur update bermuara ke subperintah `tmbilling-server.exe --apply-update <zip> <dir>`:
 | Metode | Perintah / Lokasi | Penanganan |
 |---|---|---|
-| GitHub 1-Klik | Dashboard > Pengaturan > Migrasi & Update | `updater.bat`, otomatis |
-| Upload ZIP | Dashboard > Pengaturan > Migrasi & Update | `updater.bat`, otomatis |
-| `update.bat` | `update.bat TMBilling_Server_v<versi>.zip` atau drag-and-drop ZIP | `updater.bat`, semi-manual |
-| Manual total | Langkah 1–8 di bawah | Dikerjakan sendiri |
-
-`updater.bat` melakukan: preflight Python 3.11+, mengambil klaim pembaruan tunggal lintas-proses (`install_scripts/update_claim.py claim`, lock `instance/update.lock`; bila klaim dipegang proses lain — misalnya route dashboard yang baru memulai update — runner berhenti dengan pesan "Pembaruan lain sedang berjalan"), memulihkan penukaran berkas yang terputus sebelumnya (`recover_interrupted_swap()` pada `install_scripts/extract_update.py` membaca `instance/update_journal.json` dan mengembalikan tiap entri dari `instance/rollback_<timestamp>`), menghentikan proses server (background `pythonw`, proses `run.py`, dan pemilik port 7015), membatalkan tanpa mengubah berkas bila port masih hidup, backup database via SQLite Online Backup API, ekstraksi ZIP ke `instance/staging_update`, penyalinan screenshot lama `app/static/uploads/screenshots` ke staging (gagal salin = batal sebelum pohon live disentuh), penukaran berkas per entri top-level dengan `os.replace` yang niatnya sudah ditulis ke jurnal **sebelum** replace (sehingga proses yang mati tepat setelah replace tetap dipulihkan), `"%TM_PY%" -m pip install -r requirements.txt --quiet` **tanpa syarat** (wajib, tidak bergantung pada keberadaan `pip.exe` di `.venv`), migrasi, lalu start ulang. Klaim selalu dilepas di label `:done`. Bila backup/ekstraksi/penukaran gagal, server dinyalakan kembali, berkas live di-rollback, dan ZIP dipertahankan di `instance/temp_update.zip`. Bila `pip install` atau migrasi gagal, updater berhenti di label `:fail` dengan exit code `1` dan **tidak** menyalakan server; perbaiki penyebabnya lalu jalankan `start.bat`, atau rollback sesuai prosedur di bawah.
-
-Endpoint dashboard (GitHub 1-Klik maupun Upload ZIP) juga memakai klaim yang sama: unduhan ditulis ke `instance/temp_update.zip.pending` lalu dipublikasikan atomik dengan `os.replace` hanya setelah ZIP valid, dan permintaan update kedua saat klaim masih dipegang dibalas `409` tanpa menyentuh paket pertama. Jalur `update.bat` (CLI/drag-and-drop) memakai klaim yang sama: klaim diambil **sebelum** ZIP disalin ke `instance/temp_update.zip`, sehingga drag-and-drop saat update otomatis berjalan ditolak tanpa menimpa paket yang sedang dipakai.
-
+| GitHub 1-Klik | Dashboard > Pengaturan > Migrasi & Update | unduh + `--apply-update`, otomatis |
+| Upload ZIP | Dashboard > Pengaturan > Migrasi & Update | `--apply-update`, otomatis |
+| `update.bat` | `update.bat TMBilling_Server_v<versi>.zip` atau drag-and-drop ZIP | `--apply-update`, semi-manual |
+| Manual total | Langkah 1–5 di bawah | Dikerjakan sendiri |
+Mode `--apply-update` menghentikan proses yang memegang port 7015, mengekstrak ZIP ke `instance/staging_update`, lalu menukar setiap entri top-level. Berkas `.env`, direktori `instance/`, dan `backups/` tidak pernah ditimpa, sehingga kredensial, database, dan arsip backup tetap utuh. Bila ekstraksi atau penukaran gagal, berkas live dikembalikan dan paket dipertahankan di `instance/temp_update.zip`. Setelah penukaran selesai, server dijalankan ulang; klien tersambung kembali lewat heartbeat dan sesi yang sedang berjalan dipulihkan dari database.
+Endpoint dashboard memakai jalur yang sama: unduhan ditulis ke berkas sementara, divalidasi sebagai ZIP, lalu dipublikasikan sebelum `--apply-update` dipanggil. Permintaan update kedua saat proses pertama masih berjalan dibalas `409` tanpa menyentuh paket pertama.
 **Prosedur manual total (tanpa `update.bat`):**
-
-1. Pastikan Python 3.11+:
-   ```cmd
-   .venv\Scripts\python.exe -c "import sys; print(sys.version)"
-   ```
-2. Hentikan server dan verifikasi port:
-   ```cmd
-   stop.bat
+1. Hentikan server dan verifikasi port:
+   ```powershell
+   Get-Process tmbilling-server -ErrorAction SilentlyContinue | Stop-Process -Force
    netstat -ano | findstr :7015
    ```
    Tidak boleh ada `LISTENING`. Jika masih ada, hentikan PID tersebut lewat Task Manager.
-3. Cadangkan database dan konfigurasi:
-   ```cmd
-   .venv\Scripts\python.exe -c "import sqlite3,os; os.makedirs('backups',exist_ok=True); s=sqlite3.connect(r'instance\warnet.db'); d=sqlite3.connect(r'backups\manual_pre_update.db'); s.backup(d); s.close(); d.close()"
-   copy .env .env.bak
+2. Cadangkan database dan konfigurasi:
+   ```powershell
+   Copy-Item instance\warnet.db backups\manual_pre_update.db
+   Copy-Item .env .env.bak
    ```
-4. Ekstrak ZIP rilis dan timpa berkas aplikasi:
+3. Ekstrak ZIP rilis dan timpa berkas aplikasi:
    ```powershell
    Expand-Archive -Path TMBilling_Server_v<versi>.zip -DestinationPath . -Force
    ```
    Jangan menyentuh `.env`, `instance/`, dan `backups/` kustom.
-5. Pasang dependensi:
-   ```cmd
-   .venv\Scripts\python.exe -m pip install -r requirements.txt
+4. Nyalakan server:
+   ```powershell
+   Start-Process .\tmbilling-server.exe
    ```
-   Bila langkah ini gagal, jangan lanjut start; perbaiki atau balikkan kode ke versi lama.
-6. Jalankan migrasi:
-   ```cmd
-   .venv\Scripts\python.exe install_scripts\run_migration.py
-   ```
-   Output normal berakhir dengan `[MIGRATION] Safety sync skema berhasil.` Bila upgrade atau safety sync gagal, skrip mencetak `[MIGRATION ERROR] ...`, keluar dengan kode bukan nol, dan **tidak** men-stamp revisi ke `head` sehingga upaya berikutnya tetap menjalankan migrasi yang belum selesai.
-7. Nyalakan server:
-   ```cmd
-   start.bat
-   ```
-8. Verifikasi `http://localhost:7015/api/health`, login dashboard, dan uji satu sesi billing + satu transaksi POS.
-
-**Kapan `run_migration.py` wajib?** Wajib bila rilis mengubah skema (cek `CHANGELOG.md` atau `migrations/versions/`). Untuk rilis kode/CSS saja tidak wajib, tetapi migrasi bersifat idempoten sehingga aman dijalankan setiap update. Jangan menjalankan migrasi saat server masih hidup.
-
-**Jangan jalankan `flask db upgrade` mentah pada database legacy.** Database hasil `db.create_all()` tidak punya tabel `alembic_version`, sehingga Alembic mengulang seluruh revisi dari awal dan gagal pada revisi pertama yang menambah kolom yang sudah ada (`duplicate column name: active_window`). `run_migration.py` melakukan safety sync kolom lebih dulu lalu men-stamp revisi `head`; test `tests/test_migration_fresh_database.py` menjaga agar skema hasilnya tetap identik dengan model.
-**Rollback bila update gagal:** `stop.bat` → salin `backups/manual_pre_update.db` (atau `warnet_backup_before_update_*.db`) menjadi `instance/warnet.db` → ekstrak ulang ZIP versi lama → `start.bat`. Update tidak zero-downtime: client terputus beberapa detik, tetapi sesi tersimpan di database dan pulih lewat heartbeat/blackout.
-
+   Migrasi skema aditif berjalan otomatis saat startup, didahului snapshot database.
+5. Verifikasi `http://localhost:7015/api/health`, login dashboard, dan uji satu sesi billing + satu transaksi POS.
+**Rollback bila update gagal:** hentikan proses → salin `backups/manual_pre_update.db` menjadi `instance/warnet.db` → ekstrak ulang ZIP versi lama → jalankan `tmbilling-server.exe`. Update tidak zero-downtime: client terputus beberapa detik, tetapi sesi tersimpan di database dan pulih lewat heartbeat/blackout.
 ---
 
-## 10. Panduan Kontribusi, Testing & SOP Dual-Engine
+## 10. Panduan Kontribusi, Testing & Verifikasi
 
-### 10.1 Standar Testing Backend (Pytest)
-Repositori TMBilling dilengkapi **248 file pengujian unit dan integrasi** dengan **686 test specs** aktif:
+### 10.1 Standar Testing Backend (Rust)
+Backend diuji dengan dua kelompok suite Cargo: **12 suite contract** di `app-rust/tests/contract/` (auth, client_agent, device, http, master_data, member_shift_notes, ops, public_cms, report, sesi, settings, mikrotik) dan **6 suite unit** di `app-rust/tests/unit/` (cache, config, idempotency, logger, scheduler, schema_parity).
 ```powershell
-python -m pytest tests/ -q
+cd app-rust
+cargo test -j 2 -- --test-threads=2
 ```
-Seluruh pengujian harus berstatus **PASSED (686 passed, 0 failed)** sebelum melakukan commit atau push.
+Seluruh target harus **passed, 0 failed** sebelum commit atau push.
 
 ### 10.1.1 Pengujian End-to-End Browser (Playwright)
 `tests/e2e/` menjalankan **15 suite Chromium sungguhan** (385 check) secara paralel terhadap sandbox terisolasi:
 
 ```powershell
-npm run test:e2e                                            # semua suite, worker = jumlah CPU
-.venv\Scripts\python.exe tests/e2e/run_all_e2e.py --jobs 1  # serial untuk debug
-.venv\Scripts\python.exe tests/e2e/run_all_e2e.py --suite pc_billing --jobs 2
-.venv\Scripts\python.exe tests/e2e/run_all_e2e.py --list
-npm run test:e2e:sandbox                                    # server sandbox interaktif port 7016
+npm run test:e2e                    # semua suite, worker = jumlah CPU
+node tests/e2e/run_all_e2e.js --suite pc_billing --jobs 2
+npm run test:e2e:sandbox            # server sandbox interaktif port 7016
 ```
 
-- Setiap suite berjalan di proses Python sendiri dengan database `instance/e2e/<suite>/warnet.db`, port dinamis, catatan `instance/e2e/<suite>/notes`, dan backup `instance/e2e/<suite>/backups`; `E2E_BASE_URL` dan `E2E_SANDBOX_DB` diteruskan ke runner Node.
+- Setiap suite berjalan di proses sandbox sendiri dengan database `instance/e2e/<suite>/warnet.db`, port dinamis, catatan `instance/e2e/<suite>/notes`, dan backup `instance/e2e/<suite>/backups`; `E2E_BASE_URL` dan `E2E_SANDBOX_DB` diteruskan ke runner Node.
 - `instance/warnet.db` (sha256 + jumlah baris), `backups/`, `instance/notes/`, `.env`, dan `initial_admin.txt` dijaga read-only; kegagalan guard membuat exit code 1.
 - Direktori catatan diisolasi lewat `TM_NOTES_DIR`, jadi test tidak menyentuh catatan produksi.
 - Cakupan: 30 tab container, 10 sub-tab settings, 8 portal publik, siklus billing, POS kantin, member/paket/grup, shift & rekonsiliasi kas, telemetri hardware & anti-maling, turnamen, RBAC/redaksi setting, blackout & emergency login, invarian zero-thrash dan reflow responsif.
-- **Gerbang cakupan rute:** sandbox mencatat setiap `endpoint method` yang benar-benar dipanggil ke `requests.log`, lalu `tests/e2e/check_coverage_gate.py` membandingkannya dengan `routes.json` (seluruh `url_map`). Rute yang belum dipanggil harus ditutup suite bisnis atau suite `route_smoke`, atau didaftarkan di `tests/e2e/api_exempt.py` dengan alasan nyata (proses/jaringan eksternal). Gerbang hanya berjalan bila semua suite lulus dan menggagalkan run bila ada rute tertinggal.
+- **Gerbang cakupan rute:** sandbox mencatat setiap `endpoint method` yang benar-benar dipanggil, lalu gerbang cakupan membandingkannya dengan daftar seluruh rute yang terdaftar. Rute yang belum dipanggil harus ditutup suite bisnis atau suite `route_smoke`, atau didaftarkan sebagai pengecualian dengan alasan nyata (proses/jaringan eksternal). Gerbang hanya berjalan bila semua suite lulus dan menggagalkan run bila ada rute tertinggal.
 - Suite khusus hasil audit: `update_restore` (klaim pembaruan tunggal, restore menolak DB asing, tukar berkas + pemulihan jurnal), `screenshot_whitelist` (screenshot privat admin-only, revalidasi role whitelist), `analytics_cleanup` (top paket tanpa baris siklus hidup, guard hapus tanggal), dan `route_smoke` (memanggil seluruh rute sisa dengan payload aman dan memastikan tidak ada balasan 5xx).
 - Check harus membuktikan transisi state, baris database, aritmetika uang, atau kontrak error — bukan sekadar "elemen ada".
 
 
-### 10.2 Standar Dual-Engine SOP (Single Operating Procedure)
-Seluruh aktivitas rekayasa perangkat lunak wajib mematuhi protokol **Dual-Engine**:
+### 10.2 Standar Rekayasa & Verifikasi
+Seluruh aktivitas rekayasa perangkat lunak wajib mematuhi protokol verifikasi dua tahap:
 1. **Engine 1 - Planning & Brainstorming (Plugin `superpowers`)**:
    - `brainstorming`: Menganalisis kebutuhan pengguna dan merancang arsitektur sebelum coding.
    - `writing-plans`: Menyusun rencana kerja bertahap yang modular dan terverifikasi.
-   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi (686 test specs) dan jangan commit/push otomatis setelah bugfix.
+   - `systematic-debugging`: Investigasi akar masalah secara mendalam sebelum perbaikan; verifikasi regresi seluruh suite dan jangan commit/push otomatis setelah bugfix.
    - `test-driven-development`: Memastikan spesifikasi pengujian ada untuk setiap perubahan fitur krusial.
    - `git-discipline`: Dilarang keras melakukan `git commit` maupun `git push` secara sepihak/otomatis (baik saat fitur baru maupun setelah debugging/bugfix) sebelum ada perintah eksplisit dari USER. Selalu laporkan hasil pekerjaan dan tunggu aba-aba USER.
 2. **Engine 2 - Execution & Verification (MCP `codebase-memory`)**:
@@ -852,34 +824,19 @@ Seluruh aktivitas rekayasa perangkat lunak wajib mematuhi protokol **Dual-Engine
    - `index_repository`: Memperbarui graf pengetahuan repositori setelah modifikasi kode selesai.
 
 ### 10.3 Skrip Otomatisasi & Build Pipeline
-Repositori menyediakan skrip batch otomatis untuk menyederhanakan manajemen operasional dan proses build:
-
+Repositori menyediakan skrip batch untuk instalasi server dan build aset:
 | Skrip Batch | Direktori | Fungsi Utama |
 | :--- | :--- | :--- |
-| **`install.bat`** | Root (`/`) | Instalasi Server Billing 1-klik (Python venv, requirements, `.env`, SQLite init). |
-| **`start.bat`** | Root (`/`) | Menjalankan Server Billing di background pada port `7015` (`http://localhost:7015`). |
-| **`stop.bat`** | Root (`/`) | Menghentikan proses Server Billing. |
-| **`developer_install.bat`** | Root (`/`) | Inisialisasi environment lengkap untuk pengembang (Python & Frontend dependencies). |
+| **`install.bat`** | `app-rust/packaging/` | Menyalin `tmbilling-server.exe`, menyiapkan direktori runtime, dan mendaftarkan autostart `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. |
+| **`update.bat`** | `app-rust/packaging/` | Meneruskan ZIP ke `tmbilling-server.exe --apply-update` (CLI atau drag-and-drop). |
 | **`build_and_deploy.bat`** | Root (`/`) | Kompilasi seluruh binary klien Rust (`TMBillingTauri`, `TMBilling_Monitor`, `MGCTM`, `TMBilling_Uninstaller`, `mtm`, `TMLHMService`) dan menyalin binary rilis ke `WarnetAgent/Deploy/`. |
 | **`install.bat`** | `WarnetAgent/Deploy/` | Instalasi otomatis klien PC warnet (konfigurasi IP server, registry, firewall, startup). |
 | **`uninstall.bat`** | `WarnetAgent/Deploy/` | Uninstalasi aman klien warnet via `TMBilling_Uninstaller.exe`. |
 | **`allow_firewall.bat`** | `WarnetAgent/Deploy/` | Konfigurasi aturan Windows Defender Firewall port 5900 TightVNC. |
-| **`scripts/upgrade_packages.py`** | `scripts/` | Sinkronisasi/upgrade dependensi Python: tanpa flag = `pip install -r requirements.txt`; `--latest` = upgrade semua paket ke versi terbaru lalu menulis ulang pin `requirements.txt` (salinan lama di `backups/requirements_<timestamp>.txt`); `--check` = daftar paket usang; `--dry-run` = cetak perintah pip saja. Menolak berjalan di luar virtual environment. |
-
-**Upgrade dependensi Python (manual atau script):**
-
+**Build server rilis:**
 ```powershell
-# Manual - mengikuti pin di requirements.txt
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-
-# Manual - paket tertentu ke versi terbaru, lalu sesuaikan pin di requirements.txt
-.\.venv\Scripts\python.exe -m pip install --upgrade <paket>
-
-# Script - cek, sinkronkan, atau upgrade seluruh paket + tulis ulang pin
-.\.venv\Scripts\python.exe scripts\upgrade_packages.py --check
-.\.venv\Scripts\python.exe scripts\upgrade_packages.py
-.\.venv\Scripts\python.exe scripts\upgrade_packages.py --latest
+cd app-rust
+cargo build --release
+# hasil: target/release/tmbilling-server.exe, salin ke app-rust/packaging/
 ```
-
-`--latest` menulis ulang `requirements.txt` dan menyimpan salinan lama ke `backups/requirements_<timestamp>.txt`. Setelah upgrade, jalankan `npm run test:unit` (semua core) dan `npm run test:e2e` sebelum rilis. Upgrade dependensi tidak mengubah skema database; migrasi hanya perlu bila rilis membawa perubahan model.
+Build CSS dashboard dan aset vendor memakai `npm run build:css`. Setelah build, jalankan `cargo test -j 2 -- --test-threads=2` dan `npm run test:e2e` sebelum menandai rilis. Perubahan skema hanya boleh berupa migrasi aditif; database produksi tidak pernah di-drop.
