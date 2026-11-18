@@ -5,6 +5,7 @@ Hash password memakai werkzeug scrypt, format yang diterima models/user.rs:63-76
 from __future__ import annotations
 
 import sqlite3
+from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -104,6 +105,20 @@ def apply(db_path: str) -> dict[str, int]:
             (5, None, None, 1, 2, "pembelian_paket", 8000, 60, "batas hari ini",
              today_local.astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "E2E-0005", 0, "Tunai", "kasir1"),
         ])
+        db.executemany("INSERT OR REPLACE INTO pc_process (id,pc_id,name,title,last_update) VALUES (?,?,?,?,?)", [
+            (1, 1, "TMBilling.exe", "TMBilling Kiosk", y),
+            (2, 1, "chrome.exe", "Google Chrome", y),
+            (3, 1, "Discord.exe", "Discord", y),
+        ])
+        db.executemany("INSERT OR REPLACE INTO transaksi_menu (id,no_nota,menu_id,jumlah,total_harga,tanggal,operator,metode_pembayaran,tunai,kembalian) VALUES (?,?,?,?,?,?,?,?,?,?)", [
+        (100 + i, f"E2E-PAGE-{i:02d}", 1, 1, 15000, (today_local - timedelta(days=i)).astimezone(timezone.utc).strftime("%Y-%m-%d %H:%M:%S"), "kasir1", "Tunai", 15000, 0)
+        for i in range(1, 13)
+    ])
+        db.executemany("INSERT OR REPLACE INTO shift_record (id,kasir_id,waktu_mulai,waktu_selesai,modal_awal,total_billing,total_kantin,total_qris,total_refund,uang_fisik,selisih,catatan,status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+            (10, 2, (now - timedelta(days=3)).strftime("%Y-%m-%d %H:%M:%S"), (now - timedelta(days=3, hours=-8)).strftime("%Y-%m-%d %H:%M:%S"), 200000, 30000, 15000, 0, 0, 245000, 0, "E2E shift 3 hari lalu", "SELESAI"),
+            (11, 2, (now - timedelta(days=2)).strftime("%Y-%m-%d %H:%M:%S"), (now - timedelta(days=2, hours=-8)).strftime("%Y-%m-%d %H:%M:%S"), 200000, 21000, 0, 0, 0, 221000, 0, "E2E shift 2 hari lalu", "SELESAI"),
+        ])
+        db.execute("INSERT OR REPLACE INTO system_tutorials (id,title,icon,category,content,urutan,created_at,updated_at) VALUES (2,'Cara Refund Paket','fa-rotate-left','Billing','<p>Refund</p>',2,?,?)", (y, y))
         db.execute("INSERT OR REPLACE INTO turnamen (id,nama,deskripsi,status,dibuat_pada) VALUES (2,'E2E Selesai','Turnamen lampau','selesai',?)", (y,))
 
         db.execute("""INSERT OR REPLACE INTO system_tutorials (id,title,icon,category,content,urutan,created_at,updated_at)
@@ -113,8 +128,14 @@ def apply(db_path: str) -> dict[str, int]:
         tables = ["grup", "pc", "paket", "menu_item", "menu_stock_log", "member", "user",
                   "shift_record", "transaksi", "transaksi_menu", "game", "game_kategori",
                   "maintenance_ticket", "hardware_monitor", "pc_uptime_log", "mikrotik_config",
-                  "turnamen", "turnamen_tim", "turnamen_tahap", "turnamen_match", "system_tutorials", "sesi"]
-        return {t: db.execute("SELECT COUNT(*) FROM " + t).fetchone()[0] for t in tables}
+                  "turnamen", "turnamen_tim", "turnamen_tahap", "turnamen_match", "system_tutorials", "sesi", "pc_process"]
+        shot_dir = Path(db_path).resolve().parent / "uploads" / "screenshots"
+        shot_dir.mkdir(parents=True, exist_ok=True)
+        png = bytes.fromhex("89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d49444154789c6360000000020001e221bc330000000049454e44ae426082")
+        (shot_dir / "pc_1.png").write_bytes(png)
+        hasil = {t: db.execute("SELECT COUNT(*) FROM " + t).fetchone()[0] for t in tables}
+        hasil["screenshot"] = 1
+        return hasil
     finally:
         db.close()
 

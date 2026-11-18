@@ -18,13 +18,16 @@ def main():
         print("modul:", " ".join(mods))
         return 1
     res = check(a.root, a.map)
-    print(f"handler={res['handlers']} unclassified={len(res['unclassified'])} missing_cases={len(res['missing_cases'])}")
+    print(f"handler={res['handlers']} unclassified={len(res['unclassified'])} missing_cases={len(res['missing_cases'])} missing_evidence={len(res['missing_evidence'])}")
     for h in res["unclassified"]:
         print("  UNCLASSIFIED", h)
     for h, c in res["missing_cases"]:
         print("  MISSING_CASE", c, "dari", h)
-    print("GATE LULUS" if not res["unclassified"] and not res["missing_cases"] else "GATE GAGAL")
-    return 0 if not res["unclassified"] and not res["missing_cases"] else 1
+    for h in res["missing_evidence"]:
+        print("  MISSING_EVIDENCE", h)
+    ok = not res["unclassified"] and not res["missing_cases"] and not res["missing_evidence"]
+    print("GATE LULUS" if ok else "GATE GAGAL")
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

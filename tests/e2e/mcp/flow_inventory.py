@@ -39,14 +39,20 @@ def _match(mapping, name):
     return mapping.get(mod)
 
 
-def check(root, map_path):
+def check(root, map_path, evidence_path=None):
     inv = inventory(root)
     data = json.loads(pathlib.Path(map_path).read_text(encoding="utf-8")) if pathlib.Path(map_path).exists() else {}
     cases, exempt = data.get("cases", {}), data.get("exempt", {})
     unclassified, missing = [], []
     docs = pathlib.Path(root, "tests/e2e/mcp/cases")
     text = "\n".join(p.read_text(encoding="utf-8") for p in docs.glob("*.md")) if docs.is_dir() else ""
+    ev_path = pathlib.Path(evidence_path) if evidence_path else pathlib.Path(root, "tests/e2e/mcp/handler_evidence.json")
+    ev = json.loads(ev_path.read_text(encoding="utf-8")) if ev_path.exists() else {"tested": {}, "exempt": {}}
+    tested, ev_exempt = ev.get("tested", {}), ev.get("exempt", {})
+    missing_evidence = []
     for h in inv["handlers"]:
+        if h not in tested and h not in ev_exempt:
+            missing_evidence.append(h)
         cid = _match(cases, h)
         if not cid:
             if h not in exempt and not _match(exempt, h):
@@ -56,4 +62,5 @@ def check(root, map_path):
         if m and m.group(0) not in text:
             missing.append((h, m.group(0)))
     return {"unclassified": sorted(unclassified), "missing_cases": sorted(set(missing)),
+            "missing_evidence": sorted(missing_evidence), "tested": len(tested),
             "handlers": len(inv["handlers"]), "tabs": inv["tabs"], "settings_subtabs": inv["settings_subtabs"]}
