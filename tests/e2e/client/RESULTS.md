@@ -32,4 +32,4 @@ Dashboard produksi: GET /api/v1/kasir/dashboard/pc → WEW-1 online:true, status
 
 ## Sisa risiko
 - Server produksi 7015 masih menjalankan salinan biner lama (app-rust/tmbilling-server.exe), belum memuat dua perbaikan hari ini sampai disalin + restart.
-- Langkah dashboard (proses/screenshot/remote) belum dijalankan ulang lewat MCP pada PC nyata.
+- Dashboard PC nyata: MONITOR PROSES menampilkan 58 proses dari agent. AMBIL GAMBAR mengirim perintah, tetapi berkas screenshot belum muncul dalam 8 detik (perlu cek konfigurasi screenshot di klien).
