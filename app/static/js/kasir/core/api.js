@@ -6,8 +6,10 @@ const API = {
     // Double-submit: server membandingkan cookie & header, jadi cookie sumber benar
     // (meta bisa basi setelah login ulang di tab lain).
     csrfToken() {
-        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
-        return m ? decodeURIComponent(m[1]) : (document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
+        // Ambil kemunculan TERAKHIR: cookie Path=/ (yang dikirim ke /api/*) diurutkan setelah
+        // cookie path sempit sisa versi lain; cookie path sempit tidak ikut terkirim.
+        const all = [...document.cookie.matchAll(/(?:^|; )csrf_token=([^;]+)/g)];
+        return all.length ? decodeURIComponent(all[all.length - 1][1]) : (document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
     },
     async request(url, options = {}) {
         try {

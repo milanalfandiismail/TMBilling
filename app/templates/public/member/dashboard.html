@@ -379,7 +379,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRFToken': (document.cookie.match(/(?:^|; )csrf_token=([^;]+)/) || [])[1] || ''
+                        'X-CSRFToken': ([...document.cookie.matchAll(/(?:^|; )csrf_token=([^;]+)/g)].pop() || [])[1] || ''
                     },
                     body: JSON.stringify(payload)
                 });

@@ -6,6 +6,11 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [2.0.2] - 2026-11-18
+
+### Fixed
+- CSRF: klien memakai cookie Path=/ (yang benar-benar terkirim ke /api/*), bukan cookie path sempit sisa versi lama; server menerima salah satu cookie csrf_token yang cocok.
+
 ## [2.0.1] - 2026-11-18
 
 ### Fixed

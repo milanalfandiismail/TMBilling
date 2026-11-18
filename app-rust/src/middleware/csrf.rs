@@ -48,13 +48,24 @@ pub async fn guard(State(_state): State<Arc<AppState>>, req: Request, next: Next
     if req.headers().contains_key(header::AUTHORIZATION) {
         return next.run(req).await;
     }
-    let cookie = crate::utils::http::cookie(req.headers(), COOKIE).unwrap_or_default();
     let sent = req
         .headers()
         .get(HEADER)
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
-    if cookie.is_empty() || !same(&cookie, sent) {
+    // Cookie bisa dobel (path berbeda, mis. sisa sesi Flask): terima salah satu yang cocok.
+    let cocok = !sent.is_empty()
+        && req
+            .headers()
+            .get(header::COOKIE)
+            .and_then(|v| v.to_str().ok())
+            .map(|raw| {
+                raw.split(';')
+                    .filter_map(|p| p.trim().split_once('='))
+                    .any(|(k, v)| k == COOKIE && same(v, sent))
+            })
+            .unwrap_or(false);
+    if !cocok {
         return crate::utils::http::err(400, "CSRF token tidak valid atau hilang");
     }
     next.run(req).await
