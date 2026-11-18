@@ -4,8 +4,8 @@
 
 # Master Dokumentasi Teknis & Operasional TMBilling (Single Source of Truth)
 
-> **Versi Rilis:** v2.0.0 (backend Rust; jalur Python 1.6.5 dibekukan)  
-> **Branch:** `rust` (rilis 2.0), `main` (Python 1.6.5)  
+> **Versi Rilis:** v2.0.3 (backend Rust; jalur Python 1.6.5 dibekukan)  
+> **Branch:** `rust` (rilis 2.0.x, aktif), `main` (Python 1.6.5, beku)  
 > **Status:** Single Source of Truth Resmi Repositori TMBilling  
 > **Target Audiens:** Pengembang Backend/Frontend, Pengembang Rust/Tauri, Operator/Kasir, dan Administrator Sistem Warnet & Game Center.
 
@@ -15,7 +15,7 @@
 
 1. [Ikhtisar Sistem & Filosofi Desain](#1-ikhtisar-sistem--filosofi-desain)
 2. [Arsitektur Sistem Terpadu (3-Layer SoC)](#2-arsitektur-sistem-terpadu-3-layer-soc)
-   - [2.1 Backend Server (Flask + SQLite ORM + REST API)](#21-backend-server)
+   - [2.1 Backend Rust (axum + sqlx + SQLite WAL)](#21-backend-server)
    - [2.2 Frontend Dashboard (Modular ES6 Vanilla JS + Responsive UI)](#22-frontend-dashboard)
    - [2.3 WarnetAgent Klien (Tauri 1.5 + Rust Core + Kiosk Shell)](#23-warnetagent-klien)
    - [2.4 WebSocket VNC Proxy Relay & Remote Bridge](#24-websocket-vnc-proxy-relay--remote-bridge)
@@ -31,7 +31,7 @@
    - [4.8 POS Kantin & Billing FnB Multi-Payment (Cash/QRIS/Bank + Struk Thermal)](#48-pos-kantin--billing-fnb-multi-payment)
    - [4.9 Dynamic Tutorials CMS & Custom CKEditor Builder](#49-dynamic-tutorials-cms--custom-ckeditor-builder)
    - [4.10 Cloudflare Tunnel Auto-Service](#410-cloudflare-tunnel-auto-service)
-   - [4.11 Centralized Versioning System (`config.py` Truth)](#411-centralized-versioning-system)
+   - [4.11 Centralized Versioning System (`Cargo.toml` Truth)](#411-centralized-versioning-system)
    - [4.12 RBAC Kasir & Centralized Audit Log System](#412-rbac-kasir--centralized-audit-log-system)
    - [4.13 Floor Plan & Dynamic Visual Room Layout (v1.6.3 Engine)](#413-floor-plan--dynamic-visual-room-layout-v163-engine)
    - [4.14 Database Maintenance & Cloud/Local Backup UI](#414-database-maintenance--cloudlocal-backup-ui)
@@ -53,9 +53,9 @@
    - [4.30 In-Place Reactive Rerender & Zero Page Reload Engine](#430-in-place-reactive-rerender--zero-page-reload-engine)
    - [4.31 Zero-Config Security & Credential Bootstrap Architecture](#431-zero-config-security--credential-bootstrap-architecture)
 5. [Panduan Teknis Backend (Flask & Python)](#5-panduan-teknis-backend-flask--python)
-   - [5.1 Daftar Blueprint & Routing (34 Blueprint)](#51-daftar-blueprint--routing)
-   - [5.2 Service Layer & Pola Arsitektur (36 Service Classes)](#52-service-layer--pola-arsitektur)
-   - [5.3 Skema Database & 24 Model SQLAlchemy](#53-skema-database--24-model-sqlalchemy)
+   - [5.1 Modul Routing Rust (27 Domain / 245 Route)](#51-modul-routing-rust)
+   - [5.2 Service, Repository & Pola Arsitektur](#52-service-repository--pola-arsitektur)
+   - [5.3 Skema Database (24 Tabel)](#53-skema-database-24-tabel)
 6. [Panduan Teknis Frontend (Modular Vanilla JS & CSS)](#6-panduan-teknis-frontend-modular-vanilla-js--css)
    - [6.1 Arsitektur Core JS (`core/`)](#61-arsitektur-core-js)
    - [6.2 Modul-Modul Fitur Kasir (`modules/`)](#62-modul-modul-fitur-kasir)
@@ -88,15 +88,17 @@
 ## 2. Arsitektur Sistem Terpadu (3-Layer SoC)
 
 Sistem TMBilling dirancang dengan arsitektur pemisahan tanggung jawab 3 lapis (*3-Layer Separation of Concerns*):
+
 - **Layer 1: Frontend (Browser / Kasir Dashboard)**: Web UI berbasis ES6 Modular Vanilla JS, standardized skeleton loader (core/skeleton.js), VNC web client berbasis canvas RFB, dan Process Monitor.
-- **Layer 2: Backend (Server Billing Flask)**: REST API engine dengan 34 Blueprint / 36 Service, background daemon APScheduler, VNC bridge via proses Websockify (port 8081), database SQLite dengan 24 Model SQLAlchemy, serta integrasi zero-trust Cloudflare Ingress.
+- **Layer 2: Backend Rust**: biner tunggal `tmbilling-server.exe` (axum + sqlx) dengan 27 domain route, 27 domain service, 18 repository, scheduler internal 60 detik, relay VNC WebSocket di dalam proses, database SQLite 24 tabel, serta integrasi Cloudflare Ingress.
 - **Layer 3: WarnetAgent Client (PC Klien)**: Aplikasi klien Tauri 1.5 (Rust + HTML5/CSS) dengan low-level Win32 hooks dan TightVNC loopback port 5900, diawasi oleh Watchdog Service C++ (MGCTM.exe), validasi registry hash SHA-256, dan telemetri hardware LibreHardwareMonitor (TMMonitor.exe + HardwareHelper.exe).
 
 ### 2.1 Backend Server
-- **Framework**: Python 3.11+ dengan Flask, Flask-SQLAlchemy, Flask-Migrate, Flask-CORS, Flask-WTF.
-- **Telemetry & VNC**: Telemetri dan screenshot memakai HTTP polling; kanal WebSocket hanya dipakai VNC melalui proses Websockify (`ws://<host>:8081/?token=...`, atau `wss://<host>/ws/vnc?token=...` di balik HTTPS).
-- **Service Layer**: Pemisahan logika bisnis dari endpoint HTTP menggunakan 36 service class independen dan 15 repository class.
-- **Background Scheduler**: APScheduler menjalankan routine maintenance, deteksi blackout, dan pembersihan sesi kadaluwarsa setiap 60 detik.
+- **Stack**: Rust 2.0.3, axum 0.8 (+ws/multipart), sqlx 0.8 (SQLite WAL), tokio, minijinja + rust-embed, chrono-tz, ureq, printpdf, image.
+- **Struktur**: `app-rust/src/routes/` (HTTP tipis) → `services/` (aturan bisnis) → `repositories/` (SQL) → `models/`. Middleware `auth`, `csrf`, `whitelist`.
+- **Telemetry & VNC**: Telemetri dan screenshot memakai HTTP polling; relay RFB WebSocket berjalan di dalam biner yang sama (tanpa proses Websockify terpisah).
+- **Scheduler**: task internal tick 60 detik (flush uptime, deteksi blackout, cleanup sesi, reap VNC, backup harian, prune uptime 366 hari).
+- **Konkurensi tulis**: seluruh jalur tulis melewati `AppState::write()` karena SQLite hanya mendukung satu penulis.
 
 ### 2.2 Frontend Dashboard
 - **Teknologi**: Modular ES6 JavaScript (tanpa Node.js bundler runtime), TailwindCSS styling, Font Awesome icon set.
@@ -111,99 +113,60 @@ Sistem TMBilling dirancang dengan arsitektur pemisahan tanggung jawab 3 lapis (*
 
 ### 2.4 WebSocket VNC Proxy Relay & Remote Bridge
 - Menjembatani canvas web kasir dengan TightVNC Server yang berjalan di port `5900` PC klien.
-- Meneruskan frame RFB (Remote FrameBuffer), event mouse/keyboard, dan pertukaran teks clipboard secara dua arah.
+- Relay RFB (Remote FrameBuffer) ditangani route `app-rust/src/routes/vnc/` di dalam biner server; token proxy acak per sesi.
+- Meneruskan event mouse/keyboard dan pertukaran teks clipboard secara dua arah.
 
 ---
-
 ## 3. Struktur Direktori & Pemetaan Kode Repositori
 
 ```text
 c:\Project GIT\TMBilling
-├── app/                                # Backend Server Flask & Frontend Kasir
-│   ├── config.py                       # Single Source of Version Truth (VERSION = "1.6.5")
-│   ├── models/                         # 24 Model Database SQLAlchemy
-│   │   ├── game/                       # Game & GameKategori
-│   │   ├── grup/                       # Grup Ruangan / Tarif (Reguler/VIP)
-│   │   ├── hardware/                   # HardwareMonitor & PCProcess
-│   │   ├── maintenance/                # MaintenanceTicket
-│   │   ├── member/                     # Member accounts & prepaid balances
-│   │   ├── menu/                       # MenuItem & TransaksiMenu (POS Kantin)
-│   │   ├── mikrotik/                   # MikroTikConfig
-│   │   ├── paket/                      # Paket billing (Jam, Malam, Personal)
-│   │   ├── pc/                         # PC registry & PCUptimeLog
-│   │   ├── sesi/                       # Sesi billing aktif & selesai
-│   │   ├── settings/                   # Global settings & cloud configs
-│   │   ├── shift/                      # ShiftRecord & modal kas
-│   │   ├── tournament/                 # Turnamen, Tim, Tahap, Match
-│   │   ├── transaksi/                  # Transaksi pembayaran billing
-│   │   ├── tutorial/                   # SystemTutorial (CMS Articles)
-│   │   └── user/                       # User & Role RBAC
-│   ├── routes/                         # 34 Blueprint HTTP REST + VNC Bridge
-│   │   ├── auth/                       # Login/Logout kasir & admin
-│   │   ├── backup/                     # Database local & cloud backup
-│   │   ├── blackout/                   # Toleransi & recovery mati lampu
-│   │   ├── client/                     # Handshake & telemetry client agent
-│   │   ├── dashboard/                  # Dashboard summary & stats
-│   │   ├── game/                       # Game launcher & icon cropper
-│   │   ├── grup/                       # Grup ruangan & tarif per menit
-│   │   ├── hardware/                   # Uptime logs & baseline discrepancy
-│   │   ├── maintenance/                # Ticket reporting & tracking
-│   │   ├── member/                     # Member management & deposit
-│   │   ├── menu/                       # POS FnB, order, stock logs & thermal struk
-│   │   ├── mikrotik/                   # RouterOS API integration
-│   │   ├── monitor/                    # PC monitor, batch actions, processes
-│   │   ├── notes/                      # Kasir sticky notes & handover
-│   │   ├── paket/                      # Paket management
-│   │   ├── pc/                         # PC CRUD, floor plan coordinates
-│   │   ├── public/                     # Public TV billboard & scoreboard
-│   │   ├── report/                     # Laporan harian, billing, kantin, shift
-│   │   ├── server_monitor/             # Server health (CPU, RAM, Disk, LHM)
-│   │   ├── sesi/                       # Billing sessions lifecycle & batch
-│   │   ├── settings/                   # IP whitelist, Cloudflare, DB vacuum
-│   │   ├── shift/                      # Kasir shift drawer management
-│   │   ├── tournament/                 # Turnamen & bracket engine
-│   │   ├── tutorial/                   # CMS Tutorials & editor uploads
-│   │   ├── user/                       # RBAC user & audit logs
-│   │   └── vnc/                        # Kontrol HTTP proxy VNC (WebSocket via Websockify)
-│   ├── services/                       # 36 Service Layer Business Logic
-│   ├── repositories/                   # 15 Data Access Layer & DB Query Helpers
-│   ├── utils/                          # 8 Utility Helpers (Formatters, Security, Response)
-│   ├── static/                         # Static Assets
-│   │   ├── css/                        # TailwindCSS build & custom styling
-│   │   ├── js/kasir/                   # Modular ES6 JavaScript Frontend
-│   │   │   ├── app.js                  # Main Application Entrypoint
-│   │   │   ├── core/                   # api.js, modal.js, toast.js, utils.js, skeleton.js
-│   │   │   ├── components/             # Modal buka sesi, tambah durasi, dll.
-│   │   │   └── modules/                # 28 Modul fitur + dashboard
-│   │   └── sounds/                     # Audio warning bells (15m, 10m, 5m, 1m)
-│   └── templates/                      # Jinja2 HTML Templates
-│       ├── kasir/                      # Dashboard Kasir & Modals (31 tab views)
-│       ├── member/                     # Member Portal Kiosk
-│       └── tv/                         # Public Billboard & Scoreboard
-├── docs/                               # Master Dokumentasi Teknis
-│   ├── DOCUMENTATION.md                # Single Source of Truth (File Ini)
-│   └── superpowers/                    # Arsip Riwayat Perancangan & Specs
-├── tools/                              # Build & Utility Tools
-│   └── ckeditor-builder/               # Custom CKEditor 5 Build untuk CMS
-├── WarnetAgent/                        # Source Code Klien Warnet (Rust / Tauri)
-│   ├── TMBillingTauri/                 # Main Client Application
-│   │   ├── src/                        # UI HTML/JS (Kiosk, Overlay, Admin Lock)
-│   │   ├── src-tauri/                  # Rust Core, Win32 Hooks, IPC Commands
-│   │   └── package.json
-│   ├── MGCTM/                          # Watchdog Daemon (Supervisi TMBilling.exe)
-│   ├── mtm/                            # Auxiliary Watchdog & Resilience Guard
-│   ├── TMBilling_Monitor/              # Hardware Telemetry & Sensor Daemon
-│   ├── TMBilling_Uninstaller/          # Secure Uninstaller (Registry & Service Clean)
-│   └── Deploy/                         # Deployment & Firewall Helper Scripts
-├── tests/                              # 248 File Pytest / 686 Test + 15 Suite E2E
-├── build_and_deploy.bat                # Skrip Build Otomatis Klien & Server
-├── developer_install.bat               # Skrip Inisialisasi Dev Environment Cepat
-├── CHANGELOG.md                        # Riwayat Rilis Lengkap (Keep a Changelog)
-└── README.md                           # Ringkasan Proyek, Quickstart & Panduan Instalasi
+├── app-rust/                           # Backend Rust 2.0.3 (rilis aktif)
+│   ├── Cargo.toml                      # Single Source of Version (version = "2.0.3")
+│   ├── src/
+│   │   ├── main.rs                     # Entry: --init, --apply-update, server normal
+│   │   ├── app.rs                      # Router axum: 245 registrasi .route(
+│   │   ├── state.rs                    # AppState + write() (gerbang tulis tunggal)
+│   │   ├── config.rs                   # Config, .env, SECRET_KEY write-through
+│   │   ├── routes/                     # 27 domain, 63 file handler HTTP
+│   │   ├── services/                   # 27 domain, 62 file aturan bisnis
+│   │   ├── repositories/               # 18 file query SQL
+│   │   ├── models/                     # 15 file model + to_json()
+│   │   ├── middleware/                 # auth.rs, csrf.rs, whitelist.rs
+│   │   ├── cache/                      # 7 store in-memory
+│   │   ├── db/                         # mod.rs, migrate.rs, write_lock.rs
+│   │   ├── utils/                      # time, logger, http, validators, idempotency, instance
+│   │   ├── scheduler.rs                # Tick 60 detik
+│   │   ├── tray.rs, update.rs          # Tray Windows & penukar berkas update
+│   │   └── templates.rs, assets.rs     # Minijinja + rust-embed + cache_version()
+│   ├── migrations/
+│   │   ├── 0001_schema_head.sql        # Skema head 24 tabel
+│   │   └── 0001_schema.json            # Metadata parity test
+│   ├── packaging/                      # install.bat, update.bat
+│   ├── tests/                          # 12 suite contract + 6 suite unit
+│   ├── instance/                       # Runtime: warnet.db, server.lock, backups (tidak di-commit)
+│   └── target/                         # Artefak cargo (tidak di-commit)
+├── app/                                # Backend Python 1.6.5 (BEKU, acuan 1:1)
+│   └── static/, templates/             # Frontend bersama, di-embed ke biner Rust
+│       ├── static/css/                 # TailwindCSS build & custom styling
+│       ├── static/js/kasir/            # Modular ES6 (app.js, core/, components/, modules/)
+│       ├── static/sounds/              # Audio warning (15m, 10m, 5m, 1m)
+│       └── templates/                  # Jinja2: kasir/ (31 tab), member/, tv/, public/
+├── docs/                               # Dokumentasi teknis
+│   ├── DOCUMENTATION.md                # Single Source of Truth (file ini)
+│   ├── RUST_MIGRATION.md               # Keputusan migrasi & cutover
+│   └── superpowers/                    # Specs & plans agent
+├── tools/ckeditor-builder/             # Custom CKEditor 5 build untuk CMS
+├── tests/                              # Pytest Python (beku) + 15 suite E2E Playwright
+├── WarnetAgent/                        # Klien: Tauri, watchdog C++/C#, monitor, uninstaller, Deploy
+├── build_release.py                    # ZIP TMBilling_Server_v<versi>.zip
+├── build_and_deploy.bat                # Build biner klien & aset CSS
+├── scripts/rust_parity.py              # Gate paritas endpoint Python vs Rust
+├── CHANGELOG.md
+└── README.md
 ```
 
 ---
-
 ## 4. Katalog & Spesifikasi Mendalam Seluruh Fitur (31 Domain Fitur)
 
 ### 4.1 Multi-PC Selection & Batch Actions Engine (`remoteBatch`)
@@ -223,8 +186,8 @@ c:\Project GIT\TMBilling
 ### 4.2 TightVNC Remote Control System & Bi-directional Clipboard Sync
 - **Deskripsi**: Kasir dapat melihat layar dan mengontrol keyboard/mouse PC klien secara *real-time* langsung dari browser tanpa perlu menginstall VNC viewer eksternal.
 - **Arsitektur Loopback 5900**: TightVNC Server di klien mendengarkan pada port `127.0.0.1:5900`.
-- **WebSocket RFB Proxy**: Proses Websockify (port `8081`) meneruskan binary frame RFB dari TightVNC ke canvas HTML5 di dashboard (`vnc_client.js`); route Flask hanya mengatur start/stop/status proxy.
-- **Bi-directional Clipboard Sync**: Teks yang disalin di browser kasir otomatis terkirim ke clipboard Windows PC klien, dan sebaliknya teks yang disalin di PC klien disinkronkan ke browser kasir melalui kanal WebSocket Websockify.
+- **WebSocket RFB Proxy**: Relay di `app-rust/src/routes/vnc/` meneruskan binary frame RFB dari TightVNC ke canvas HTML5 di dashboard (`vnc_client.js`); route hanya mengatur start/stop/status dan token proxy.
+- **Bi-directional Clipboard Sync**: Teks yang disalin di browser kasir otomatis terkirim ke clipboard Windows PC klien, dan sebaliknya teks yang disalin di PC klien disinkronkan ke browser kasir melalui kanal WebSocket relay server.
 - **Auto-Firewall & Fail-Fast Multiplexing**: Skrip `allow_firewall.bat` memastikan port TightVNC diizinkan oleh Windows Firewall, dan mekanisme multiplexing token mencegah tabrakan sesi VNC antar kasir. Token proxy kini acak per sesi (`secrets.token_urlsafe(24)`), bukan pola `client_<id>` yang bisa ditebak.
 - **Auto-Generated Random VNC Password**: Sistem secara otomatis meng-generate password acak 8 karakter saat pertama kali dijalankan jika belum dikonfigurasi di tabel settings (`SettingsService.get_or_create_vnc_password`), menggantikan ketergantungan pada password default statis demi keamanan jaringan LAN.
 - **Otorisasi & Non-Blocking Start**: Seluruh route VNC wajib `@login_required` + `@admin_required`. Permintaan start tidak lagi menahan worker 25 detik: server membalas `202 {pending: true}` dan route status mem-poll hasil (`poll_vnc_result`) lalu memulai proxy saat TightVNC siap. Token lama dicabut saat proxy dimulai ulang, file token ditulis atomik (`os.replace`), dan reaper mematikan proxy milik PC offline maupun proxy yang idle melewati batas.
@@ -331,9 +294,10 @@ c:\Project GIT\TMBilling
   - Instalasi otomatis service background `cloudflared.exe`; log proses ditulis ke `logs/` di samping biner cloudflared.
   - Kemudahan akses bagi Owner untuk melihat laporan keuangan dan analitik dari mana saja melalui smartphone.
 
-### 4.11 Centralized Versioning System (`config.py` Truth)
-- **Deskripsi**: Standarisasi nomor versi aplikasi terpusat pada file [app/config.py](file:///c:/Project%20GIT/TMBilling/app/config.py) (`VERSION = "1.6.5"`).
-- **Penyebaran Otomatis**: Variabel versi ini otomatis diinjeksikan ke template Jinja2 (footer UI kasir), endpoint REST `/api/version`, dan response handshake klien agent.
+### 4.11 Centralized Versioning System (`Cargo.toml` Truth)
+- **Deskripsi**: Versi backend bersumber dari `app-rust/Cargo.toml` (`version = "2.0.3"`) dan menjadi satu-satunya versi rilis aktif.
+- **Penyebaran Otomatis**: Versi dipakai endpoint `/api/health`, footer UI kasir, dan nama ZIP rilis dari `build_release.py`.
+- **Jalur Python**: `app/config.py` tetap `VERSION = "1.6.5"` sebagai acuan beku; `tests/test_version_consistency.py` menjaga keduanya tidak saling menyimpang.
 
 ### 4.12 RBAC Kasir & Centralized Audit Log System
 - **Deskripsi**: Role-Based Access Control dengan 3 tingkatan pengguna: `Super Admin`, `Admin`, dan `Kasir`.
@@ -495,9 +459,9 @@ c:\Project GIT\TMBilling
 ### 4.28 Arsitektur Proteksi Triple-Layer Session Expiry & Heartbeat
 - **Deskripsi**: Arsitektur perlindungan 3 lapis untuk memastikan penghitungan sisa waktu presisi dan penutupan otomatis sesi billing yang telah habis tanpa ada celah *free playtime*.
 - **Lapisan Proteksi**:
-  1. **Layer 1 - Server Background Scheduler (APScheduler)**:
-     - Berjalan di latar belakang server Flask setiap **60 detik** (`run.py`).
-     - Memanggil `SesiService.cleanup_expired_sessions()` untuk memeriksa seluruh sesi aktif, menandai sesi kadaluwarsa sebagai `SELESAI`, dan memicu sinyal penguncian.
+  1. **Layer 1 - Server Background Scheduler (internal Rust)**:
+     - Berjalan di `app-rust/src/scheduler.rs` setiap **60 detik** di dalam biner server.
+     - Memanggil `sesi_service::cleanup_expired()` untuk memeriksa sesi aktif, menutup sesi kadaluwarsa lewat `tutup_sesi` (tercatat transaksi Rp0), lalu memicu sinyal penguncian.
   2. **Layer 2 - Realtime Client Polling (WarnetAgent Klien)**:
      - Klien PC warnet (Tauri) mengirimkan request heartbeat/status setiap **1 s/d 3 detik** ke `/api/v1/public/client/status`.
      - Handler `ClientService.get_status()` memanggil `SesiService.hitung_sisa_menit()` dan menutup sesi lewat `SesiService.tutup_sesi(id, operator="system")` saat sisa waktu `<= 0`, sehingga tercatat satu transaksi `tutup_sesi` Rp0 sebelum payload lockscreen dikembalikan ke klien.
@@ -546,77 +510,77 @@ c:\Project GIT\TMBilling
 
 ---
 
-## 5. Panduan Teknis Backend (Flask & Python)
+## 5. Panduan Teknis Backend Rust (axum & sqlx)
 
-### 5.1 Daftar Blueprint & Routing
-Backend TMBilling terbagi ke dalam **34 Blueprint** modular di `app/routes/`:
-- `auth_routes.py` & `auth_kasir_routes.py`: Manajemen autentikasi login session kasir dan administrator.
-- `backup_routes.py`: Endpoint pemicu backup database, download backup `.db`, dan restore database.
-- `blackout_routes.py`: Handler deteksi pemadaman listrik dan pemulihan sesi pelanggan.
-- `client_routes.py`: Komunikasi IPC dan heartbeat agent klien warnet.
-- `dashboard_routes.py`: API penyedia data statistik ringkas dashboard kasir.
-- `game_kasir_routes.py` & `game_public_routes.py`: Manajemen katalog game dan katalog publik; ikon menolak `.svg` dan disimpan di `current_app.static_folder/uploads/games`.
-- `grup_routes.py`: CRUD grup kategori ruangan / tarif.
-- `uptime_routes.py`: Pemantauan uptime PC, riwayat hardware baseline, dan penghapusan log.
-- `maintenance_routes.py`: Pengelolaan tiket pemeliharaan dan pelaporan kendala.
-- `member_routes.py` & `member_portal_routes.py`: Manajemen akun member, isi saldo, dan portal member.
-- `menu_routes.py`: Manajemen produk F&B kantin, pesanan, mutasi stok, dan cetak struk thermal.
-- `mikrotik_routes.py`: Konfigurasi RouterOS API dan manajemen queue bandwidth.
-- `monitor_routes.py`: Monitoring PC klien, live screenshot, process manager, dan aksi batch `remote-batch`.
-- `note_routes.py`: Scratchpad catatan kasir dan memo handover shift.
-- `paket_routes.py`: Manajemen paket jam/malam billing.
-- `pc_routes.py`: CRUD PC, alamat IP, MAC address, dan koordinat denah floor plan.
-- `tv_public_routes.py`: Penyedia data halaman TV display lobi.
-- `report_routes.py`: Generator laporan keuangan harian, laporan billing, kantin, dan shift kasir.
-- `server_monitor_routes.py`: Monitoring performa CPU, RAM, and storage server billing serta service LHM.
-- `sesi_routes.py`: Siklus hidup sesi billing (buka sesi, tambah waktu, pindah PC, stop sesi).
-- `settings_routes.py`, `migration_routes.py`: Konfigurasi global, IP Whitelist, dan Cloudflare.
-- `shift_routes.py`: Manajemen shift kasir, kas awal, dan rekonsiliasi kas akhir.
-- `tournament_routes.py`: Manajemen turnamen eSports dan bagan pertandingan.
-- `tutorial_routes.py`: CMS artikel panduan dan upload gambar editor.
-- `user_routes.py`: Manajemen pengguna sistem dan audit log.
-- `vnc_routes.py`: Kontrol HTTP start/stop/status proxy VNC; kanal WebSocket RFB ditangani Websockify.
+### 5.1 Modul Routing Rust
+Backend TMBilling terbagi ke dalam **27 direktori domain** di `app-rust/src/routes/` (63 file) dengan **245 registrasi `.route(`** di `app-rust/src/app.rs`:
 
-### 5.2 Service Layer & Pola Arsitektur
-Logika bisnis diisolasi secara ketat dalam 36 class di `app/services/`. Blueprint routes hanya bertugas memvalidasi request HTTP dan mengembalikan response JSON, sedangkan eksekusi aturan bisnis dilakukan oleh service:
-- `blackout_service.py`: Logika toleransi pemadaman listrik dan pemulihan sesi.
-- `vnc_service.py`: Menangani komunikasi low-level dengan klien.
-- `sesi_service.py`: Menangani perhitungan tarif per detik, sisa waktu, pembersihan kadaluwarsa, dan promo paket.
-- `hardware_service.py`: Menangani kalkulasi baseline mismatch, pemisahan Mobo Model vs Mobo Serial, dan jendela waktu CCTV.
-- `dashboard_service.py`: Agregator status real-time PC, server metrics, dan billing quick summary.
+| Domain | Prefix utama | Endpoint | Tanggung Jawab |
+|---|---|---|---|
+| `auth/` | `/api/v1/kasir/auth`, `/api/v1/public/auth` | 7 | Login/logout kasir & admin, login member, cek sesi. |
+| `client/` | `/api/v1/public/client` | 13 | Handshake agent, heartbeat, polling sesi/perintah, emergency login. |
+| `dashboard/` | `/api/v1/kasir/dashboard` | 3 | Statistik dashboard, ringkasan PC, omzet hari ini. |
+| `pc/` | `/api/v1/kasir/pc` | 9 | CRUD PC, IP/MAC, koordinat denah, arsip. |
+| `grup/` | `/api/v1/kasir/grup` | 5 | Grup ruangan & tarif per menit. |
+| `paket/` | `/api/v1/kasir/paket` | 6 | Paket billing jam/malam, arsip. |
+| `member/` | `/api/v1/kasir/member` | 14 | Member, saldo, top-up, refund, riwayat. |
+| `menu/` | `/api/v1/kasir/menu` | 10 | POS FnB, stok, kategori, struk. |
+| `sesi/` | `/api/v1/kasir/sesi` | 11 | Buka/tambah/pindah/tutup sesi, refund, blackout. |
+| `shift/` | `/api/v1/kasir/shift` | 9 | Buka/tutup shift, hitung buta, riwayat. |
+| `report/` | `/api/v1/kasir/report` | 18 | Laporan billing/keuangan, struk, ekspor, cleanup. |
+| `monitor/` | `/api/v1/kasir/monitor` | 21 | Telemetri, proses, screenshot, remote action, VNC client. |
+| `hardware/` | `/api/v1/kasir/uptime` | 2 | Uptime log & baseline hardware. |
+| `vnc/` | `/api/v1/kasir/vnc` | 5 | Start/stop/status proxy VNC + relay WebSocket. |
+| `settings/` | `/api/v1/kasir/settings` | 30 | Pengaturan, whitelist, backup/restore, migrasi & update, QRIS. |
+| `backup/` | `/api/v1/kasir/backup` | 7 | Backup manual/otomatis & restore. |
+| `blackout/` | `/api/v1/kasir/blackout` | 9 | Deteksi & pemulihan sesi pasca mati lampu. |
+| `notes/` | `/api/v1/kasir/notes` | 6 | Scratchpad serah terima shift. |
+| `maintenance/` | `/api/v1/kasir/maintenance` | 6 | Tiket servis & status perbaikan. |
+| `game/` | `/api/v1/kasir/game`, publik | 9 | Katalog game, ikon, katalog publik. |
+| `tournament/` | `/api/v1/kasir/tournament` | 6 | Turnamen, tim, bagan bracket. |
+| `tutorial/` | `/api/v1/kasir/tutorials` | 8 | CMS artikel & upload media. |
+| `user/` | `/api/v1/kasir/user` | 6 | RBAC user & audit log. |
+| `arsip/` | `/api/v1/kasir/arsip` | 2 | Agregat data terarsip lintas kategori. |
+| `mikrotik/` | `/api/v1/kasir/mikrotik` | 3 | Konfigurasi RouterOS, test, sync member. |
+| `server_monitor/` | `/api/v1/kasir/server-monitor` | 4 | Telemetri CPU/RAM/disk server + LHM. |
+| `public/` | `/tv`, `/livepc`, `/paket`, `/spesifikasi`, `/games`, `/api/health` | 7 | Billboard, scoreboard, landing, health check. |
 
-### 5.3 Skema Database & 24 Model SQLAlchemy
-TMBilling menggunakan 24 model ORM terdefinisi di `app/models/`:
-1. `User`: Akun pengguna dashboard kasir/admin (`id`, `username`, `password_hash`, `role`, `status`).
-2. `PC`: Data unit PC klien (`id`, `nama_pc`, `ip_address`, `mac_address`, `grup_id`, `pos_x`, `pos_y`, `status_pc`).
-3. `Sesi`: Sesi penggunaan PC (`id`, `tipe`, `member_id`, `user_id`, `pc_id`, `paket_id`, `nama_guest`, `token_sesi`, `mulai_pada`, `selesai_pada`, `durasi_beli_menit`, `total_bayar`, `status`, `is_admin`, `waktu_mulai_sesi`, `waktu_tersimpan_awal`, `last_sync`, `menit_pause_total`, `sisa_menit_saat_mati`, `is_blackout_suspect`, `is_blackout_resolved`, `waktu_resolved`, `is_afk`, `afk_pin`, `afk_sejak`, `sesi_asal_id`).
-   - *`user_id`*: FK ke `User` untuk sesi kasir/staf benefit (nullable).
-   - *`sesi_asal_id`*: FK self-referential ke `Sesi.id` untuk pelacakan rantai sesi akibat pindah PC.
-4. `Transaksi`: Data transaksi pembayaran billing (`id`, `sesi_id`, `total_bayar`, `metode_pembayaran`, `kasir_id`, `created_at`).
-5. `Member`: Data pelanggan member (`id`, `username`, `password_hash`, `saldo`, `total_jam_main`, `status`).
-6. `Paket`: Paket tarif billing (`id`, `nama_paket`, `durasi_jam`, `harga`, `grup_id`, `unlimited_stock`).
-7. `Grup`: Kategori ruangan/tarif (`id`, `nama_grup`, `tarif_per_jam`, `deskripsi`).
-8. `MenuItem`: Katalog produk kantin/FnB (`id`, `nama`, `harga`, `stok`, `is_active`, `gambar_path`).
-9. `TransaksiMenu`: Transaksi pesanan kantin (`id`, `no_nota`, `menu_id`, `jumlah`, `total_harga`, `pc_kode`, `tanggal`, `kasir_id`, `tunai`, `kembalian`, `metode_pembayaran`, `operator`).
-10. `MenuStockLog`: Catatan audit riwayat mutasi stok menu (`id`, `menu_id`, `perubahan`, `stok_sebelum`, `stok_sesudah`, `jenis`, `keterangan`, `operator`, `created_at`).
-11. `ShiftRecord`: Rekam shift kasir & rekonsiliasi hitung buta (`id`, `kasir_id`, `waktu_mulai`, `waktu_selesai`, `modal_awal`, `total_billing`, `total_kantin`, `total_qris`, `total_refund`, `uang_fisik`, `selisih`, `catatan`, `status`, `detail_metode_json`).
-12. `HardwareMonitor`: Snapshot baseline hardware PC dan monitoring real-time (`id`, `pc_id`, `cpu_usage`, `cpu_temp`, `gpu_temp`, `cpu_name`, `gpu_name`, `total_ram`, `motherboard`, `nic_speed`, `active_window`, `last_update`).
-    - *Audit Internal*: `hardware_baseline`, `hardware_current_specs`, `hardware_mismatch`, `hardware_mismatch_desc`, `hardware_mismatch_time`, `hardware_cctv_window`, `hardware_last_sync`.
-13. `PCProcess`: Snapshot proses yang sedang berjalan di klien.
-14. `PCUptimeLog`: Catatan uptime & downtime PC untuk toleransi blackout (`id`, `pc_id`, `status`, `timestamp`).
-15. `SystemTutorial`: Artikel panduan CMS (`id`, `judul`, `konten_html`, `kategori`, `urutan`).
-16. `MaintenanceTicket`: Tiket kerusakan perangkat (`id`, `pc_id`, `judul_masalah`, `deskripsi`, `prioritas`, `status`).
-17. `Turnamen`: Data kompetisi game (`id`, `nama_turnamen`, `game`, `status`).
-18. `TurnamenTahap`: Babak turnamen (Penyisihan, Semi-Final, Grand Final).
-19. `TurnamenTim`: Tim peserta kompetisi.
-20. `TurnamenMatch`: Jadwal & hasil pertandingan.
-21. `MikroTikConfig`: Pengaturan RouterOS (`host`, `port`, `username`, `password_encrypted`).
-22. `Game`: Katalog launcher game (`id`, `nama_game`, `path_executable`, `icon_url`, `kategori_id`).
-23. `GameKategori`: Kategori game (FPS, MOBA, Battle Royale, RPG).
-24. `Settings`: Pengaturan global key-value (nama warnet, logo, Cloudflare token, opsi thermal printer).
+Urutan guard di router: publik/client agent (tanpa guard) → `csrf` → `whitelist` → `admin_only`/`shift_required` pada domain sensitif. Halaman `/kasir/`, `/kasir/documentation`, dan `/kasir/login` dirender minijinja dari template ter-embed.
+
+### 5.2 Service, Repository & Pola Arsitektur
+- **Service** (`app-rust/src/services/`, 62 file / 27 domain) memegang seluruh aturan bisnis; handler hanya memvalidasi request dan membentuk response JSON.
+- **Repository** (`app-rust/src/repositories/`, 18 file) memegang query SQL; tidak ada query di handler.
+- **Tulis**: semua jalur tulis memakai `AppState::write()` (satu lock global) agar SQLite tidak mengalami `SQLITE_BUSY`.
+- **Cache**: data polling disimpan di `app-rust/src/cache/` (7 store) untuk menghindari query disk berulang.
+- **Contoh kunci**: `sesi/sesi_service.rs` (tarif & sisa waktu), `member/` (top-up atomik + sinkron MikroTik), `report/` (billing hanya nota bernomor), `backup/` (snapshot + validasi skema), `mikrotik/` (login CHAP + hitung hasil sync).
+
+### 5.3 Skema Database (24 Tabel)
+Skema head ada di `app-rust/migrations/0001_schema_head.sql`; migrasi bersifat aditif dan distempel `HEAD_REVISION = "a2b3c4d5e6f7"`.
+
+| Tabel | Kolom kunci |
+|---|---|
+| `user` | `id`, `username`, `password_hash`, `role`, `aktif`, `kuota_main_bulanan`, `sisa_kuota_menit` |
+| `grup` | `id`, `nama`, `warna`, `aktif` |
+| `pc` | `id`, `kode`, `nama`, `ip_address`, `mac_address`, `grup_id`, `aktif`, `is_admin_mode`, `pos_x`, `pos_y` |
+| `paket` | `id`, `nama`, `durasi_menit`, `harga`, `grup_id`, `aktif` |
+| `member` | `id`, `username`, `nama_lengkap`, `grup_id`, `aktif`, `waktu_tersimpan`, `kadaluarsa_pada` |
+| `sesi` | `id`, `tipe`, `member_id`, `pc_id`, `paket_id`, `nama_guest`, `status`, `durasi_beli_menit`, `waktu_tersimpan_awal`, `last_sync`, `menit_pause_total`, `is_blackout_suspect`, `is_afk` |
+| `transaksi` | `id`, `sesi_id`, `member_id`, `paket_id`, `jenis`, `jumlah`, `menit`, `no_nota`, `is_refunded`, `metode_pembayaran` |
+| `transaksi_menu` | `id`, `no_nota`, `menu_id`, `jumlah`, `total_harga`, `pc_kode`, `tanggal`, `tunai`, `kembalian` |
+| `menu_item` | `id`, `nama`, `harga`, `stok`, `gambar_path`, `is_active` |
+| `menu_stock_log` | `id`, `menu_id`, `menu_nama`, `tipe`, `jumlah_masuk`, `stok_sebelum`, `stok_sesudah`, `operator` |
+| `shift_record` | `id`, `kasir_id`, `waktu_mulai`, `waktu_selesai`, `modal_awal`, `uang_fisik`, `selisih`, `status` |
+| `settings` | `key`, `value` |
+| `hardware_monitor` | `pc_id`, `cpu_usage`, `cpu_temp`, `gpu_temp`, `hardware_baseline`, `hardware_mismatch`, `last_update` |
+| `pc_process` | `pc_id`, `name`, `title`, `last_update` |
+| `pc_uptime_log` | `pc_id`, `tanggal`, `total_online_seconds`, `total_billing_seconds` |
+| `maintenance_ticket` | `pc_id`, `reporter`, `kategori`, `prioritas`, `status`, `resolusi` |
+| `game`, `game_kategori` | `nama`, `exe_path`, `icon`, `aktif` / `nama` |
+| `turnamen`, `turnamen_tahap`, `turnamen_tim`, `turnamen_match` | `nama`, `status`, `tipe_format`, `skor1`, `skor2`, `pemenang_id` |
+| `system_tutorials` | `title`, `category`, `content`, `urutan` |
+| `mikrotik_config` | `enabled`, `host`, `port`, `username`, `password`, `hotspot_profile` |
 
 ---
-
 ## 6. Panduan Teknis Frontend (Modular Vanilla JS & CSS)
 
 ### 6.1 Arsitektur Core JS (`core/`)
@@ -713,397 +677,48 @@ Jika terjadi kegagalan:
 }
 ```
 
-### 8.2 Katalog Endpoint REST API (34 Blueprint)
+### 8.2 Katalog Endpoint REST API (245 Route Rust)
+Total registrasi `.route(` di `app-rust/src/app.rs`: **245 route**. Sumber kebenaran endpoint adalah file tersebut; tabel di bawah merangkum per domain (jumlah = perkiraan per prefix, beberapa domain berbagi prefix).
 
-Total Blueprint Terdaftar: **34 Blueprint** | Total dekorator route di `app/routes/`: **254 Route** (katalog per blueprint di bawah merinci endpoint utama; route dinamis/registrasi manual tidak selalu punya baris sendiri).
+> Endpoint kesehatan `GET /api/health` bersifat publik dan dipakai probe eksternal; payload-nya tidak memuat path atau angka sensitif.
+>
+> **Arsip vs Hapus Permanen (PC, Paket, Member, User, Game, Grup, Menu)**: `POST .../<id>/archive` hanya menonaktifkan (`aktif = false`; menu memakai `is_active`) sehingga datanya bisa dipulihkan lewat tab **Data Diarsipkan** (`GET /api/v1/kasir/arsip/` → `POST /api/v1/kasir/<resource>/<id>/restore`). Tombol arsip dan hapus permanen terpisah di UI; hapus permanen menampilkan modal konfirmasi dengan satu checkbox wajib. `DELETE .../<id>` wajib menyertakan body `{"confirm": "<kode PC / nama paket / nama member / username / nama game>"}` — tanpa itu route membalas 400. Riwayat transaksi/sesi tidak ikut terhapus; referensinya dilepas (`paket_id`, `member_id`, `user_id`, `pc_id` menjadi NULL) di dalam `state.write()`. Pengecualian: `DELETE /api/v1/kasir/user/<id>` ditolak bila user punya riwayat shift karena `shift_record.kasir_id` NOT NULL — nonaktifkan saja.
 
-> Endpoint kesehatan `GET /api/health` terdaftar sebagai blueprint `health_api` (`app/routes/public/health_routes.py`), dan didaftarkan di `app/__init__.py:135`.
-
-> **Arsip vs Hapus Permanen (PC, Paket, Member, User, Game, Grup, Menu)**: `POST .../<id>/archive` hanya menonaktifkan (`aktif = False`; menu memakai `is_active`) sehingga datanya bisa dipulihkan lewat tab **Data Diarsipkan** (`GET /api/v1/kasir/arsip/` → `POST /api/v1/kasir/<resource>/<id>/restore`). Di UI kasir, tombol arsip (ikon kotak, amber) dan hapus permanen (ikon sampah, merah) terpisah; hapus permanen menampilkan modal konfirmasi dengan satu checkbox yang wajib dicentang sebelum tombol setuju aktif. `DELETE .../<id>` menghapus permanen dan **wajib** menyertakan body `{"confirm": "<kode PC / nama paket / nama member / username / nama game>"}` - tanpa itu route membalas 400. Riwayat transaksi/sesi tidak ikut terhapus; referensinya dilepas (`paket_id`, `member_id`, `user_id`, `pc_id` menjadi NULL) di dalam `WRITE_LOCK`. Pengecualian: `DELETE /api/v1/kasir/user/<id>` tetap ditolak bila user punya riwayat shift karena `shift_record.kasir_id` NOT NULL — nonaktifkan saja.
-
-#### 🔹 Blueprint: auth (3 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| POST | /api/v1/public/auth/login | auth.login |
-| POST | /api/v1/public/auth/logout | auth.logout |
-| POST | /api/v1/public/auth/status | auth.status |
-
-#### 🔹 Blueprint: auth_kasir (4 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| POST | /api/v1/kasir/auth/admin-check | auth_kasir.admin_check |
-| GET | /api/v1/kasir/auth/check | auth_kasir.check_session |
-| POST | /api/v1/kasir/auth/login | auth_kasir.login |
-| POST | /api/v1/kasir/auth/logout | auth_kasir.logout |
-
-#### 🔹 Blueprint: backup (6 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| DELETE | /api/v1/kasir/backup/delete/<filename> | backup.delete_backup |
-| GET | /api/v1/kasir/backup/download/<filename> | backup.download_backup |
-| GET | /api/v1/kasir/backup/list | backup.list_backups |
-| POST | /api/v1/kasir/backup/restore/<filename> | backup.restore_backup |
-| POST | /api/v1/kasir/backup/test-connection | backup.test_connection |
-| POST | /api/v1/kasir/backup/trigger | backup.trigger_backup |
-
-#### 🔹 Blueprint: blackout (9 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| POST | /api/v1/kasir/blackout/clear | blackout.clear_audit |
-| GET | /api/v1/kasir/blackout/dates | blackout.get_dates |
-| POST | /api/v1/kasir/blackout/deteksi | blackout.deteksi |
-| POST | /api/v1/kasir/blackout/force-all-and-detect | blackout.force_all_and_detect |
-| GET | /api/v1/kasir/blackout/list | blackout.list_audit |
-| POST | /api/v1/kasir/blackout/resolve/guest/lanjut/<int:sesi_id> | blackout.resolve_guest_lanjut |
-| POST | /api/v1/kasir/blackout/resolve/guest/sama/<int:sesi_id> | blackout.resolve_guest_sama |
-| POST | /api/v1/kasir/blackout/resolve/guest/tutup/<int:sesi_id> | blackout.resolve_guest_tutup |
-| POST | /api/v1/kasir/blackout/resolve/member/<int:sesi_id> | blackout.resolve_member |
-
-
-#### 🔹 Blueprint: client (9 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| POST | /api/v1/public/client/admin-login | client.admin_login |
-| POST | /api/v1/public/client/emergency-login | client.emergency_login |
-| POST | /api/v1/public/client/identify | client.identify |
-| POST | /api/v1/public/client/selesai | client.selesai |
-| POST | /api/v1/public/client/status | client.status |
-| POST | /api/v1/public/client/vnc_poll | client.vnc_poll |
-| POST | /api/v1/public/client/vnc_ready | client.vnc_ready |
-| POST | /api/v1/public/client/vnc_stopped | client.vnc_stopped |
-| GET | /api/v1/public/client/warnet | client.get_warnet_config |
-> Respons memuat `qris_path` (relatif, selalu diawali `/`) dan `qris_url` (absolut) selain `title`, `announcement`, `paket`, dan `menu`.
-
-#### 🔹 Blueprint: dashboard (3 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /kasir/ | dashboard.dashboard |
-| GET | /kasir/documentation | dashboard.documentation |
-| GET | /kasir/login | dashboard.login_page |
-
-#### 🔹 Blueprint: dashboard_api (3 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/dashboard/analytics | dashboard_api.analytics_data |
-| GET | /api/v1/kasir/dashboard/pc | dashboard_api.list_pc_api |
-| GET | /api/v1/kasir/dashboard/server-metrics | dashboard_api.server_metrics_api |
-
-#### 🔹 Blueprint: game_kasir (7 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/game/ | game_kasir.list_games |
-| POST | /api/v1/kasir/game/ | game_kasir.tambah_game |
-| POST | /api/v1/kasir/game/<int:game_id>/archive | game_kasir.arsip_game |
-| DELETE | /api/v1/kasir/game/<int:game_id> | game_kasir.hapus_game |
-| POST, PUT | /api/v1/kasir/game/<int:game_id> | game_kasir.edit_game |
-| GET | /api/v1/kasir/game/kategori | game_kasir.list_kategori |
-| POST | /api/v1/kasir/game/kategori | game_kasir.tambah_kategori |
-| DELETE | /api/v1/kasir/game/kategori/<int:kategori_id> | game_kasir.hapus_kategori |
-
-#### 🔹 Blueprint: game_public (2 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/public/game/all | game_public.get_public_games |
-| GET | /api/v1/public/game/kategori | game_public.get_public_kategori |
-
-#### 🔹 Blueprint: global (10 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | / | index |
-| GET | /games | public_games |
-| GET | /livepc | public_pc_map |
-| GET | /paket | public_packages |
-| GET | /spesifikasi | public_specs |
-| GET | /static/<path:filename> | static |
-| GET | /tv | public_tv_static |
-| GET | /tv-static | public_tv_static |
-| GET | /tv/dynamic | public_tv_dynamic |
-| GET | /tv/static | public_tv_static |
-
-> `/spesifikasi` hanya menyajikan PC aktif (`pc.aktif=True`) dan status online diambil dari heartbeat `OnlineStatusStore` (timeout 45 detik), bukan flag arsip PC.
-
-#### 🔹 Blueprint: grup (6 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/grup/ | grup.list_grup |
-| POST | /api/v1/kasir/grup/ | grup.tambah_grup |
-| DELETE | /api/v1/kasir/grup/<int:grup_id> | grup.hapus_grup |
-| PUT | /api/v1/kasir/grup/<int:grup_id> | grup.update_grup |
-| POST | /api/v1/kasir/grup/<int:grup_id>/archive | grup.arsipkan_grup |
-| POST | /api/v1/kasir/grup/<int:grup_id>/restore | grup.pulihkan_grup |
-
-#### 🔹 Blueprint: arsip (1 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/arsip/ | arsip_api.daftar_arsip |
-
-> `GET /api/v1/kasir/arsip/` mengagregasi seluruh data terarsip (grup, pc, paket, member, user, game, menu) untuk tab **Data Diarsipkan**. Tab itu menampilkan satu kategori sekaligus lewat pill horizontal (`#arsip-pills`), bukan tumpukan seksi, dan punya pill grup sendiri (`#arsip-grup-pills`, tombol `Semua` + tiap grup; grup terarsip tetap muncul dengan label ` · arsip`) sehingga item arsip bisa difilter per grup lalu dipulihkan. Di tab member, mode **aktif** menampilkan pill untuk **semua** grup aktif meski belum punya member (grup tanpa member tampil tanpa angka, dan daftarnya menampilkan "Member Tidak Ditemukan"), sedangkan mode arsip hanya menampilkan grup yang punya member terarsip. Pill grup itu dihitung **hanya dari kategori yang sedang dibuka** (mis. kategori Member hanya menampilkan grup yang punya member terarsip, dengan label `NAMA (n)`); baris pill grup disembunyikan untuk kategori tanpa grup (`grup`, `user`, `menu`) dan label pill kategori dirender uppercase. Setiap tab sumber (grup, PC, paket, member, user, game) dan katalog FnB juga punya pill `Aktif | Diarsipkan` sehingga data terarsip tetap terlihat di tab asalnya; pill grup pada tab PC/paket/member memuat grup terarsip (`?include_arsip=1`) dan tetap tampil di mode arsip. Baris/kartu arsip di kedua jalur dirender oleh modul bersama `app/static/js/kasir/core/arsip_list.js` (`ArsipList.mount`), yang menyimpan skema kolom per resource sehingga arsip selalu menampilkan kolom yang sama dengan data aktifnya (grup/paket/member/user/game berupa tabel, PC dan menu FnB berupa kartu), dengan tombol Pulihkan dan Hapus Permanen, plus footer `Total N <unit> arsip` yang mengikuti hasil filter. Filter grup dinormalkan lewat `ArsipList.setGrup` (`''`/`null` = semua), dan `Member.to_dict()` ikut mengirim `grup_id` agar filter member bekerja. Setelah Pulihkan/Hapus Permanen, `ArsipList.onChanged` menjalankan ulang daftar **dan** callback pemanggil sehingga daftar, total, dan pill grup ikut segar tanpa reload. Kartu PC terarsip memakai warna kartu aktif (`border-[#242424]`, tanpa `opacity-60`). Angka pill grup mengikuti mode yang sedang tampil: mode aktif memakai data aktif (member lewat `grup_counts` dari server), mode arsip memakai `ArsipList.counts` atas data arsip, dan grup tanpa data pada mode itu tidak ditampilkan. Pemulihan memakai `POST /api/v1/kasir/<resource>/<id>/restore`; grup memperoleh kolom `aktif` lewat migrasi `a1b2c3d4e5f6`.
-
-#### 🔹 Blueprint: maintenance (6 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| DELETE | /api/v1/kasir/maintenance/<int:ticket_id> | maintenance.delete_ticket |
-| PUT | /api/v1/kasir/maintenance/<int:ticket_id>/status | maintenance.update_status |
-| POST | /api/v1/kasir/maintenance/create | maintenance.create_ticket |
-| GET | /api/v1/kasir/maintenance/export | maintenance.export_report |
-| GET | /api/v1/kasir/maintenance/list | maintenance.list_tickets |
-| GET | /api/v1/kasir/maintenance/report | maintenance.get_report |
-
-#### 🔹 Blueprint: member (8 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/member/ | member.list_member |
-| POST | /api/v1/kasir/member/ | member.tambah_member |
-| POST | /api/v1/kasir/member/<int:member_id>/archive | member.archive_member |
-| DELETE | /api/v1/kasir/member/<int:member_id> | member.delete_member |
-| GET | /api/v1/kasir/member/<int:member_id> | member.get_member_detail |
-| PUT | /api/v1/kasir/member/<int:member_id> | member.edit_member |
-| GET | /api/v1/kasir/member/<int:member_id>/paket | member.get_riwayat_paket |
-| POST | /api/v1/kasir/member/refund-paket | member.refund_paket |
-| POST | /api/v1/kasir/member/tambah-waktu | member.tambah_waktu |
-
-#### 🔹 Blueprint: member_portal (7 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /member | member_portal.dashboard_page |
-| GET | /member/dashboard | member_portal.dashboard_page |
-| GET | /member/login | member_portal.login_page |
-| POST | /member/login | member_portal.login_action |
-| POST | /member/logout | member_portal.logout_action |
-| POST | /member/profile/update | member_portal.update_profile_action |
-| GET | /pc-status | member_portal.public_pc_status |
-
-#### 🔹 Blueprint: menu (9 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/menu/ | menu.get_menu_list |
-| POST | /api/v1/kasir/menu/ | menu.create_menu_item |
-| DELETE | /api/v1/kasir/menu/<int:menu_id> | menu.delete_menu_item |
-| PUT | /api/v1/kasir/menu/<int:menu_id> | menu.update_menu_item |
-| DELETE | /api/v1/kasir/menu/<int:menu_id>/permanent | menu.hard_delete_menu_item |
-| POST | /api/v1/kasir/menu/<int:menu_id>/restore | menu.restore_menu_item |
-| GET | /api/v1/kasir/menu/archived | menu.get_archived_menu_list |
-| POST | /api/v1/kasir/menu/checkout | menu.checkout_order |
-| GET | /api/v1/kasir/menu/transaksi | menu.get_all_transactions |
-
-#### 🔹 Blueprint: migration (2 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/settings/migration/status | migration.get_migration_status |
-| POST | /api/v1/kasir/settings/migration/upload | migration.upload_update |
-
-#### 🔹 Blueprint: mikrotik (4 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/mikrotik/config | mikrotik.get_mikrotik_config |
-| POST | /api/v1/kasir/mikrotik/config | mikrotik.save_mikrotik_config |
-| POST | /api/v1/kasir/mikrotik/sync_all | mikrotik.sync_all_mikrotik_members |
-| POST | /api/v1/kasir/mikrotik/test | mikrotik.test_mikrotik_connection |
-
-#### 🔹 Blueprint: monitor (6 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| POST | /api/v1/public/monitor/ | monitor.receive_hardware_data |
-| DELETE | /api/v1/public/monitor/<int:hardware_id> | monitor.delete_hardware_data |
-| GET | /api/v1/public/monitor/all | monitor.get_all_hardware |
-| GET | /api/v1/public/monitor/processes/<int:pc_id> | monitor.get_pc_processes |
-| POST | /api/v1/public/monitor/processes/<int:pc_id>/kill | monitor.kill_pc_process |
-| POST | /api/v1/public/monitor/screenshot/upload | monitor.upload_screenshot |
-
-#### 🔹 Blueprint: monitor_kasir (15 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| DELETE | /api/v1/kasir/monitor/<int:hardware_id> | monitor_kasir.delete_hardware_data_kasir |
-| GET | /api/v1/kasir/monitor/all | monitor_kasir.get_all_hardware_kasir |
-| GET | /api/v1/kasir/monitor/hardware/<int:pc_id> | monitor_kasir.get_hardware_by_pc |
-| GET | /api/v1/kasir/monitor/processes/<int:pc_id> | monitor_kasir.get_pc_processes_kasir |
-| POST | /api/v1/kasir/monitor/processes/<int:pc_id>/kill | monitor_kasir.kill_pc_process_kasir |
-| POST | /api/v1/kasir/monitor/register/<int:pc_id> | monitor_kasir.register_pc_hardware |
-| POST | /api/v1/kasir/monitor/remote/<int:pc_id>/<string:action> | monitor_kasir.trigger_remote_action |
-| POST | /api/v1/kasir/monitor/remote/batch | monitor_kasir.trigger_remote_action_batch |
-| GET | /api/v1/kasir/monitor/screenshot/all | monitor_kasir.get_all_screenshot_status |
-| GET | /api/v1/kasir/monitor/screenshot/image/<int:pc_id> | monitor_kasir.get_screenshot_image |
-| GET | /api/v1/kasir/monitor/screenshot/status/<int:pc_id> | monitor_kasir.get_screenshot_status |
-| POST | /api/v1/kasir/monitor/screenshot/trigger/<int:pc_id> | monitor_kasir.trigger_screenshot |
-| POST | /api/v1/kasir/monitor/vnc_client/<int:pc_id>/start | monitor_kasir.start_vnc_client |
-| GET | /api/v1/kasir/monitor/vnc_client/<int:pc_id>/status | monitor_kasir.status_vnc_client |
-| POST | /api/v1/kasir/monitor/vnc_client/<int:pc_id>/stop | monitor_kasir.stop_vnc_client |
-
-#### 🔹 Blueprint: notes_api (8 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/notes | notes_api.list_notes |
-| POST | /api/v1/kasir/notes | notes_api.create_note |
-| DELETE | /api/v1/kasir/notes/<filename> | notes_api.delete_note |
-| GET | /api/v1/kasir/notes/<filename> | notes_api.get_note |
-| PUT | /api/v1/kasir/notes/<filename> | notes_api.save_note |
-| GET | /api/v1/kasir/notes/<filename>/download | notes_api.download_note |
-| POST | /api/v1/kasir/notes/<filename>/duplicate | notes_api.duplicate_note |
-| POST | /api/v1/kasir/notes/<filename>/pin | notes_api.toggle_pin_note |
-
-#### 🔹 Blueprint: paket (4 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/paket/ | paket.list_paket |
-| POST | /api/v1/kasir/paket/ | paket.tambah_paket |
-| POST | /api/v1/kasir/paket/<int:paket_id>/archive | paket.arsipkan_paket |
-| DELETE | /api/v1/kasir/paket/<int:paket_id> | paket.hapus_paket |
-| PUT | /api/v1/kasir/paket/<int:paket_id> | paket.edit_paket |
-
-#### 🔹 Blueprint: pc (8 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/pc/ | pc.list_pc |
-| POST | /api/v1/kasir/pc/ | pc.tambah_pc |
-| POST | /api/v1/kasir/pc/<int:pc_id>/archive | pc.arsipkan_pc |
-| DELETE | /api/v1/kasir/pc/<int:pc_id> | pc.hapus_pc |
-| PUT | /api/v1/kasir/pc/<int:pc_id> | pc.edit_pc |
-| PUT | /api/v1/kasir/pc/<int:pc_id>/position | pc.update_pc_position |
-| POST | /api/v1/kasir/pc/batch | pc.tambah_batch |
-| POST | /api/v1/kasir/pc/reset-admin/<int:pc_id> | pc.reset_admin |
-| POST | /api/v1/kasir/pc/wol | pc.wol_pc |
-
-#### 🔹 Blueprint: report (18 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/report/blackout-log | report.blackout_log |
-| GET | /api/v1/kasir/report/export/audit-pdf | report.export_audit_pdf |
-| GET | /api/v1/kasir/report/export/billing | report.export_billing |
-| GET | /api/v1/kasir/report/export/kantin | report.export_kantin |
-| GET | /api/v1/kasir/report/export/pnl | report.export_pnl |
-| GET | /api/v1/kasir/report/kasir-list | report.get_kasir_list |
-| GET | /api/v1/kasir/report/laporan-harian | report.laporan_harian |
-| GET | /api/v1/kasir/report/laporan/billing | report.get_laporan |
-| GET | /api/v1/kasir/report/laporan/kantin | report.get_laporan_kantin |
-| GET | /api/v1/kasir/report/log | report.get_logs |
-| POST | /api/v1/kasir/report/log/clear | report.clear_logs_endpoint |
-| GET | /api/v1/kasir/report/log/export | report.export_logs |
-| GET | /api/v1/kasir/report/struk/<identifier> | report.get_struk |
-| GET | /api/v1/kasir/report/struk/menu/<int:t_menu_id> | report.get_struk_menu |
-| GET | /api/v1/kasir/report/tanggal | report.get_tanggal_list |
-| DELETE | /api/v1/kasir/report/transaksi/<int:t_id> | report.delete_transaction_endpoint |
-| DELETE | /api/v1/kasir/report/transaksi/by-date/<string:tanggal> | report.clear_date_transactions_endpoint |
-| POST | /api/v1/kasir/report/transaksi/clear | report.clear_transactions_endpoint |
-
-#### 🔹 Blueprint: server_monitor_api (4 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/server-monitor | server_monitor_api.get_metrics |
-| POST | /api/v1/kasir/server-monitor/lhm/start | server_monitor_api.start_lhm_service |
-| GET | /api/v1/kasir/server-monitor/lhm/status | server_monitor_api.status_lhm_service |
-| POST | /api/v1/kasir/server-monitor/lhm/stop | server_monitor_api.stop_lhm_service |
-
-#### 🔹 Blueprint: sesi (11 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/sesi/<int:sesi_id> | sesi.get_sesi |
-| GET | /api/v1/kasir/sesi/<int:sesi_id>/riwayat-paket | sesi.get_riwayat_paket |
-| POST | /api/v1/kasir/sesi/buka-guest | sesi.buka_guest |
-| POST | /api/v1/kasir/sesi/buka-guest-batch | sesi.buka_guest_batch |
-| POST | /api/v1/kasir/sesi/buka-member | sesi.buka_member |
-| POST | /api/v1/kasir/sesi/pindah-pc/<int:sesi_id> | sesi.pindah_pc |
-| POST | /api/v1/kasir/sesi/refund-paket | sesi.refund_paket |
-| POST | /api/v1/kasir/sesi/tambah-waktu-batch | sesi.tambah_waktu_batch |
-| POST | /api/v1/kasir/sesi/tambah-waktu-sesi/<int:sesi_id> | sesi.tambah_waktu_sesi |
-| POST | /api/v1/kasir/sesi/tutup-batch | sesi.tutup_sesi_batch |
-| POST | /api/v1/kasir/sesi/tutup/<int:sesi_id> | sesi.tutup_sesi |
-
-#### 🔹 Blueprint: settings (22 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/settings/ | settings.get_all_settings |
-| GET, PUT | /api/v1/kasir/settings/<key> | settings.handle_setting |
-| PUT | /api/v1/kasir/settings/apikey | settings.update_client_api_key |
-| POST | /api/v1/kasir/settings/app-public-url | settings.set_app_public_url |
-| PUT | /api/v1/kasir/settings/auto-shutdown | settings.update_auto_shutdown |
-| GET | /api/v1/kasir/settings/backup/download | settings.download_db |
-| POST | /api/v1/kasir/settings/backup/manual | settings.trigger_manual_backup |
-| POST | /api/v1/kasir/settings/cloudflare-tunnel/save-token | settings.cloudflare_tunnel_save_token |
-| GET | /api/v1/kasir/settings/cloudflare-tunnel/status | settings.cloudflare_tunnel_status |
-| POST | /api/v1/kasir/settings/cloudflare-tunnel/toggle | settings.cloudflare_tunnel_toggle |
-| POST | /api/v1/kasir/settings/database/purge-and-vacuum | settings.purge_and_vacuum_database |
-| GET | /api/v1/kasir/settings/ip-whitelist | settings.list_ip_whitelist |
-| POST | /api/v1/kasir/settings/ip-whitelist | settings.add_whitelist_ip |
-| DELETE | /api/v1/kasir/settings/ip-whitelist/<ip> | settings.remove_whitelist_ip |
-| POST | /api/v1/kasir/settings/ip-whitelist/regenerate-token | settings.regenerate_whitelist_token |
-| GET | /api/v1/kasir/settings/ip-whitelist/status | settings.status_whitelist |
-| POST | /api/v1/kasir/settings/ip-whitelist/toggle | settings.toggle_whitelist |
-| POST | /api/v1/kasir/settings/qris | settings.upload_qris |
-| PUT | /api/v1/kasir/settings/scheduler | settings.update_scheduler_config |
-| POST | /api/v1/kasir/settings/scheduler/restart | settings.restart_scheduler |
-| PUT | /api/v1/kasir/settings/timezone | settings.update_timezone |
-| GET | /api/v1/kasir/settings/uninstall-token/client | settings.get_uninstall_token_for_client |
-
-> Catatan keamanan: `/uninstall-token/client` hanya memerlukan `X-Client-Key`, menentukan PC dari IP koneksi peer, dan kini **hanya** mengembalikan `uninstall_token` (token darurat server tidak lagi dibagikan ke client). `client_api_key` hanya dapat diubah lewat `/api/v1/kasir/settings/apikey`; handler setting generik menolak key tersebut dan hanya menerima prefix `warnet_`/`backup_`/`tv_`/`qris_`/`mikrotik_`/`screenshot_` serta `payment_methods`. Login darurat `POST /api/v1/public/client/emergency-login` diterima bila token server valid **atau** IP koneksi peer sama dengan `ip_address` PC terdaftar. Identitas client memakai IP koneksi; `ip_address` di body hanya boleh berbeda bila request datang dari loopback.
-
-#### 🔹 Blueprint: shift (5 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/shift/active | shift.get_active_shift |
-| POST | /api/v1/kasir/shift/end | shift.end_shift |
-| GET | /api/v1/kasir/shift/history | shift.get_shift_history |
-| POST | /api/v1/kasir/shift/start | shift.start_shift |
-| GET | /api/v1/kasir/shift/summary | shift.get_shift_summary |
-
-#### 🔹 Blueprint: tournament (7 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/tournament/ | tournament.list_tournament |
-| POST | /api/v1/kasir/tournament/ | tournament.create_tournament |
-| DELETE | /api/v1/kasir/tournament/<int:t_id> | tournament.delete_tournament |
-| GET | /api/v1/kasir/tournament/<int:t_id> | tournament.get_tournament |
-| POST | /api/v1/kasir/tournament/<int:t_id>/swiss/next | tournament.next_swiss_round |
-| POST | /api/v1/kasir/tournament/match/<int:match_id>/skor | tournament.update_match_skor |
-| POST | /api/v1/kasir/tournament/stage/<int:stage_id>/finish | tournament.finish_stage |
-
-#### 🔹 Blueprint: tutorial (9 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/tutorials/ | tutorial.get_tutorials |
-| POST | /api/v1/kasir/tutorials/ | tutorial.create_tutorial |
-| DELETE | /api/v1/kasir/tutorials/<int:tutorial_id> | tutorial.delete_tutorial |
-| PUT | /api/v1/kasir/tutorials/<int:tutorial_id> | tutorial.update_tutorial |
-| GET | /api/v1/kasir/tutorials/categories | tutorial.get_categories |
-| DELETE | /api/v1/kasir/tutorials/categories/<path:category_name> | tutorial.delete_category |
-| POST | /api/v1/kasir/tutorials/cleanup-temp | tutorial.cleanup_temp_images |
-| POST | /api/v1/kasir/tutorials/export-json | tutorial.export_tutorials_json |
-| POST | /api/v1/kasir/tutorials/upload-image | tutorial.upload_tutorial_image |
-
-#### 🔹 Blueprint: tv_public_api (1 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/public/tv/data | tv_public_api.get_tv_data |
-
-#### 🔹 Blueprint: uptime_api (2 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/uptime/daily | uptime_api.get_daily_uptime |
-| GET | /api/v1/kasir/uptime/range | uptime_api.get_range_uptime |
-
-#### 🔹 Blueprint: user (5 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/user/ | user.get_all_users |
-| POST | /api/v1/kasir/user/ | user.create_user |
-| POST | /api/v1/kasir/user/<int:user_id>/archive | user.archive_user |
-| DELETE | /api/v1/kasir/user/<int:user_id> | user.delete_user |
-| GET | /api/v1/kasir/user/<int:user_id> | user.get_user |
-| PUT | /api/v1/kasir/user/<int:user_id> | user.update_user |
-
-#### 🔹 Blueprint: vnc (5 Endpoint)
-| Method | Endpoint URL | Handler Endpoint |
-| :--- | :--- | :--- |
-| GET | /api/v1/kasir/vnc/client/<int:pc_id>/status | vnc.status_vnc_client_route |
-| POST | /api/v1/kasir/vnc/client/<int:pc_id>/start | vnc.start_vnc_client_route |
-| POST | /api/v1/kasir/vnc/client/<int:pc_id>/stop | vnc.stop_vnc_client_route |
-| POST | /api/v1/kasir/vnc/start | vnc.start_vnc_proxy |
-| GET | /api/v1/kasir/vnc/status | vnc.get_vnc_status |
+| Domain | Prefix | Endpoint | Cakupan |
+|---|---|---|---|
+| auth | `/api/v1/kasir/auth`, `/api/v1/public/auth` | 7 | login, logout, check, admin-check, status member |
+| client | `/api/v1/public/client` | 13 | handshake, heartbeat, poll sesi/perintah, telemetri, screenshot |
+| dashboard | `/api/v1/kasir/dashboard` | 3 | summary, omzet, status PC |
+| arsip | `/api/v1/kasir/arsip` | 2 | daftar agregat arsip, restore per resource |
+| backup | `/api/v1/kasir/backup` | 7 | list, buat, unduh, restore, hapus, status manual |
+| blackout | `/api/v1/kasir/blackout` | 9 | deteksi, resolve, force-close, clear audit |
+| game | `/api/v1/kasir/game` + publik | 9 | CRUD katalog, ikon, katalog publik |
+| grup | `/api/v1/kasir/grup` | 5 | CRUD, archive, restore |
+| hardware | `/api/v1/kasir/uptime` | 2 | uptime report, hapus log |
+| maintenance | `/api/v1/kasir/maintenance` | 6 | CRUD tiket, ubah status |
+| member | `/api/v1/kasir/member` | 14 | CRUD, top-up, refund, riwayat, reset password |
+| menu | `/api/v1/kasir/menu` | 10 | CRUD menu, stok, kategori, struk |
+| mikrotik | `/api/v1/kasir/mikrotik` | 3 | config GET/POST, test, sync |
+| monitor | `/api/v1/kasir/monitor` | 21 | hardware, proses, screenshot, remote action, VNC client |
+| notes | `/api/v1/kasir/notes` | 6 | daftar, simpan, hapus catatan |
+| paket | `/api/v1/kasir/paket` | 6 | CRUD, archive, restore |
+| pc | `/api/v1/kasir/pc` | 9 | CRUD, denah, status, archive |
+| public | `/tv`, `/livepc`, `/paket`, `/spesifikasi`, `/games`, `/api/health` | 7 | halaman publik & health |
+| report | `/api/v1/kasir/report` | 18 | billing, keuangan, struk, ekspor, hapus riwayat |
+| server_monitor | `/api/v1/kasir/server-monitor` | 4 | statistik host, kontrol LHM |
+| sesi | `/api/v1/kasir/sesi` | 11 | buka, tambah, pindah, tutup, refund, pause/AFK |
+| settings | `/api/v1/kasir/settings` | 30 | pengaturan, whitelist, token, QRIS, migrasi, update, scheduler |
+| shift | `/api/v1/kasir/shift` | 9 | buka, tutup, ringkasan, riwayat, struk |
+| tournament | `/api/v1/kasir/tournament` | 6 | turnamen, tim, tahap, match |
+| tutorial | `/api/v1/kasir/tutorials` | 8 | CRUD artikel, upload media, cleanup |
+| user | `/api/v1/kasir/user` | 6 | CRUD user, log audit |
+| vnc | `/api/v1/kasir/vnc` | 5 | start, stop, status |
 
 ### 8.3 Protokol VNC Bridge (WebSocket)
-- **VNC Proxy Stream (Websockify)**:
+- **VNC Proxy Stream (relay di dalam biner Rust)**:
   - HTTP lokal: `ws://<host>:8081/?token=<token>`
   - HTTPS (di balik reverse proxy): `wss://<host>/ws/vnc?token=<token>`
-  - URL dibentuk oleh `resolveWebSocketUrl()` di `vnc_client.js`; tidak memakai path `<pc_id>`.
+  - URL dibentuk oleh `resolveWebSocketUrl()` di `vnc_client.js`; token acak per sesi proxy.
   - Meneruskan data binary byte array frame RFB (Remote FrameBuffer).
   - Meneruskan event keyboard & mouse kasir ke PC klien.
   - Bi-directional clipboard text synchronization.
