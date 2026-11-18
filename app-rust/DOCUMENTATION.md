@@ -123,6 +123,9 @@ Sistem TMBilling dirancang dengan arsitektur pemisahan tanggung jawab 3 lapis (*
 c:\Project GIT\TMBilling
 ├── app-rust/                           # Backend Rust 2.0.3 (rilis aktif)
 │   ├── Cargo.toml                      # Single Source of Version (version = "2.0.3")
+│   ├── AGENTS.md                       # Peta modul & aturan kerja untuk AI agent
+│   ├── DOCUMENTATION.md                # Master dokumentasi teknis (file ini)
+│   ├── README.md                       # Build, menjalankan, rilis, troubleshooting
 │   ├── src/
 │   │   ├── main.rs                     # Entry: --init, --apply-update, server normal
 │   │   ├── app.rs                      # Router axum: 245 registrasi .route(
@@ -152,9 +155,8 @@ c:\Project GIT\TMBilling
 │       ├── static/js/kasir/            # Modular ES6 (app.js, core/, components/, modules/)
 │       ├── static/sounds/              # Audio warning (15m, 10m, 5m, 1m)
 │       └── templates/                  # Jinja2: kasir/ (31 tab), member/, tv/, public/
-├── docs/                               # Dokumentasi teknis
-│   ├── DOCUMENTATION.md                # Single Source of Truth (file ini)
-│   ├── RUST_MIGRATION.md               # Keputusan migrasi & cutover
+├── docs/                               # Dokumentasi operasional
+│   ├── RUST_MIGRATION.md               # Arsitektur, upgrade & rollback
 │   └── superpowers/                    # Specs & plans agent
 ├── tools/ckeditor-builder/             # Custom CKEditor 5 build untuk CMS
 ├── tests/                              # 15 suite E2E Playwright

@@ -76,6 +76,6 @@ Artefak rilis: `tmbilling-server.exe`, `app-rust/packaging/install.bat`, `app-ru
 | Setelan tidak berubah | `.env` dan folder `instance/` harus writable oleh user yang menjalankan server. |
 | Aset UI lama muncul | `?v=` mengikuti hash isi aset; lakukan hard refresh (Ctrl+F5) setelah update. |
 ## Bacaan Lanjutan
-- `../docs/RUST_MIGRATION.md` — keputusan migrasi dan cutover.
-- `../docs/DOCUMENTATION.md` — dokumentasi teknis lengkap.
-- `../AGENTS.md` — peta repo untuk agent.
+- `../docs/RUST_MIGRATION.md` — arsitektur, upgrade, dan rollback.
+- `DOCUMENTATION.md` — dokumentasi teknis lengkap.
+- `AGENTS.md` — peta modul untuk agent.

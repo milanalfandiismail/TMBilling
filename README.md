@@ -28,7 +28,7 @@
 **TMBilling** adalah solusi manajemen operasional terpadu untuk warnet, cybercafe, dan arena esports modern. Dirancang dengan arsitektur **3-Layer Separation of Concerns (SoC)** yang tangguh, sistem ini mengintegrasikan server billing kasir, kasir kantin/FnB terpadu, kendali jarak jauh (remote control TightVNC berbasis web), monitoring hardware baseline anti-maling, dan pertahanan klien 5-lapis (*5-Layer Anti-Tamper Security*).
 
 > 📚 **Dokumentasi Lengkap (Single Source of Truth):**  
-> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 245 route API, dan skema database, buka **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)**.
+> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 245 route API, dan skema database, buka **[app-rust/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/app-rust/DOCUMENTATION.md)**.
 
 ---
 
@@ -64,9 +64,8 @@ c:\Project GIT\TMBilling
 ├── app/                        # Aset frontend bersama
 │   ├── static/js/kasir/        # Modular Vanilla ES6 Frontend JS
 │   └── templates/              # Jinja2 kasir/member/tv/public
-├── docs/                       # Master Dokumentasi
-│   ├── DOCUMENTATION.md        # Master Technical Manual & Single Source of Truth
-│   ├── RUST_MIGRATION.md       # Keputusan migrasi & cutover
+├── docs/                       # Dokumentasi operasional
+│   ├── RUST_MIGRATION.md       # Arsitektur, upgrade & rollback
 │   └── superpowers/            # Arsip rencana kerja & spesifikasi
 ├── tools/ckeditor-builder/     # Custom CKEditor 5 Build untuk CMS
 ├── WarnetAgent/                # Klien: Tauri 1.5, watchdog, monitor, uninstaller, Deploy
@@ -185,7 +184,7 @@ c:\Project GIT\TMBilling
 
 | Dokumen | Deskripsi |
 | :--- | :--- |
-| **[docs/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/docs/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog 31 domain fitur, 245 route REST API, skema 24 tabel, panduan backend Rust/frontend/klien, dan spesifikasi VNC bridge. |
+| **[app-rust/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/app-rust/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog 31 domain fitur, 245 route REST API, skema 24 tabel, panduan backend Rust/frontend/klien, dan spesifikasi VNC bridge. |
 | **[CHANGELOG.md](file:///c:/Project%20GIT/TMBilling/CHANGELOG.md)** | **Catatan Rilis** — Riwayat log perubahan dan rilis; entri terbaru mengikuti versi `app-rust/Cargo.toml`. |
 
 ---
