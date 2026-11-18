@@ -617,6 +617,9 @@ tests/e2e/results/*
 audit-screenshots/
 *.png
 !app/static/img/*.png
+
+# Desain klien (FigCraft) - PNG hasil ekspor ikut di-commit
+!app-rust/figcraft/exports/**/*.png
 !tm.png
 
 # Pesan commit/tag sementara untuk rilis
