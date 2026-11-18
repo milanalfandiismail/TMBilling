@@ -335,7 +335,7 @@ async fn remote_shutdown_mengantre_perintah() {
         .as_str()
         .unwrap()
         .contains("Shutdown"));
-    assert_eq!(st.commands.fast.pop(pc_id).as_deref(), Some("shutdown"));
+    assert_eq!(st.commands.regular.pop(pc_id).as_deref(), Some("shutdown"));
 }
 
 #[tokio::test]
