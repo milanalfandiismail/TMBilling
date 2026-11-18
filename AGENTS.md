@@ -336,6 +336,7 @@ Runner Chromium sungguhan (Playwright) dengan sandbox terisolasi; setiap suite d
 | `tests/e2e/lib/coverage_manifest.js` | 30 tab container + 10 sub-tab settings + 8 portal, pemilik suite per tab. |
 | `tests/e2e/test_e2e_backup_restore.js` | Suite `backup_restore`: backup → mutasi → restore di sandbox, validasi admin/konfirmasi/404/403, dan guard folder `backups/` produksi tidak berubah. |
 | `tests/e2e/test_e2e_*.js` | 15 suite: `pc_billing`, `fnb_pos`, `member_paket`, `auth_shift_notes`, `hardware_maintenance_remote`, `tournament_game`, `settings_admin_logs`, `backup_restore`, `public_portals_cms`, `coverage`, `perf_invariants`, `update_restore` (klaim update, restore DB, tukar berkas + pemulihan jurnal), `screenshot_whitelist` (screenshot privat + revalidasi role), `analytics_cleanup` (top paket tanpa baris siklus hidup + guard hapus tanggal), `route_smoke` (semua rute sisa agar gerbang cakupan lulus). |
+| `tests/e2e/client/` | Uji kontrak HTTP klien agent (auth API key, sesi klien, telemetri/screenshot, `fast_poll`, login member kiosk) via pytest + sandbox Rust sendiri; `live_probe.py`/`live_checklist.md` untuk smoke klien nyata. |
 
 ---
 
