@@ -703,7 +703,7 @@ pub fn router(state: Arc<AppState>) -> Router {
             "/member/profile/update",
             post(member_portal::profile_update),
         )
-        .route("/api/v1/public/auth/login", post(member_portal::login))
+        .route("/api/v1/public/auth/login", post(crate::routes::public::client_auth::login))
         .route("/api/v1/public/auth/logout", post(member_portal::logout))
         .route("/api/v1/public/auth/status", post(member_portal::status));
 

@@ -33,3 +33,13 @@ Dashboard produksi: GET /api/v1/kasir/dashboard/pc → WEW-1 online:true, status
 ## Sisa risiko
 - Server produksi 7015 masih menjalankan salinan biner lama (app-rust/tmbilling-server.exe), belum memuat dua perbaikan hari ini sampai disalin + restart.
 - Dashboard PC nyata: MONITOR PROSES menampilkan 58 proses dari agent. AMBIL GAMBAR mengirim perintah, tetapi berkas screenshot belum muncul dalam 8 detik (perlu cek konfigurasi screenshot di klien).
+
+## Perbaikan 2026-11-18 (3 bug lapangan)
+
+| Bug | Akar masalah | Perbaikan | Bukti |
+|---|---|---|---|
+| Ambil gambar tidak menghasilkan screenshot | perintah `screenshot` diantrekan ke `commands.fast` (dibaca TMMonitor, yang tidak mengenal `screenshot`) | `app-rust/src/routes/monitor/monitor_routes.rs` mengantre ke `commands.regular` (dibaca klien Tauri) | `test_screenshot_queue.py` |
+| Remote control VNC gagal | proxy hanya start setelah laporan `vnc_ready`, rapuh bila monitor lama/tidak ada | fallback probe TCP 5900 di `app-rust/src/routes/vnc/vnc_routes.rs::client_status` | `test_vnc_fallback.py` |
+| Login member kiosk langsung mengakhiri sesi | `/api/v1/public/auth/login` menunjuk login web (cookie `tm_member`, tanpa sesi billing) | handler baru `app-rust/src/routes/public/client_auth.rs`: member → `sesi_service::buka_member`, admin → mode admin | `test_client_member_login.py` |
+
+Total: `pytest tests/e2e/client -q` 34 lulus; `cargo test --release -j 16` 87 lulus.

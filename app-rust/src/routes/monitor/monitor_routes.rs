@@ -215,7 +215,8 @@ pub async fn screenshot_trigger(
         Ok(Some(pc)) => pc,
         _ => return gagal(404, "PC tidak ditemukan"),
     };
-    state.commands.fast.push(pc.id, "screenshot");
+    // klien Tauri membaca perintah screenshot dari command pada /client/status (antrean reguler)
+    state.commands.regular.push(pc.id, "screenshot");
     logger::rec(
         &kasir.user.username,
         "REMOTE_SCREENSHOT_TRIGGER",

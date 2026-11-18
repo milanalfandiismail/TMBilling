@@ -182,6 +182,15 @@ pub async fn client_status(State(state): St, kasir: Kasir, Path(pc_id): Path<i64
             None => {}
         }
     }
+    // Fallback: monitor klien mungkin tidak sempat mengirim vnc_ready; probe langsung.
+    if state.vnc.get(pc_id).is_none() {
+        if let Ok(Some(pc)) = pc_repo::get_by_id(&state.pool, pc_id).await {
+            let host = pc.ip_address.clone().unwrap_or_default();
+            if vnc_service::is_port_open(&host, vnc_service::VNC_PORT) {
+                let _ = vnc_service::start_proxy(&state, pc.id, &host);
+            }
+        }
+    }
     match state.vnc.get(pc_id) {
         Some(p) => http::json(
             200,

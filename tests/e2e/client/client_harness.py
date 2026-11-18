@@ -70,6 +70,30 @@ class ClientHarness:
     def get(self, path, key=None, headers=None):
         return requests.get(self.base + path, headers=self._headers(key, headers), timeout=30)
 
+
+    def _login_kasir(self):
+        if not hasattr(self, '_sess'):
+            s = requests.Session()
+            s.get(self.base + '/kasir/login', timeout=30)
+            token = s.cookies.get('csrf_token', '')
+            r = s.post(self.base + '/api/v1/kasir/auth/login',
+                       json={'username': 'admin', 'password': 'admin123'},
+                       headers={'X-CSRFToken': token}, timeout=30)
+            r.raise_for_status()
+            r = s.post(self.base + '/api/v1/kasir/shift/start', json={'modal_awal': 0},
+                       headers={'X-CSRFToken': s.cookies.get('csrf_token', '')}, timeout=30)
+            if r.status_code not in (200, 201, 400):
+                r.raise_for_status()
+            self._sess = s
+
+    def kasir_post(self, path, payload=None):
+        self._login_kasir()
+        return self._sess.post(self.base + path, json=payload or {},
+                               headers={'X-CSRFToken': self._sess.cookies.get('csrf_token', '')}, timeout=30)
+
+    def kasir_get(self, path):
+        self._login_kasir()
+        return self._sess.get(self.base + path, timeout=30)
     def db(self, sql, params=()):
         c = sqlite3.connect(f"file:{self.root / 'instance' / 'warnet.db'}?mode=ro", uri=True)
         try:
