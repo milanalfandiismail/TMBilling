@@ -268,7 +268,7 @@ async fn statistik_database_dan_status_migrasi() {
     )
     .await;
     assert_eq!(r.status, StatusCode::OK, "{}", r.body);
-    assert_eq!(r.json()["app_version"], "2.0.0");
+    assert_eq!(r.json()["app_version"], env!("CARGO_PKG_VERSION"));
 }
 
 #[tokio::test]

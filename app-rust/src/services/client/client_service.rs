@@ -48,7 +48,7 @@ async fn cari_pc(st: &AppState, ip: &str, mac: &str) -> Option<Pc> {
             return Some(pc);
         }
     }
-    if let Ok(Some(pc)) = pc_repo::find_by_ip(&st.pool, ip).await {
+    if let Ok(Some(pc)) = pc_repo::find_aktif_by_ip(&st.pool, ip).await {
         return Some(pc);
     }
     let m = format_mac(mac);
@@ -80,7 +80,7 @@ pub async fn identify(st: &AppState, ip: &str, mac: &str) -> Result<Value, Strin
         "IDENTIFY_START",
         &format!("PC coba kenalan: IP={ip}, MAC={mac}"),
     );
-    let Some(pc) = pc_repo::find_by_ip(&st.pool, ip)
+    let Some(pc) = pc_repo::find_aktif_by_ip(&st.pool, ip)
         .await
         .map_err(|e| e.to_string())?
     else {
@@ -135,7 +135,7 @@ pub async fn status(
     mac: &str,
     role: Option<&str>,
 ) -> Result<Value, String> {
-    let mut pc = match pc_repo::find_by_ip(&st.pool, ip)
+    let mut pc = match pc_repo::find_aktif_by_ip(&st.pool, ip)
         .await
         .map_err(|e| e.to_string())?
     {
@@ -545,13 +545,13 @@ pub async fn afk_unlock(
         return Err("Password akun atau PIN wajib diisi".into());
     }
     let mut valid = match sesi.afk_pin.as_deref() {
-        Some(pin) => verify_password(kredensial, pin),
+        Some(pin) => verify_password(pin, kredensial),
         None => false,
     };
     if !valid && sesi.tipe == "member" {
         if let Some(mid) = sesi.member_id {
             if let Ok(Some(m)) = member_repo::get_by_id(&st.pool, mid).await {
-                valid = verify_password(kredensial, &m.password_hash);
+                valid = verify_password(&m.password_hash, kredensial);
             }
         }
     }

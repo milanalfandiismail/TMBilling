@@ -254,7 +254,7 @@ pub async fn screenshot_upload(
     } else {
         peer.ip().to_string()
     };
-    let pc = match pc_repo::find_by_ip(&state.pool, &ip).await {
+    let pc = match pc_repo::find_aktif_by_ip(&state.pool, &ip).await {
         Ok(Some(pc)) => pc,
         _ => return gagal(404, "IP PC tidak dikenal"),
     };

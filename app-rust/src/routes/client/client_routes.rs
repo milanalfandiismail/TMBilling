@@ -323,7 +323,7 @@ async fn pc_id_dari(st: &AppState, ip: &str, mac: &str) -> Option<(i64, String)>
     if let Ok(Some(meta)) = st.pc_network.resolve(&st.pool, ip, Some(mac)).await {
         return Some((meta.id, meta.kode));
     }
-    if let Ok(Some(pc)) = crate::repositories::pc::find_by_ip(&st.pool, ip).await {
+    if let Ok(Some(pc)) = crate::repositories::pc::find_aktif_by_ip(&st.pool, ip).await {
         return Some((pc.id, pc.kode));
     }
     let m = mac.replace([':', '-', ' '], "").to_uppercase();

@@ -4,9 +4,10 @@ use tmbilling_server::config::{paths, Config};
 fn versi_dan_cache_version() {
     let dir = std::env::temp_dir().join(format!("tmb_cfg_{}", std::process::id()));
     let cfg = Config::load(&dir).expect("config harus termuat");
-    assert_eq!(cfg.version, "2.0.0");
-    assert_eq!(cfg.cache_version(), "200");
-    assert_eq!(cfg.version_tag(), "v2.0.0");
+    let v = env!("CARGO_PKG_VERSION");
+    assert_eq!(cfg.version, v);
+    assert_eq!(cfg.cache_version(), v.replace('.', ""));
+    assert_eq!(cfg.version_tag(), format!("v{v}"));
 }
 
 #[tokio::test]

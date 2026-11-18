@@ -63,6 +63,14 @@ pub async fn find_by_ip(pool: &SqlitePool, ip: &str) -> anyhow::Result<Option<Pc
         .await?)
 }
 
+pub async fn find_aktif_by_ip(pool: &SqlitePool, ip: &str) -> anyhow::Result<Option<Pc>> {
+    let sql = format!("{KOLOM} WHERE p.ip_address = ? AND p.aktif = 1");
+    Ok(sqlx::query_as::<_, Pc>(&sql)
+        .bind(ip)
+        .fetch_optional(pool)
+        .await?)
+}
+
 pub async fn find_by_mac(pool: &SqlitePool, mac: &str) -> anyhow::Result<Option<Pc>> {
     let sql = format!("{KOLOM} WHERE p.mac_address = ?");
     Ok(sqlx::query_as::<_, Pc>(&sql)
