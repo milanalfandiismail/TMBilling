@@ -1,5 +1,6 @@
 //! Klien protokol RouterOS API (socket murni) + sinkronisasi member hotspot.
 
+use md5::{Digest, Md5};
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::time::Duration;
@@ -101,7 +102,7 @@ impl Client {
         Ok(out)
     }
 
-    /// Login RouterOS 6.43+/7 (plain). `shortcut:` CHAP lama (<6.43) tidak didukung.
+    /// Login RouterOS 6.43+/7 (plain), fallback CHAP `=ret=` untuk RouterOS <6.43.
     pub fn login(&mut self) -> Result<(), String> {
         let sock =
             TcpStream::connect((self.host.as_str(), self.port)).map_err(|e| e.to_string())?;
@@ -113,17 +114,34 @@ impl Client {
             format!("=name={}", self.username),
             format!("=password={}", self.password),
         ])?;
-        if res.last().map(|s| s[0].as_str()) == Some("!done") {
-            Ok(())
-        } else {
-            Err(format!("MikroTik Login failed: {res:?}"))
+        if let Some(message) = trap_message(&res) {
+            return Err(format!("MikroTik Login failed: {message}"));
+        }
+        if let Some(challenge) = res.iter().flatten().find_map(|w| w.strip_prefix("=ret=")) {
+            let response = chap_response(&self.password, challenge)?;
+            let res = self.talk(&[
+                "/login".into(),
+                format!("=name={}", self.username),
+                format!("=response=00{response}"),
+            ])?;
+            if let Some(message) = trap_message(&res) {
+                return Err(format!("MikroTik Login failed: {message}"));
+            }
+            return match res.last().map(|s| s[0].as_str()) {
+                Some("!done") => Ok(()),
+                _ => Err(format!("MikroTik Login failed: {res:?}")),
+            };
+        }
+        match res.last().map(|s| s[0].as_str()) {
+            Some("!done") => Ok(()),
+            _ => Err(format!("MikroTik Login failed: {res:?}")),
         }
     }
 
     pub fn test_connection(&mut self) -> (bool, String) {
         match self.login() {
-            Ok(()) => (true, "Koneksi ke MikroTik berhasil!".to_string()),
-            Err(e) => (false, format!("Koneksi gagal: {e}")),
+            Ok(()) => (true, "Koneksi sukses".to_string()),
+            Err(e) => (false, e),
         }
     }
 
@@ -139,9 +157,56 @@ impl Client {
             format!("=password={password}"),
             format!("=profile={profile}"),
         ])?;
+        if let Some(message) = trap_message(&res) {
+            return Err(format!("Failed to add user: {message}"));
+        }
         match res.last() {
             Some(s) if s[0] == "!done" => Ok(()),
             other => Err(format!("Failed to add user: {other:?}")),
         }
     }
+}
+
+/// Pesan `=message=` dari `!trap`/`!fatal` pertama, bila ada.
+fn trap_message(res: &[Vec<String>]) -> Option<String> {
+    for sentence in res {
+        if matches!(sentence.first().map(String::as_str), Some("!trap") | Some("!fatal")) {
+            return Some(
+                sentence
+                    .iter()
+                    .find_map(|w| w.strip_prefix("=message=").map(str::to_string))
+                    .unwrap_or_else(|| format!("{res:?}")),
+            );
+        }
+    }
+    None
+}
+
+fn chap_response(password: &str, challenge_hex: &str) -> Result<String, String> {
+    let challenge = hex::decode(challenge_hex).map_err(|e| e.to_string())?;
+    let mut hasher = Md5::new();
+    hasher.update([0u8]);
+    hasher.update(password.as_bytes());
+    hasher.update(challenge);
+    Ok(hex::encode(hasher.finalize()))
+}
+
+/// Sinkronkan member satu per satu; kegagalan tidak menghentikan loop.
+pub fn sync_members(client: &mut Client, members: &[String], profile: &str) -> (usize, usize) {
+    let mut berhasil = 0;
+    let mut gagal = 0;
+    for nama in members {
+        match client.add_user(nama, nama, profile) {
+            Ok(()) => berhasil += 1,
+            Err(e) => {
+                gagal += 1;
+                crate::utils::logger::rec(
+                    "system",
+                    "MIKROTIK_SYNC_FAIL",
+                    &format!("Gagal menambah member {nama}: {e}"),
+                );
+            }
+        }
+    }
+    (berhasil, gagal)
 }

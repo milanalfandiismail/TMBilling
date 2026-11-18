@@ -9,7 +9,7 @@ use std::sync::Arc;
 
 use crate::middleware::auth::{self, Kasir};
 use crate::repositories::mikrotik as cfg_repo;
-use crate::services::mikrotik::mikrotik_service::Client;
+use crate::services::mikrotik::mikrotik_service::{sync_members, Client};
 use crate::state::AppState;
 use crate::utils::{http, logger, validators};
 
@@ -92,15 +92,18 @@ pub async fn save_config(State(state): St, kasir: Kasir, body: Bytes) -> Respons
         .and_then(|v| v.as_str())
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
-    let profile = data
-        .get("hotspot_profile")
-        .and_then(|v| v.as_str())
-        .unwrap_or("default")
-        .to_string();
-    let profile = if profile.is_empty() {
-        "default".to_string()
-    } else {
-        profile
+    let profile = match validators::text(
+        data.get("hotspot_profile")
+            .and_then(|v| v.as_str())
+            .unwrap_or("default"),
+        1,
+        64,
+        "Profile Hotspot",
+        false,
+    ) {
+        Ok(v) if v.is_empty() => "default".to_string(),
+        Ok(v) => v,
+        Err(e) => return http::json(400, json!({"error": e})),
     };
     match cfg_repo::save(
         &state.pool,
@@ -140,7 +143,15 @@ pub async fn test(State(state): St, kasir: Kasir, body: Bytes) -> Response {
     if host.is_empty() || username.is_empty() {
         return http::json(400, json!({"error": "Host dan Username wajib diisi"}));
     }
-    let port = data.get("port").and_then(|v| v.as_i64()).unwrap_or(8728) as u16;
+    let port = match validators::int_range(
+        data.get("port").unwrap_or(&json!(8728)),
+        1,
+        65535,
+        "Port MikroTik",
+    ) {
+        Ok(v) => v as u16,
+        Err(e) => return http::json(400, json!({"error": e})),
+    };
     let password = data.get("password").and_then(|v| v.as_str()).unwrap_or("");
     let mut client = Client::new(host, username, password, port);
     let (ok, msg) = client.test_connection();
@@ -184,39 +195,40 @@ pub async fn sync_all(State(state): St, kasir: Kasir) -> Response {
     let (ok, msg) = client.test_connection();
     if !ok {
         SYNC_RUNNING.store(false, Ordering::SeqCst);
-        return http::json(400, json!({"error": format!("Koneksi gagal: {}", msg.trim_start_matches("Koneksi gagal: "))}));
+        return http::json(400, json!({"error": format!("Koneksi gagal: {msg}")}));
     }
-    let members: Vec<String> = sqlx::query_scalar("SELECT username FROM member WHERE aktif = 1")
+    let members: Vec<String> = sqlx::query_scalar("SELECT username FROM member")
         .fetch_all(&state.pool)
         .await
         .unwrap_or_default();
     let jumlah = members.len();
     tokio::spawn(async move {
-        let mut client = Client::new(&host, &username, &password, port);
-        if client.login().is_err() {
-            logger::rec(
-                "system",
-                "MIKROTIK_ERROR",
-                "Gagal login saat sinkronisasi massal.",
-            );
-            SYNC_RUNNING.store(false, Ordering::SeqCst);
-            return;
-        }
-        for nama in members {
-            if let Err(e) = client.add_user(&nama, &nama, &profile) {
-                logger::rec(
-                    "system",
-                    "MIKROTIK_SYNC_FAIL",
-                    &format!("Gagal menambah member {nama}: {e}"),
-                );
+        // Reset lock juga saat task panik.
+        struct Guard;
+        impl Drop for Guard {
+            fn drop(&mut self) {
+                SYNC_RUNNING.store(false, Ordering::SeqCst);
             }
         }
-        logger::rec(
-            "system",
-            "MIKROTIK_SYNC",
-            &format!("Sinkronisasi massal {jumlah} member selesai"),
-        );
-        SYNC_RUNNING.store(false, Ordering::SeqCst);
+        let _guard = Guard;
+        let mut client = Client::new(&host, &username, &password, port);
+        match client.login() {
+            Ok(()) => {
+                let (berhasil, gagal) = sync_members(&mut client, &members, &profile);
+                logger::rec(
+                    "system",
+                    "MIKROTIK_SYNC",
+                    &format!(
+                        "Sinkronisasi massal selesai. {berhasil} berhasil, {gagal} gagal dari {jumlah} member."
+                    ),
+                );
+            }
+            Err(e) => logger::rec(
+                "system",
+                "MIKROTIK_ERROR",
+                &format!("Gagal login saat sinkronisasi massal: {e}"),
+            ),
+        }
     });
     logger::rec(
         &kasir.user.username,
