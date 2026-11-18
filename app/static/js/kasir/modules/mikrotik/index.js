@@ -50,19 +50,6 @@ const MikrotikModule = {
 
     updateUIState: function() {
         const isEnabled = document.getElementById('mikrotik-enabled').checked;
-        const inputs = ['mikrotik-host', 'mikrotik-port', 'mikrotik-username', 'mikrotik-password', 'mikrotik-profile'];
-        inputs.forEach(id => {
-            const el = document.getElementById(id);
-            if(el) {
-                el.disabled = !isEnabled;
-                if (!isEnabled) {
-                    el.classList.add('opacity-50', 'cursor-not-allowed');
-                } else {
-                    el.classList.remove('opacity-50', 'cursor-not-allowed');
-                }
-            }
-        });
-        
         const testBtn = document.getElementById('btn-mikrotik-test');
         const syncBtn = document.getElementById('btn-mikrotik-sync');
         if (testBtn) {
