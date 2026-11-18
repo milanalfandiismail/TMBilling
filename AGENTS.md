@@ -17,8 +17,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 - **State**: `app-rust/src/state.rs` memegang pool sqlx, seluruh cache in-memory, antrean perintah, dan `write()`. Semua jalur tulis WAJIB lewat `state.write()` (satu lock global) karena SQLite.
 - **Keamanan**: cookie `tm_session` (HMAC-SHA256, 24 jam, user dimuat ulang tiap request), CSRF double-submit `csrf_token`/`X-CSRFToken`, IP whitelist hanya untuk `/kasir/` + `/api/v1/kasir/`, `admin_only`, dan `shift_required` untuk endpoint uang/sesi.
 - **Uang & sesi**: `sisa_menit` guest = durasi beli − terpakai; member/admin = saldo/waktu tersimpan − terpakai. UNIQUE `uq_aktif_sesi_pc`/`uq_aktif_sesi_member` dipetakan ke `"PC sedang dipakai"`. Transaksi `tutup_sesi` ber-`no_nota` NULL tidak tampil di laporan billing.
-- **Database**: SQLite WAL `instance/warnet.db`, 24 tabel dari `app-rust/migrations/0001_schema_head.sql`. Migrasi aditif + snapshot, stempel `HEAD_REVISION = "a2b3c4d5e6f7"`, tanpa Alembic dan tanpa drop. Waktu DB UTC; tampilan memakai zona setting (default `Asia/Makassar`).
-- **Paritas**: `.venv\Scripts\python.exe scripts\rust_parity.py` wajib mencetak `Hanya di Python : 0` sebelum rilis.
+- **Database**: SQLite WAL `instance/warnet.db`, 24 tabel dari `app-rust/migrations/0001_schema_head.sql`. Migrasi aditif + snapshot, stempel `HEAD_REVISION = "a2b3c4d5e6f7"`, tanpa drop. Waktu DB UTC; tampilan memakai zona setting (default `Asia/Makassar`).
 - **Dokumen**: `docs/RUST_MIGRATION.md` (keputusan cutover), `app-rust/README.md` (operasional), `docs/DOCUMENTATION.md` (teknis lengkap).
 
 ---
@@ -33,8 +32,6 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `app-rust/packaging/install.bat` | Salin `tmbilling-server.exe` ke folder induk + daftarkan autostart `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. |
 | `app-rust/packaging/update.bat` | Terapkan ZIP pembaruan lewat `tmbilling-server.exe --apply-update`. |
 | `app-rust/migrations/0001_schema_head.sql` | Skema head 24 tabel + `0001_schema.json` (metadata parity test). |
-| `build_release.py` | Membangun `TMBilling_Server_v<versi>.zip` dari `app-rust/target/release/tmbilling-server.exe` + `app-rust/packaging/*.bat` + `SHA256SUMS.txt`. |
-| `scripts/rust_parity.py` | Gate paritas endpoint Python vs router Rust. |
 | `package.json` | DevDependencies frontend (TailwindCSS 4.3, Playwright, FontAwesome 7) dan skrip build aset. |
 | `tailwind.config.js` | Konfigurasi Tailwind untuk dashboard kasir dan client kiosk UI. |
 | `build_and_deploy.bat` | Kompilasi biner klien (Rust/C#) dan build aset CSS. |
@@ -43,7 +40,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [docs/DOCUMENTATION
 | `docs/superpowers/plans/`, `docs/superpowers/specs/` | Rencana/desain agent; di-ignore Git, bukan runtime. |
 | `AGENTS.md` | Dokumen ini. |
 | `LICENSE` | MIT License. |
-| `app/`, `run.py`, `create_admin.py`, `seed*.py`, `requirements.txt`, `start.bat`, `stop.bat`, `install.bat`, `update.bat`, `install_scripts/` | **Jalur Python 1.6.5 beku** — acuan 1:1, hotfix darurat saja. Rincian di lampiran. |
+| `app/static/`, `app/templates/` | Aset frontend bersama yang di-embed ke biner Rust saat build. |
 
 ### 2. Backend Rust (`app-rust/`)
 
@@ -171,12 +168,10 @@ cd app-rust
 cargo build --release
 cargo test -j 2 -- --test-threads=2
 cargo test --test sesi_test -- --nocapture
-.venv\Scripts\python.exe scripts\rust_parity.py
 ```
 
 ```bat
-:: Rilis server (ZIP berisi biner + install/update.bat)
-.venv\Scripts\python.exe build_release.py
+:: Artefak rilis: exe + app-rust/packaging/install.bat + update.bat
 :: Frontend
 npm run build:css
 node --check app/static/js/kasir/modules/dashboard/dashboard_compact.js
@@ -187,7 +182,7 @@ node --check app/static/js/kasir/modules/dashboard/dashboard_compact.js
 ### 7. Peta Suite Test
 - `app-rust/tests/contract/` (12): `auth`, `client_agent`, `device`, `http`, `master_data`, `member_shift_notes`, `mikrotik`, `ops`, `public_cms`, `report`, `sesi`, `settings`.
 - `app-rust/tests/unit/` (6): `cache`, `config`, `idempotency`, `logger`, `scheduler`, `schema_parity`.
-- `tests/e2e/` (Python/Playwright, sandbox): 15 suite Chromium + `tests/e2e/client/` kontrak agent; masih memakai sandbox Python dan tidak menyentuh DB produksi.
+- `tests/e2e/` (Playwright): 15 suite Chromium + `tests/e2e/client/` kontrak agent; sandbox terisolasi dan tidak menyentuh DB produksi.
 
 ---
 
@@ -221,7 +216,7 @@ node --check app/static/js/kasir/modules/dashboard/dashboard_compact.js
 - **Frontend**: Vanilla ES6 modular, tanpa bundler runtime.
 - **Client**: Tauri 1.5 + C#/C++ watchdog.
 - **Database**: SQLite (`app-rust/instance/warnet.db` produksi; DB terpisah per test).
-- **Single Source of Version**: `app-rust/Cargo.toml` (`version`). Python beku tetap `1.6.5` di `app/config.py`.
+- **Single Source of Version**: `app-rust/Cargo.toml` (`version` = 2.0.3).
 - **Cache Transient**: data yang sering di-polling WAJIB lewat store di `app-rust/src/cache/`.
 - **Tulis DB**: selalu `state.write()`; jangan query langsung dari handler.
 
@@ -236,15 +231,3 @@ node --check app/static/js/kasir/modules/dashboard/dashboard_compact.js
 - Paparkan alasan teknis di balik keputusan arsitektural/perbaikan bug.
 
 ---
-
-## 🐍 Lampiran: Jalur Python 1.6.5 (beku)
-
-- Status: dibekukan sejak cutover 2.0; hanya hotfix darurat, tanpa fitur baru. Acuan paritas 1:1 untuk Rust.
-- `app/` — backend Flask lama: `routes/` (26 domain), `services/` (31 domain), `repositories/`, `models/`, `middleware/`, `utils/`, `static/`, `templates/`.
-- `run.py`, `create_admin.py`, `seed.py`, `seed_games.py` — entry & seeding Python.
-- `install_scripts/` — `update_claim.py`, `updater.bat`, `extract_update.py`, `run_migration.py`, `gen_env.py`, `init_db.py`.
-- `requirements.txt` — dependensi Python (Flask 3.1.3, SQLAlchemy 2.1, APScheduler, Waitress).
-- `start.bat`/`stop.bat`/`install.bat`/`update.bat` root — jalur Python; rilis Rust memakai `app-rust/packaging/`.
-- `tests/` Python + `tests/e2e/` sandbox masih dipakai untuk E2E frontend.
-- Versi: `app/config.py` `VERSION = "1.6.5"`. Jangan menyebut 1.6.5 sebagai versi aktif.
-- Peta rinci lama (Blueprint, service, model) ada di riwayat git `AGENTS.md` sebelum commit dokumentasi Rust.
