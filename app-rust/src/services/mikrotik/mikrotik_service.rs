@@ -210,3 +210,101 @@ pub fn sync_members(client: &mut Client, members: &[String], profile: &str) -> (
     }
     (berhasil, gagal)
 }
+
+impl Client {
+    /// `.id` user hotspot dari nama (None bila tidak ada).
+    pub fn get_user(&mut self, username: &str) -> Result<Option<String>, String> {
+        let res = self.talk(&[
+            "/ip/hotspot/user/print".into(),
+            format!("?name={username}"),
+        ])?;
+        if let Some(m) = trap_message(&res) {
+            return Err(m);
+        }
+        Ok(res
+            .iter()
+            .find(|s| s.first().map(String::as_str) == Some("!re"))
+            .and_then(|s| s.iter().find_map(|w| w.strip_prefix("=.id=").map(str::to_string))))
+    }
+
+    pub fn set_user_password(&mut self, id: &str, password: &str) -> Result<(), String> {
+        let res = self.talk(&[
+            "/ip/hotspot/user/set".into(),
+            format!("=.id={id}"),
+            format!("=password={password}"),
+        ])?;
+        if let Some(m) = trap_message(&res) {
+            return Err(format!("Failed to set user: {m}"));
+        }
+        match res.last() {
+            Some(s) if s[0] == "!done" => Ok(()),
+            other => Err(format!("Failed to set user: {other:?}")),
+        }
+    }
+
+    pub fn remove_user(&mut self, id: &str) -> Result<(), String> {
+        let res = self.talk(&["/ip/hotspot/user/remove".into(), format!("=.id={id}")])?;
+        if let Some(m) = trap_message(&res) {
+            return Err(format!("Failed to remove user: {m}"));
+        }
+        match res.last() {
+            Some(s) if s[0] == "!done" => Ok(()),
+            other => Err(format!("Failed to remove user: {other:?}")),
+        }
+    }
+}
+
+/// Padanan `_sync_mikrotik` Python: sinkronkan satu user hotspot di latar belakang.
+pub async fn sync_member(
+    st: &crate::state::AppState,
+    aksi: &'static str,
+    username: String,
+    password: Option<String>,
+) {
+    let Ok(cfg) = crate::repositories::mikrotik::get_instance(&st.pool).await else {
+        return;
+    };
+    if !cfg.enabled {
+        return;
+    }
+    let (Some(host), Some(user)) = (
+        cfg.host.clone().filter(|h| !h.is_empty()),
+        cfg.username.clone().filter(|u| !u.is_empty()),
+    ) else {
+        return;
+    };
+    let pass = cfg.password.clone().unwrap_or_default();
+    let profile = cfg
+        .hotspot_profile
+        .clone()
+        .unwrap_or_else(|| "default".into());
+    let port = cfg.port as u16;
+    tokio::task::spawn_blocking(move || {
+        let mut c = Client::new(&host, &user, &pass, port);
+        if let Err(e) = c.login() {
+            crate::utils::logger::rec("system", "MIKROTIK_ERROR", &format!("Gagal login MikroTik: {e}"));
+            return;
+        }
+        let hasil = match aksi {
+            "add" => c.add_user(&username, password.as_deref().unwrap_or(&username), &profile),
+            "update" => match password.as_deref() {
+                Some(p) => c.get_user(&username).and_then(|u| match u {
+                    Some(id) => c.set_user_password(&id, p),
+                    None => Ok(()),
+                }),
+                None => Ok(()),
+            },
+            _ => c.get_user(&username).and_then(|u| match u {
+                Some(id) => c.remove_user(&id),
+                None => Ok(()),
+            }),
+        };
+        if let Err(e) = hasil {
+            crate::utils::logger::rec(
+                "system",
+                "MIKROTIK_ERROR",
+                &format!("Gagal {aksi} user {username}: {e}"),
+            );
+        }
+    });
+}

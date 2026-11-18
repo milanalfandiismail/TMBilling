@@ -11,6 +11,7 @@ use crate::repositories::{
     transaksi as trx_repo,
 };
 use crate::services::menu::menu_service;
+use crate::services::mikrotik::mikrotik_service::sync_member;
 use crate::services::transaksi as nota;
 use crate::state::AppState;
 use crate::utils::idempotency;
@@ -254,6 +255,7 @@ pub async fn create(st: &AppState, body: &Value, operator: &str) -> Result<Value
             "email": email,
         }),
     );
+    sync_member(st, "add", username.clone(), Some(raw_password.clone())).await;
     Ok(json!({"id": id, "username": username}))
 }
 
@@ -292,14 +294,13 @@ pub async fn update(st: &AppState, id: i64, body: &Value, operator: &str) -> Res
         }
         _ => m.grup_id,
     };
-    let hash = match body
+    let password_baru = body
         .get("password")
         .and_then(|v| v.as_str())
         .filter(|p| !p.trim().is_empty())
-    {
-        Some(raw) => Some(hash_password(&password(raw, 4, 16)?)),
-        None => None,
-    };
+        .map(|raw| password(raw, 4, 16))
+        .transpose()?;
+    let hash = password_baru.as_deref().map(hash_password);
 
     repo::update_profile(
         &st.pool,
@@ -327,6 +328,7 @@ pub async fn update(st: &AppState, id: i64, body: &Value, operator: &str) -> Res
         "",
         json!({"username": m.username}),
     );
+    sync_member(st, "update", m.username.clone(), password_baru).await;
     let sisa = sisa_sesi(&st.pool, id).await?;
     Ok(json!({
         "username": m.username,
@@ -418,6 +420,7 @@ pub async fn delete(st: &AppState, id: i64, operator: &str) -> Result<Option<Str
         "DELETE_MEMBER",
         &format!("Member {} dihapus permanen", m.username),
     );
+    sync_member(st, "delete", m.username.clone(), None).await;
     Ok(Some(m.username))
 }
 

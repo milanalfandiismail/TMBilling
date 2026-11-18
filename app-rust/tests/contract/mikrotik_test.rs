@@ -124,6 +124,25 @@ fn sync_menghitung_berhasil_dan_gagal() {
     assert_eq!((berhasil, gagal), (1, 1));
 }
 
+#[test]
+fn get_user_mengembalikan_id_dan_set_remove_memakai_id() {
+    let (port, hits) = fake_ros(vec![
+        vec![vec!["!done"]],
+        vec![vec!["!re", "=.id=*95", "=name=alok"], vec!["!done"]],
+        vec![vec!["!done"]],
+        vec![vec!["!done"]],
+    ]);
+    let mut c = Client::new("127.0.0.1", "admin", "x", port);
+    c.login().unwrap();
+    assert_eq!(c.get_user("alok").unwrap().as_deref(), Some("*95"));
+    c.set_user_password("*95", "baru1234").unwrap();
+    c.remove_user("*95").unwrap();
+    let h = hits.lock().unwrap();
+    assert!(h[1].contains(&"?name=alok".to_string()), "{:?}", h[1]);
+    assert!(h[2].contains(&"=password=baru1234".to_string()), "{:?}", h[2]);
+    assert!(h[3].contains(&"=.id=*95".to_string()), "{:?}", h[3]);
+}
+
 // ---------- Test route ----------
 
 const LAN: SocketAddr = SocketAddr::new(
