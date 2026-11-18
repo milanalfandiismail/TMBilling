@@ -36,7 +36,7 @@ pub async fn health(State(state): State<Arc<AppState>>) -> Response {
     let status = if healthy { "ok" } else { "degraded" };
     (
         StatusCode::OK,
-        Json(json!({"status": status, "checks": {"db": db, "disk": disk, "backup": backup}})),
+        Json(json!({"status": status, "version": env!("CARGO_PKG_VERSION"), "checks": {"db": db, "disk": disk, "backup": backup}})),
     )
         .into_response()
 }

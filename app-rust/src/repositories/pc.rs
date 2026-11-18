@@ -106,21 +106,33 @@ pub async fn sesi_map(
         i64,
         Option<String>,
         Option<String>,
+        Option<String>,
+        Option<i64>,
         Option<bool>,
         Option<String>,
         Option<i64>,
         Option<i64>,
     )> = sqlx::query_as(
-        "SELECT pc_id, id, tipe, nama_guest, is_afk, mulai_pada, durasi_beli_menit,          CASE WHEN mulai_pada IS NULL THEN durasi_beli_menit ELSE MAX(0, durasi_beli_menit - CAST((julianday('now') - julianday(mulai_pada)) * 1440 AS INTEGER)) END          FROM sesi WHERE status = 'aktif' AND pc_id IS NOT NULL ORDER BY id DESC",
+        "SELECT s.pc_id, s.id, s.tipe, s.nama_guest, COALESCE(m.nama_lengkap, m.username), \
+         s.waktu_tersimpan_awal, s.is_afk, s.mulai_pada, s.durasi_beli_menit, \
+         CASE \
+           WHEN s.tipe = 'guest' THEN MAX(0, s.durasi_beli_menit - CAST((julianday('now') - julianday(s.mulai_pada)) * 1440 AS INTEGER)) \
+           WHEN s.waktu_tersimpan_awal > 0 THEN MAX(0, s.waktu_tersimpan_awal - CAST((julianday('now') - julianday(COALESCE(s.waktu_mulai_sesi, s.mulai_pada))) * 1440 AS INTEGER)) \
+           ELSE MAX(0, COALESCE(s.durasi_beli_menit, 0) - CAST((julianday('now') - julianday(s.mulai_pada)) * 1440 AS INTEGER)) \
+         END \
+         FROM sesi s LEFT JOIN member m ON m.id = s.member_id \
+         WHERE s.status = 'aktif' AND s.pc_id IS NOT NULL ORDER BY s.id DESC",
     )
     .fetch_all(pool)
     .await?;
     let mut map = std::collections::HashMap::new();
-    for (pc_id, id, tipe, nama_guest, is_afk, mulai_pada, durasi_beli_menit, sisa_menit) in rows {
+    for (pc_id, id, tipe, nama_guest, nama_member, waktu_awal, is_afk, mulai_pada, durasi_beli_menit, sisa_menit) in rows {
         map.entry(pc_id).or_insert(SesiRingkas {
             id,
             tipe,
             nama_guest,
+            nama_member,
+            waktu_tersimpan_awal: waktu_awal,
             is_afk,
             mulai_pada,
             durasi_beli_menit,

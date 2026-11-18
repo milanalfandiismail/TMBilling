@@ -55,6 +55,12 @@ pub async fn login(
         None => return http::err(404, "PC tidak dikenal server"),
     };
 
+    crate::utils::logger::rec(
+        "client",
+        "CLIENT_LOGIN_PC",
+        &format!("ip={ip} mac={mac} user={username} pc={}", pc.kode),
+    );
+
     if login_throttle::check(&ip, &username) {
         return http::err(
             429,
@@ -81,6 +87,7 @@ pub async fn login(
         }
         login_throttle::ok(&ip, &username);
         let grup = pc.grup_nama.clone().unwrap_or_else(|| "reguler".into());
+        let _ = crate::utils::logger::rec("client", "CLIENT_LOGIN_MEMBER", &format!("user={username} pc={}", pc.kode));
         return match sesi_service::buka_member(&st, Some(&pc.kode), Some(&member.username), "client")
             .await
         {

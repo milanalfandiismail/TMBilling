@@ -27,6 +27,8 @@ pub struct SesiRingkas {
     pub id: i64,
     pub tipe: Option<String>,
     pub nama_guest: Option<String>,
+    pub nama_member: Option<String>,
+    pub waktu_tersimpan_awal: Option<i64>,
     pub is_afk: Option<bool>,
     pub mulai_pada: Option<String>,
     pub durasi_beli_menit: Option<i64>,

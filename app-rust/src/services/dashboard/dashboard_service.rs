@@ -122,8 +122,15 @@ pub async fn pc_list(st: &AppState) -> Value {
                     Some(s) => json!({
                         "id": s.id,
                         "tipe": s.tipe,
-                        "nama": s.nama_guest,
+                        "nama": if s.tipe.as_deref() == Some("member") {
+                            s.nama_member.clone().unwrap_or_else(|| "Member".into())
+                        } else {
+                            s.nama_guest.clone().unwrap_or_else(|| "Guest".into())
+                        },
                         "nama_guest": s.nama_guest,
+                        "nama_member": s.nama_member,
+                        "member_nama": s.nama_member,
+                        "waktu_tersimpan_awal": s.waktu_tersimpan_awal,
                         "is_afk": s.is_afk,
                         "mulai_pada": s.mulai_pada,
                         "durasi_beli_menit": s.durasi_beli_menit,

@@ -106,6 +106,29 @@ pub async fn client_start(State(state): St, kasir: Kasir, Path(pc_id): Path<i64>
         "VNC_COMMAND_QUEUED",
         &format!("Perintah VNC START masuk antrean untuk PC {}", pc.kode),
     );
+    // Monitor klien bisa telat/mati; bila TightVNC sudah hidup, buka proxy sekarang.
+    let host = pc.ip_address.clone().unwrap_or_default();
+    if vnc_service::is_port_open(&host, vnc_service::VNC_PORT) {
+        if let Ok(p) = vnc_service::start_proxy(&state, pc.id, &host) {
+            logger::rec(
+                &kasir.user.username,
+                "VNC_PROXY_START",
+                &format!("Proxy VNC langsung aktif untuk PC {} ({host})", pc.kode),
+            );
+            return http::json(
+                200,
+                json!({
+                    "success": true,
+                    "pending": false,
+                    "message": "Remote control siap",
+                    "port": p.port,
+                    "token": p.token,
+                    "vnc_password": password,
+                    "pc_kode": pc.kode,
+                }),
+            );
+        }
+    }
     http::json(
         202,
         json!({

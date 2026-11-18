@@ -43,3 +43,11 @@ Dashboard produksi: GET /api/v1/kasir/dashboard/pc → WEW-1 online:true, status
 | Login member kiosk langsung mengakhiri sesi | `/api/v1/public/auth/login` menunjuk login web (cookie `tm_member`, tanpa sesi billing) | handler baru `app-rust/src/routes/public/client_auth.rs`: member → `sesi_service::buka_member`, admin → mode admin | `test_client_member_login.py` |
 
 Total: `pytest tests/e2e/client -q` 34 lulus; `cargo test --release -j 16` 87 lulus.
+
+## Tindak lanjut 2026-11-18 (lanjutan)
+
+| Bug | Akar | Perbaikan | Bukti |
+|---|---|---|---|
+| Dashboard menampilkan "Guest 0 menit" untuk sesi member | `sesi_map` menghitung sisa dari `durasi_beli_menit` (0 untuk member) dan `nama` hanya `nama_guest` | SQL per tipe (`waktu_tersimpan_awal` untuk member) + `member_nama` di `sesi_detail` | `test_dashboard_member.py` |
+| VNC tetap gagal walau TightVNC hidup | proxy hanya mulai setelah `vnc_ready` | `client_start` probe port 5900 lalu `start_proxy` langsung | `test_vnc_start_proxy.py` |
+| Sulit memastikan biner produksi terbaru | tidak ada versi di health | `GET /api/health` memuat `version` | `test_dashboard_member.py::test_health_memuat_versi` |
