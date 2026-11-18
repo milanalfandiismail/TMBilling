@@ -209,6 +209,11 @@ async fn billing_menghitung_billing_refund_dan_kantin() {
     assert_eq!(body["total_kantin"], 5000, "{}", body);
     assert_eq!(body["total_pendapatan"], 15000, "{}", body);
     assert_eq!(body["total"], 1, "satu nota billing: {}", body);
+    let lama = &body["data"][0];
+    assert_eq!(lama["nama_pelanggan"], "Guest", "{lama}");
+    assert_eq!(lama["pc_kode"], "-", "{lama}");
+    assert_eq!(lama["paket_nama"], "Guest uji", "{lama}");
+    assert!(!lama["waktu"].as_str().unwrap_or("").is_empty(), "{lama}");
 }
 
 #[tokio::test]
@@ -312,4 +317,110 @@ async fn export_billing_pdf() {
         "keluaran bukan PDF: {}",
         &reply.body[..20.min(reply.body.len())]
     );
+}
+
+#[tokio::test]
+async fn billing_menampilkan_waktu_pelanggan_paket_dan_pc() {
+    let (_dir, st) = state("billing_kolom").await;
+    let (cookies, _uid) = admin(&st).await;
+    let hari = tmbilling_server::utils::time::today_local(&st.cfg.timezone)
+        .format("%Y-%m-%d")
+        .to_string();
+
+    let grup: i64 =
+        sqlx::query_scalar("INSERT INTO grup (nama, aktif) VALUES ('Reguler Uji', 1) RETURNING id")
+            .fetch_one(&st.pool)
+            .await
+            .unwrap();
+    let paket: i64 = sqlx::query_scalar(
+        "INSERT INTO paket (nama, durasi_menit, harga, grup_id, aktif)
+         VALUES ('Paket Uji', 60, 8000, ?, 1) RETURNING id",
+    )
+    .bind(grup)
+    .fetch_one(&st.pool)
+    .await
+    .unwrap();
+    let pc: i64 = sqlx::query_scalar(
+        "INSERT INTO pc (kode, nama, grup_id, aktif) VALUES ('PC-01', 'PC Uji', ?, 1) RETURNING id",
+    )
+    .bind(grup)
+    .fetch_one(&st.pool)
+    .await
+    .unwrap();
+    let member: i64 = sqlx::query_scalar(
+        "INSERT INTO member (username, password_hash, nama_lengkap, grup_id, aktif)
+         VALUES ('member_uji', 'x', 'Member Uji', ?, 1) RETURNING id",
+    )
+    .bind(grup)
+    .fetch_one(&st.pool)
+    .await
+    .unwrap();
+    let sesi_member: i64 = sqlx::query_scalar(
+        "INSERT INTO sesi (tipe, member_id, pc_id, paket_id, status, is_afk)
+         VALUES ('member', ?, ?, ?, 'selesai', 0) RETURNING id",
+    )
+    .bind(member)
+    .bind(pc)
+    .bind(paket)
+    .fetch_one(&st.pool)
+    .await
+    .unwrap();
+    let sesi_guest: i64 = sqlx::query_scalar(
+        "INSERT INTO sesi (tipe, pc_id, nama_guest, status, is_afk)
+         VALUES ('guest', ?, 'Budi Guest', 'selesai', 0) RETURNING id",
+    )
+    .bind(pc)
+    .fetch_one(&st.pool)
+    .await
+    .unwrap();
+    let stamp = format!("{hari} 11:00:00");
+    for (sesi, nota, jenis) in [
+        (sesi_member, "TM-uji-member", "beli_paket_member"),
+        (sesi_guest, "TM-uji-guest", "beli_paket_guest"),
+    ] {
+        let anggota = (jenis == "beli_paket_member").then_some(member);
+        sqlx::query(
+            "INSERT INTO transaksi (sesi_id, member_id, paket_id, jenis, jumlah, menit, dibuat_pada, no_nota, metode_pembayaran)
+             VALUES (?, ?, ?, ?, 8000, 60, ?, ?, 'Tunai')",
+        )
+        .bind(sesi)
+        .bind(anggota)
+        .bind(anggota.map(|_| paket))
+        .bind(jenis)
+        .bind(&stamp)
+        .bind(nota)
+        .execute(&st.pool)
+        .await
+        .unwrap();
+    }
+
+    let reply = kirim(
+        st.clone(),
+        "GET",
+        "/api/v1/kasir/report/laporan/billing",
+        None,
+        &cookies,
+        None,
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+    let body = reply.json();
+    let rows = body["data"].as_array().expect("data array");
+    let member_row = rows
+        .iter()
+        .find(|r| r["no_nota"] == "TM-uji-member")
+        .unwrap();
+    assert_eq!(member_row["nama_pelanggan"], "Member Uji", "{member_row}");
+    assert_eq!(member_row["paket_nama"], "Paket Uji", "{member_row}");
+    assert_eq!(member_row["pc_kode"], "PC-01", "{member_row}");
+    assert!(
+        member_row["waktu"].as_str().unwrap_or("").contains(':'),
+        "{member_row}"
+    );
+    let guest_row = rows
+        .iter()
+        .find(|r| r["no_nota"] == "TM-uji-guest")
+        .unwrap();
+    assert_eq!(guest_row["nama_pelanggan"], "Budi Guest", "{guest_row}");
+    assert_eq!(guest_row["pc_kode"], "PC-01", "{guest_row}");
 }

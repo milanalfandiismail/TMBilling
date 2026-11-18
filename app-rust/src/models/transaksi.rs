@@ -21,4 +21,7 @@ pub struct Transaksi {
     pub operator: Option<String>,
     pub paket_nama: Option<String>,
     pub paket_durasi_menit: Option<i64>,
+    pub member_nama: Option<String>,
+    pub guest_nama: Option<String>,
+    pub pc_kode: Option<String>,
 }

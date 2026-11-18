@@ -7,8 +7,13 @@ use crate::models::transaksi::Transaksi;
 const SELECT: &str = "SELECT t.id, t.sesi_id, t.member_id, t.paket_id, t.user_id, t.jenis, \
     COALESCE(t.jumlah, 0) AS jumlah, COALESCE(t.menit, 0) AS menit, t.keterangan, \
     t.dibuat_pada, t.no_nota, COALESCE(t.is_refunded, 0) AS is_refunded, \
-    t.metode_pembayaran, t.operator, p.nama AS paket_nama, p.durasi_menit AS paket_durasi_menit \
-    FROM transaksi t LEFT JOIN paket p ON p.id = t.paket_id";
+    t.metode_pembayaran, t.operator, p.nama AS paket_nama, p.durasi_menit AS paket_durasi_menit, \
+    COALESCE(NULLIF(m.nama_lengkap, ''), m.username) AS member_nama, \
+    s.nama_guest AS guest_nama, pck.kode AS pc_kode \
+    FROM transaksi t LEFT JOIN paket p ON p.id = t.paket_id \
+    LEFT JOIN member m ON m.id = t.member_id \
+    LEFT JOIN sesi s ON s.id = t.sesi_id \
+    LEFT JOIN pc pck ON pck.id = s.pc_id";
 
 pub async fn get_by_id(pool: &SqlitePool, id: i64) -> sqlx::Result<Option<Transaksi>> {
     sqlx::query_as::<_, Transaksi>(&format!("{SELECT} WHERE t.id = ?"))

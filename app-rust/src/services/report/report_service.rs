@@ -105,6 +105,15 @@ pub async fn billing(
                 "tanggal": r.dibuat_pada.as_deref().and_then(time::parse_dt)
                     .map(|d| time::format_display(d, tz))
                     .unwrap_or_default(),
+                "waktu": r.dibuat_pada.as_deref().and_then(time::parse_dt)
+                    .map(|d| time::format_display(d, tz))
+                    .unwrap_or_default(),
+                "pc_kode": r.pc_kode.clone().unwrap_or_else(|| "-".into()),
+                "nama_pelanggan": nama_pelanggan(r.member_nama.as_deref(), r.guest_nama.as_deref()),
+                "paket_nama": r.paket_nama.clone()
+                    .or_else(|| r.keterangan.clone())
+                    .filter(|s| !s.is_empty())
+                    .unwrap_or_else(|| "-".into()),
                 "jenis": r.jenis,
                 "keterangan": r.keterangan.clone().unwrap_or_default(),
                 "menit": r.menit,
