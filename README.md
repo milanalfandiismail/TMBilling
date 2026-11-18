@@ -61,7 +61,7 @@ c:\Project GIT\TMBilling
 │   ├── migrations/             # Skema head 24 tabel
 │   ├── packaging/              # install.bat, update.bat
 │   └── tests/                  # 12 suite contract + 6 suite unit
-├── app/                        # Backend Python 1.6.5 (BEKU) + frontend bersama
+├── app/                        # Aset frontend bersama
 │   ├── static/js/kasir/        # Modular Vanilla ES6 Frontend JS
 │   └── templates/              # Jinja2 kasir/member/tv/public
 ├── docs/                       # Master Dokumentasi
@@ -70,9 +70,7 @@ c:\Project GIT\TMBilling
 │   └── superpowers/            # Arsip rencana kerja & spesifikasi
 ├── tools/ckeditor-builder/     # Custom CKEditor 5 Build untuk CMS
 ├── WarnetAgent/                # Klien: Tauri 1.5, watchdog, monitor, uninstaller, Deploy
-├── build_release.py            # ZIP server: biner + install.bat + update.bat
 ├── build_and_deploy.bat        # Kompilasi biner klien & aset CSS
-├── scripts/rust_parity.py      # Gate paritas endpoint Python vs Rust
 ├── CHANGELOG.md
 └── README.md
 ```
@@ -83,7 +81,7 @@ c:\Project GIT\TMBilling
 ### Prasyarat Sistem:
 - **Server Billing**: Windows 10/11 / Windows Server x86_64, browser dashboard Chrome/Edge 111+ (CSS Tailwind 4 memakai OKLCH & `@property`).
 - **PC Klien Warnet**: Windows 10/11 64-bit, Microsoft Edge WebView2 Runtime.
-- **Pengembang**: Rust stable (MSVC) + Visual Studio Build Tools, Node.js 20+ (Tailwind CLI 4); Python 3.11+ hanya untuk parity gate & `build_release.py`.
+- **Pengembang**: Rust stable (MSVC) + Visual Studio Build Tools, Node.js 20+ (Tailwind CLI 4).
 
 ---
 
@@ -94,7 +92,7 @@ c:\Project GIT\TMBilling
    ```cmd
    install.bat
    ```
-   > Skrip menyalin `tmbilling-server.exe` ke folder induk dan mendaftarkan autostart login Windows (`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`). Tidak ada Python/pip yang dibutuhkan.
+   > Skrip menyalin `tmbilling-server.exe` ke folder induk dan mendaftarkan autostart login Windows (`HKCU\Software\Microsoft\Windows\CurrentVersion\Run`).
 3. **Menyalakan Server**:
    ```cmd
    tmbilling-server.exe
@@ -115,13 +113,13 @@ c:\Project GIT\TMBilling
      ```
      atau drag-and-drop ZIP ke `update.bat`.
 
-> **Jalur Python 1.6.5 (beku)**: `install.bat`, `start.bat`, `stop.bat`, `update.bat`, `run.py`, dan `install_scripts/` di root masih mempertahankan alur Flask lama sebagai acuan 1:1. Untuk instalasi baru gunakan paket Rust di atas.
+> Instalasi baru selalu memakai paket Rust di atas; tidak ada jalur server lain.
 
 ---
 ### 2. Setup & Instalasi WarnetAgent (PC Klien Warnet)
 
 1. **Unduh Paket Klien**:
-   Unduh paket rilis klien terbaru (misal: `TMBilling_Client_v1.6.5.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak ke PC Klien *(atau salin isi folder `WarnetAgent\Deploy` jika Anda mengunduh full repository)*.
+   Unduh paket rilis klien terbaru (misal: `TMBilling_Client_v<versi>.zip`) dari halaman **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)** lalu ekstrak ke PC Klien *(atau salin isi folder `WarnetAgent\Deploy` jika Anda mengunduh full repository)*.
 2. Klik kanan **`install.bat`** lalu pilih **Run as administrator** (atau jalankan biasa).
 3. Masukkan **IP Server Billing** saat diminta (contoh: `192.168.1.100`). Port default `7015` akan otomatis digunakan *(kecuali jika Anda mengubah port server billing, Anda dapat memasukkan format `IP:PORT`, contoh: `192.168.1.100:8080`)*. Masukkan juga **API Key** yang dapat Anda cek dan kelola di dashboard server melalui menu **Sidebar > Pengaturan > Umum & Keamanan > API Key System (Client API Key)**.
 
@@ -167,28 +165,20 @@ c:\Project GIT\TMBilling
    cargo test -j 2 -- --test-threads=2
    ```
    > 12 suite kontrak (`tests/contract/`) + 6 suite unit (`tests/unit/`). Satu suite: `cargo test --test sesi_test -- --nocapture`.
-4. **Gate Paritas Endpoint**:
-   ```cmd
-   .venv\Scripts\python.exe scripts\rust_parity.py
-   ```
-   > Wajib mencetak `Hanya di Python : 0` sebelum rilis. Butuh virtual environment Python berisi dependensi `requirements.txt`.
-5. **Merilis Paket Server**:
-   ```cmd
-   .venv\Scripts\python.exe build_release.py
-   ```
-   > Menghasilkan `TMBilling_Server_v2.0.3.zip` berisi biner, `install.bat`, `update.bat`, dan `SHA256SUMS.txt`.
-6. **Frontend & Klien**:
+4. **Merilis Paket Server**:
+   Artefak rilis: `tmbilling-server.exe`, `app-rust/packaging/install.bat`, `app-rust/packaging/update.bat`, dan `SHA256SUMS.txt`.
+5. **Frontend & Klien**:
    ```cmd
    npm install
    npm run build:css
    build_and_deploy.bat
    ```
    > `build_and_deploy.bat` mengompilasi seluruh modul klien Rust/Tauri, `TMLHMService`, dan menyalin biner ke `WarnetAgent\Deploy\`.
-7. **E2E Browser (Playwright)**:
+6. **E2E Browser (Playwright)**:
    ```powershell
    npm run test:e2e
    ```
-   > 15 suite Chromium berjalan paralel memakai sandbox Python terisolasi (database, port, catatan, backup sendiri); DB produksi dijaga guard sha256.
+   > 15 suite Chromium berjalan paralel dengan sandbox terisolasi (database, port, catatan, backup sendiri); DB produksi dijaga guard sha256.
 
 ---
 ## 📚 Navigasi Dokumentasi
