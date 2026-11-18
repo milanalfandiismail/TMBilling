@@ -6,6 +6,11 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [2.0.1] - 2026-11-18
+
+### Fixed
+- CSRF token basi di tab lama: header X-CSRFToken kini dibaca dari cookie csrf_token (double-submit), bukan meta yang bisa tertinggal setelah login ulang; versi cache aset dinaikkan agar browser memuat JS baru.
+
 ## [2.0.0] - 2026-11-17 - Backend Rust
 
 ### Rewrite backend penuh ke Rust (biner tunggal)

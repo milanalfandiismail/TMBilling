@@ -61,7 +61,7 @@
             const errorBox = document.getElementById('error-box');
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
-            const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+            const csrfToken = (document.cookie.match(/(?:^|; )csrf_token=([^;]+)/) || [])[1] || document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
             if (!username || !password) {
                 showError('Username dan password wajib diisi');

@@ -148,8 +148,7 @@ const SettingsNetwork = {
 
     async _wlFetch(method, path, body) {
         const headers = { 'Content-Type': 'application/json' };
-        const csrfMeta = document.querySelector('meta[name="csrf-token"]');
-        if (csrfMeta) headers['X-CSRFToken'] = csrfMeta.content;
+        headers['X-CSRFToken'] = API.csrfToken();
         const opts = { method, headers };
         if (body) opts.body = JSON.stringify(body);
         const res = await fetch(path, opts);

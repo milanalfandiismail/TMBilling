@@ -36,7 +36,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 async function submitLogout() {
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    const csrfToken = (document.cookie.match(/(?:^|; )csrf_token=([^;]+)/) || [])[1] || document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     try {
         const res = await fetch('/member/logout', {
             method: 'POST',

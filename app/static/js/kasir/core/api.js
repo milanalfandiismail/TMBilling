@@ -2,6 +2,13 @@
 
 const API = {
     base: '',
+
+    // Double-submit: server membandingkan cookie & header, jadi cookie sumber benar
+    // (meta bisa basi setelah login ulang di tab lain).
+    csrfToken() {
+        const m = document.cookie.match(/(?:^|; )csrf_token=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : (document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '');
+    },
     async request(url, options = {}) {
         try {
             const method = (options.method || 'GET').toUpperCase();
@@ -17,7 +24,7 @@ const API = {
 
             // Tambahkan CSRF Token untuk metode yang mengubah data
             if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                const csrfToken = API.csrfToken();
                 if (csrfToken) {
                     headers['X-CSRFToken'] = csrfToken;
                 }

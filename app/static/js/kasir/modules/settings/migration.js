@@ -558,7 +558,7 @@ const MigrationModule = {
         try {
             let res;
             if (isFormData) {
-                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                const csrfToken = API.csrfToken();
                 const fetchRes = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'X-CSRFToken': csrfToken },
