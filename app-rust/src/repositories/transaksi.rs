@@ -219,13 +219,16 @@ pub async fn history_paginated(
     offset: i64,
 ) -> sqlx::Result<(Vec<Transaksi>, i64)> {
     let (clause, binds) = filter_sql(tanggal, kasir_id, metode, q);
+    // Sama seperti Python: nota tutup sesi (no_nota NULL) bukan baris laporan billing.
     let total = scalar(
-        &format!("SELECT COUNT(*) FROM transaksi t WHERE 1=1{clause}"),
+        &format!("SELECT COUNT(*) FROM transaksi t WHERE t.no_nota IS NOT NULL{clause}"),
         &binds,
         pool,
     )
     .await?;
-    let sql = format!("{SELECT} WHERE 1=1{clause} ORDER BY t.id DESC LIMIT ? OFFSET ?");
+    let sql = format!(
+        "{SELECT} WHERE t.no_nota IS NOT NULL{clause} ORDER BY t.id DESC LIMIT ? OFFSET ?"
+    );
     let mut s = sqlx::query_as::<_, Transaksi>(&sql);
     for b in &binds {
         s = s.bind(b.clone());

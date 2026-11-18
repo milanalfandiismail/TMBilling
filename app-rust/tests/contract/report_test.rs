@@ -394,6 +394,17 @@ async fn billing_menampilkan_waktu_pelanggan_paket_dan_pc() {
         .unwrap();
     }
 
+    // Sesi guest ditutup admin: nota tutup_sesi tanpa nomor tidak boleh muncul.
+    sqlx::query(
+        "INSERT INTO transaksi (sesi_id, jenis, jumlah, menit, dibuat_pada, operator)
+         VALUES (?, 'tutup_sesi', 0, 0, ?, 'admin')",
+    )
+    .bind(sesi_guest)
+    .bind(&stamp)
+    .execute(&st.pool)
+    .await
+    .unwrap();
+
     let reply = kirim(
         st.clone(),
         "GET",
@@ -405,7 +416,12 @@ async fn billing_menampilkan_waktu_pelanggan_paket_dan_pc() {
     .await;
     assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
     let body = reply.json();
+    assert_eq!(body["total"], 2, "hanya nota bernomor: {}", body);
     let rows = body["data"].as_array().expect("data array");
+    assert!(
+        rows.iter().all(|r| r["jenis"] != "tutup_sesi"),
+        "tutup_sesi bocor: {body}"
+    );
     let member_row = rows
         .iter()
         .find(|r| r["no_nota"] == "TM-uji-member")
