@@ -42,3 +42,10 @@ fn secret_key_bertahan_antar_load() {
     assert_eq!(a.len(), 64);
     assert_eq!(a, b, "kunci harus dibaca ulang dari .env");
 }
+
+#[test]
+fn cache_version_aset_ikut_isi_berkas() {
+    let v = tmbilling_server::assets::cache_version();
+    assert!(!v.is_empty());
+    assert_ne!(v, env!("CARGO_PKG_VERSION").replace('.', ""));
+}

@@ -24,7 +24,7 @@ pub(crate) async fn dasar(st: &AppState) -> Value {
         "gmaps_info": ambil("warnet_gmaps", "").await,
         "page_title": "TMBilling",
         "version": st.cfg.version,
-        "v_cache": st.cfg.cache_version(),
+        "v_cache": crate::assets::cache_version(),
     })
 }
 

@@ -37,3 +37,24 @@ pub fn content_type(path: &str) -> &'static str {
         _ => "application/octet-stream",
     }
 }
+
+/// Versi cache untuk aset aplikasi (js/css): berubah setiap kali isinya berubah,
+/// sehingga `?v=` di template tidak pernah menahan JS lama di cache immutable.
+pub fn cache_version() -> &'static str {
+    use std::hash::{Hash, Hasher};
+    static V: std::sync::OnceLock<String> = std::sync::OnceLock::new();
+    V.get_or_init(|| {
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        let mut paths: Vec<_> = StaticAssets::iter()
+            .filter(|p| p.starts_with("js/") || p.starts_with("css/"))
+            .collect();
+        paths.sort();
+        for p in paths {
+            p.hash(&mut h);
+            if let Some(f) = StaticAssets::get(&p) {
+                f.data.hash(&mut h);
+            }
+        }
+        format!("{:x}", h.finish())
+    })
+}
