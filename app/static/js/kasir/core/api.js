@@ -55,8 +55,18 @@ const API = {
                     }
                 }
 
+                // Cookie CSRF hilang/berubah: muat ulang sekali agar halaman menerbitkan
+                // token baru, tanpa perlu clear cookie manual.
+                if (res.status === 400 && data && typeof data.error === 'string' && data.error.includes('CSRF')) {
+                    if (!sessionStorage.getItem('tm_csrf_reload')) {
+                        sessionStorage.setItem('tm_csrf_reload', '1');
+                        window.location.reload();
+                        return;
+                    }
+                }
                 throw new Error(data.error || `HTTP ${res.status}`);
             }
+            sessionStorage.removeItem('tm_csrf_reload');
             return data;
         } catch (err) {
             console.error(`API Error [${url}]:`, err);
