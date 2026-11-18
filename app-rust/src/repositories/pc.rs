@@ -113,7 +113,7 @@ pub async fn sesi_map(
         Option<i64>,
         Option<i64>,
     )> = sqlx::query_as(
-        "SELECT s.pc_id, s.id, s.tipe, s.nama_guest, COALESCE(m.nama_lengkap, m.username), \
+        "SELECT s.pc_id, s.id, s.tipe, s.nama_guest, COALESCE(NULLIF(TRIM(m.nama_lengkap), ''), m.username), \
          s.waktu_tersimpan_awal, s.is_afk, s.mulai_pada, s.durasi_beli_menit, \
          CASE \
            WHEN s.tipe = 'guest' THEN MAX(0, s.durasi_beli_menit - CAST((julianday('now') - julianday(s.mulai_pada)) * 1440 AS INTEGER)) \

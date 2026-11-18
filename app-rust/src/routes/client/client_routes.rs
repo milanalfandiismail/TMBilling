@@ -359,7 +359,12 @@ pub async fn fast_poll(
             &format!("Perintah cepat [{c}] diambil oleh PC {kode} ({ip})"),
         );
     }
-    http::json(200, json!({"success": true, "command": cmd}))
+    // Klien mem-parse objek JSON (vnc_start) dari field ini; kalau dikirim sebagai
+    // string, cabang as_str() menang dan perintah VNC tidak pernah dieksekusi.
+    let command = cmd.map(|c| {
+        serde_json::from_str::<serde_json::Value>(&c).unwrap_or(serde_json::Value::String(c))
+    });
+    http::json(200, json!({"success": true, "command": command}))
 }
 
 pub async fn vnc_ready(

@@ -51,3 +51,21 @@ Total: `pytest tests/e2e/client -q` 34 lulus; `cargo test --release -j 16` 87 lu
 | Dashboard menampilkan "Guest 0 menit" untuk sesi member | `sesi_map` menghitung sisa dari `durasi_beli_menit` (0 untuk member) dan `nama` hanya `nama_guest` | SQL per tipe (`waktu_tersimpan_awal` untuk member) + `member_nama` di `sesi_detail` | `test_dashboard_member.py` |
 | VNC tetap gagal walau TightVNC hidup | proxy hanya mulai setelah `vnc_ready` | `client_start` probe port 5900 lalu `start_proxy` langsung | `test_vnc_start_proxy.py` |
 | Sulit memastikan biner produksi terbaru | tidak ada versi di health | `GET /api/health` memuat `version` | `test_dashboard_member.py::test_health_memuat_versi` |
+
+## Verifikasi lapangan 2026-11-18 (PC WEW-1 192.168.180.10)
+
+Server produksi `0.0.0.0:7015` (cwd `app-rust`), biner diganti 2.0.3. Klien TMMonitor nyata terhubung.
+
+| Kasus | Sebelum | Sesudah |
+|---|---|---|
+| Nama member di dashboard | `""` → kartu "Guest" | `milan` (member 114, `nama_lengkap` kosong → username) |
+| Remote control | toast "Proxy VNC tidak siap. Periksa service websockify di server." | 8 dtk: status `VNC_CLIENT_READY`, proxy 8081 LISTEN, noVNC canvas 1920x1080 "Terhubung" |
+| Ambil gambar | trigger terkirim, berkas tidak ada | `instance/uploads/screenshots/WEW-1.png` 801 KB + log `SCREENSHOT_UPLOAD` |
+| Login member kiosk | sesi langsung berakhir | `POST /api/v1/public/auth/login` → `is_member:true`, sesi 580 aktif (member 115, 30 mnt) sampai ditutup manual |
+
+Bukti log server: `FAST_COMMAND_DISPATCHED [{"type":"vnc_start",...}]` → 2 detik kemudian
+`VNC_CLIENT_READY`. Akar masalah: `fast_poll` mengirim perintah sebagai string JSON, sehingga
+TMMonitor memilih cabang `as_str()` dan tidak pernah masuk penanganan `vnc_start`.
+
+Regresi: `pytest tests/e2e/client -q` → 39 lulus (termasuk 2 test baru: fallback nama member,
+`fast_poll` mengirim objek).

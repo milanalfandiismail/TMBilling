@@ -6,6 +6,17 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [2.0.3] - 2026-11-18
+
+### Fixed
+- Remote control (VNC) tidak pernah dieksekusi klien: `fast_poll` mengirim perintah
+  `{"type":"vnc_start",...}` sebagai string JSON, sehingga TMMonitor jatuh ke cabang
+  `as_str()` dan perintah VNC tidak dikenali. Perintah kini diparse lalu dikirim
+  sebagai objek JSON (perintah teks biasa seperti `screenshot`/`kill:` tetap string).
+- Dashboard menampilkan "Guest" untuk member tanpa `nama_lengkap`: SQL dashboard
+  memakai `COALESCE(nama_lengkap, username)` yang tidak menangani string kosong;
+  kini `COALESCE(NULLIF(TRIM(nama_lengkap), ''), username)`.
+
 ## [2.0.2] - 2026-11-18
 
 ### Fixed
