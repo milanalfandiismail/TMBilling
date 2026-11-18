@@ -52,7 +52,7 @@
    - [4.29 Standardized Skeleton Loader Engine v1.6.3 di Seluruh Tab Kasir](#429-standardized-skeleton-loader-engine-v163-di-seluruh-tab-kasir)
    - [4.30 In-Place Reactive Rerender & Zero Page Reload Engine](#430-in-place-reactive-rerender--zero-page-reload-engine)
    - [4.31 Zero-Config Security & Credential Bootstrap Architecture](#431-zero-config-security--credential-bootstrap-architecture)
-5. [Panduan Teknis Backend (Flask & Python)](#5-panduan-teknis-backend-flask--python)
+5. [Panduan Teknis Backend Rust (axum & sqlx)](#5-panduan-teknis-backend-rust-axum--sqlx)
    - [5.1 Modul Routing Rust (27 Domain / 245 Route)](#51-modul-routing-rust)
    - [5.2 Service, Repository & Pola Arsitektur](#52-service-repository--pola-arsitektur)
    - [5.3 Skema Database (24 Tabel)](#53-skema-database-24-tabel)
@@ -81,7 +81,7 @@
 2. **Ironclad Anti-Tamper**: Klien warnet diproteksi berlapis (Tauri 1.5 Rust + Win32 API hooks + Dual-Hive Registry SHA-256 Hashes + Watchdog Daemon terpisah) agar tidak bisa di-bypass oleh software cheat, Task Manager, ataupun penggantian file binary.
 3. **Triple-Layer Session Protection**: Penutupan dan pemotongan sesi billing kadaluwarsa dilindungi secara berlapis: Layer 1 (Background Scheduler 60s), Layer 2 (Client Polling 1-3s), dan Layer 3 (Kasir Dashboard Polling 1, 2, 3, 5s).
 4. **Remote Operation & Cloud Access**: Owner atau operator dapat mengawasi, mengontrol, dan memantau billing secara aman melalui Cloudflare Tunnel & TightVNC Remote tanpa memerlukan IP publik statis.
-5. **Clean SoC & Zero-Slop Architecture**: Backend Flask terstruktur dengan *Clean Architecture* (Routes -> Services -> Repositories -> Models), Frontend menggunakan Vanilla JS modular tanpa framework berat, dan Klien Kiosk menggunakan Rust + Webview2 yang sangat hemat memori.
+5. **Clean SoC & Zero-Slop Architecture**: Backend Rust (axum) terstruktur dengan *Clean Architecture* (Routes -> Services -> Repositories -> Models), Frontend menggunakan Vanilla JS modular tanpa framework berat, dan Klien Kiosk menggunakan Rust + Webview2 yang sangat hemat memori.
 
 ---
 
