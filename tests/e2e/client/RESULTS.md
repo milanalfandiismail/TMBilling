@@ -69,3 +69,17 @@ TMMonitor memilih cabang `as_str()` dan tidak pernah masuk penanganan `vnc_start
 
 Regresi: `pytest tests/e2e/client -q` → 39 lulus (termasuk 2 test baru: fallback nama member,
 `fast_poll` mengirim objek).
+
+## Restart/Shutdown dari Detail PC (2026-11-18)
+
+Akar masalah: `remote_action` dan `remote_batch` menaruh `restart`/`shutdown` di antrean **fast**
+(`app-rust/src/routes/monitor/monitor_routes.rs`), padahal antrean fast dikonsumsi `TMMonitor.exe`
+yang hanya mengenal `kill:`, `vnc_start`, `vnc_stop`, `refresh_processes`. Eksekusi `shutdown /r`
+ada di aplikasi Tauri (`WarnetAgent/TMBillingTauri/src-tauri/src/services/polling.rs:107-125`) yang
+membaca antrean **reguler** lewat `/api/v1/public/client/status`. Akibatnya perintah diambil lalu
+dibuang, sementara UI sudah menampilkan toast sukses.
+
+Perbaikan: kedua call site memakai `state.commands.regular`. Bukti
+`tests/e2e/client/test_remote_power_queue.py` (3 kasus: restart, shutdown, batch) — gagal pada biner
+lama, lulus setelah perbaikan; suite klien 42 lulus. PC nyata `WEW-*` sengaja tidak di-reboot saat
+verifikasi.

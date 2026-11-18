@@ -494,7 +494,8 @@ pub async fn remote_action(
             "Aksi operasional (Restart/Shutdown) tidak diizinkan pada PC dalam mode SYSTEM",
         );
     }
-    state.commands.fast.push(pc.id, &action);
+    // Dieksekusi aplikasi Tauri dari antrean reguler; TMMonitor tidak mengenal restart/shutdown.
+    state.commands.regular.push(pc.id, &action);
     let label = if action == "shutdown" {
         "Shutdown"
     } else {
@@ -554,7 +555,8 @@ pub async fn remote_batch(State(state): St, kasir: Kasir, body: Bytes) -> Respon
             }));
             continue;
         }
-        state.commands.fast.push(pc.id, action);
+        // Batch memakai antrean yang sama dengan aksi tunggal (dibaca aplikasi Tauri).
+        state.commands.regular.push(pc.id, action);
         logger::rec(
             &kasir.user.username,
             "REMOTE_ACTION_BATCH",
