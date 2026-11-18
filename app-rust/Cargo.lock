@@ -2399,6 +2399,7 @@ dependencies = [
  "hmac",
  "http-body-util",
  "image",
+ "md-5",
  "minijinja",
  "pbkdf2",
  "printpdf",
