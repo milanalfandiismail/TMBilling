@@ -328,3 +328,43 @@ async fn logout_menghapus_cookie_sesi() {
         .any(|c| c.starts_with("tm_session=;") && c.contains("Max-Age=0"));
     assert!(cleared, "cookie sesi harus dikosongkan");
 }
+
+#[tokio::test]
+async fn halaman_kasir_menerbitkan_ulang_cookie_csrf_yang_hilang() {
+    let (_dir, st) = state("csrf_heal").await;
+    let reply = login(st.clone(), "admin", "rahasia123").await;
+    let session = cookie_of(&reply.headers, "tm_session").expect("cookie sesi");
+
+    // Browser membuang cookie csrf (session cookie); tm_session tetap hidup.
+    let page = send(
+        st.clone(),
+        "GET",
+        "/kasir/",
+        &format!("tm_session={session}"),
+        None,
+        None,
+    )
+    .await;
+    assert_eq!(page.status, StatusCode::OK, "{}", page.body);
+    let csrf = cookie_of(&page.headers, "csrf_token").expect("cookie csrf diterbitkan ulang");
+    let raw = page
+        .headers
+        .get_all("set-cookie")
+        .iter()
+        .filter_map(|v| v.to_str().ok())
+        .find(|c| c.starts_with("csrf_token="))
+        .unwrap();
+    assert!(raw.contains("Max-Age=86400"), "{raw}");
+    assert!(page.body.contains(&csrf), "meta csrf harus sama dengan cookie");
+
+    let logout = send(
+        st,
+        "POST",
+        "/api/v1/kasir/auth/logout",
+        &format!("tm_session={session}; csrf_token={csrf}"),
+        Some(&csrf),
+        None,
+    )
+    .await;
+    assert_eq!(logout.status, StatusCode::OK, "{}", logout.body);
+}

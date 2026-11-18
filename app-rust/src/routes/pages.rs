@@ -43,6 +43,17 @@ pub(crate) fn halaman(nama: &str, ctx: Value, csrf: &str) -> Response {
     }
 }
 
+/// Halaman HTML yang menerbitkan ulang cookie CSRF bila browser sudah membuangnya.
+pub(crate) fn halaman_csrf(nama: &str, ctx: Value, headers: &HeaderMap) -> Response {
+    let (token, cookie) = crate::middleware::csrf::ensure_cookie(headers);
+    let mut res = halaman(nama, ctx, &token);
+    if let Some(v) = cookie.and_then(|c| c.parse().ok()) {
+        res.headers_mut()
+            .append(axum::http::header::SET_COOKIE, v);
+    }
+    res
+}
+
 fn gabung(ctx: &mut Value, tambahan: Value) {
     if let (Some(a), Some(b)) = (ctx.as_object_mut(), tambahan.as_object()) {
         a.extend(b.clone());
@@ -375,11 +386,7 @@ pub async fn kasir_index(
             },
         }),
     );
-    halaman(
-        "kasir/index.html",
-        ctx,
-        &crate::utils::http::cookie(&headers, "csrf_token").unwrap_or_default(),
-    )
+    halaman_csrf("kasir/index.html", ctx, &headers)
 }
 
 pub async fn documentation(
@@ -391,9 +398,5 @@ pub async fn documentation(
     };
     let mut ctx = dasar(&st).await;
     gabung(&mut ctx, json!({"session": {"username": sesi.uname}}));
-    halaman(
-        "kasir/documentation.html",
-        ctx,
-        &crate::utils::http::cookie(&headers, "csrf_token").unwrap_or_default(),
-    )
+    halaman_csrf("kasir/documentation.html", ctx, &headers)
 }

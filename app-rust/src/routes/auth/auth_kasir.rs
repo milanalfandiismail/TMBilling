@@ -179,16 +179,8 @@ pub async fn admin_check(
 
 /// Halaman login: render template dan kirim cookie CSRF yang sama dengan meta.
 pub async fn login_page(State(state): State<Arc<AppState>>, headers: HeaderMap) -> Response {
-    use crate::routes::pages::{dasar, halaman};
-    let ada_cookie = crate::utils::http::cookie(&headers, csrf::COOKIE).is_some();
-    let token = crate::utils::http::cookie(&headers, csrf::COOKIE).unwrap_or_else(csrf::new_token);
-    let mut res = halaman("kasir/login.html", dasar(&state).await, &token);
-    if !ada_cookie {
-        if let Ok(v) = csrf::cookie_header(&token).parse() {
-            res.headers_mut().append(axum::http::header::SET_COOKIE, v);
-        }
-    }
-    res
+    use crate::routes::pages::{dasar, halaman_csrf};
+    halaman_csrf("kasir/login.html", dasar(&state).await, &headers)
 }
 
 pub async fn not_found() -> StatusCode {

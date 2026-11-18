@@ -22,14 +22,22 @@ pub fn new_token() -> String {
 }
 
 pub fn cookie_header(token: &str) -> String {
-    format!("{COOKIE}={token}; Path=/; SameSite=Lax")
+    // Umur sama dengan sesi: cookie sesi-browser hilang lebih cepat dari login.
+    format!(
+        "{COOKIE}={token}; Path=/; SameSite=Lax; Max-Age={}",
+        crate::middleware::auth::SESSION_TTL_SECONDS
+    )
 }
 
-/// Cookie CSRF baru bila belum ada di request (dipakai halaman login).
-pub fn ensure_cookie(headers: &HeaderMap) -> Option<String> {
-    crate::utils::http::cookie(headers, COOKIE)
-        .is_none()
-        .then(|| cookie_header(&new_token()))
+/// Token untuk meta + Set-Cookie bila request belum membawa cookie CSRF.
+pub fn ensure_cookie(headers: &HeaderMap) -> (String, Option<String>) {
+    match crate::utils::http::cookie(headers, COOKIE).filter(|t| !t.is_empty()) {
+        Some(token) => (token, None),
+        None => {
+            let token = new_token();
+            (token.clone(), Some(cookie_header(&token)))
+        }
+    }
 }
 
 fn same(a: &str, b: &str) -> bool {
