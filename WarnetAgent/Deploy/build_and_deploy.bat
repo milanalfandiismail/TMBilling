@@ -9,7 +9,7 @@ echo.
 set "DEPLOY_DIR=%~dp0"
 
 echo [1/5] Memulai kompilasi Tauri Client (TMBilling)...
-cd /d "%DEPLOY_DIR%..\TMBillingTauri"
+cd /d "%DEPLOY_DIR%..\TMBilling"
 call npm run tauri build
 if %ERRORLEVEL% NEQ 0 (
     echo.

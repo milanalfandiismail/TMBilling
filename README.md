@@ -58,17 +58,17 @@ c:\Project GIT\TMBilling
 ├── app-rust/                   # Backend Rust 2.0.3 (biner tmbilling-server.exe)
 │   ├── Cargo.toml              # Single Source of Version (2.0.3)
 │   ├── src/                    # routes/, services/, repositories/, models/, cache/, db/
+│   ├── app/                    # Aset frontend yang di-embed ke biner
+│   │   ├── static/             # Modular Vanilla ES6 JS, CSS, vendor, upload
+│   │   └── templates/          # Jinja2 kasir/member/tv/public
 │   ├── migrations/             # Skema head 24 tabel
 │   ├── packaging/              # install.bat, update.bat
+│   ├── WarnetAgent/            # Klien: Tauri 1.5, watchdog, monitor, uninstaller, Deploy
 │   └── tests/                  # 12 suite contract + 6 suite unit
-├── app/                        # Aset frontend bersama
-│   ├── static/js/kasir/        # Modular Vanilla ES6 Frontend JS
-│   └── templates/              # Jinja2 kasir/member/tv/public
+├── archive-1.6.5/              # Server Python 1.6.5 (beku, acuan migrasi)
 ├── docs/                       # Dokumentasi operasional
 │   ├── RUST_MIGRATION.md       # Arsitektur, upgrade & rollback
 │   └── superpowers/            # Arsip rencana kerja & spesifikasi
-├── tools/ckeditor-builder/     # Custom CKEditor 5 Build untuk CMS
-├── WarnetAgent/                # Klien: Tauri 1.5, watchdog, monitor, uninstaller, Deploy
 ├── build_and_deploy.bat        # Kompilasi biner klien & aset CSS
 ├── CHANGELOG.md
 └── README.md
@@ -172,7 +172,7 @@ c:\Project GIT\TMBilling
    npm run build:css
    build_and_deploy.bat
    ```
-   > `build_and_deploy.bat` mengompilasi seluruh modul klien Rust/Tauri, `TMLHMService`, dan menyalin biner ke `WarnetAgent\Deploy\`.
+   > `build_and_deploy.bat` mengompilasi seluruh modul klien Rust/Tauri, `TMLHMService`, dan menyalin biner ke `app-rust\WarnetAgent\Deploy\`.
 6. **E2E Browser (Playwright)**:
    ```powershell
    npm run test:e2e

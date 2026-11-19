@@ -60,7 +60,7 @@
    - [6.1 Arsitektur Core JS (`core/`)](#61-arsitektur-core-js)
    - [6.2 Modul-Modul Fitur Kasir (`modules/`)](#62-modul-modul-fitur-kasir)
 7. [Panduan Teknis WarnetAgent (Tauri 1.5 Rust Core)](#7-panduan-teknis-warnetagent-tauri-15-rust-core)
-   - [7.1 TMBillingTauri (Client Lock & Overlay)](#71-tmbillingtauri)
+   - [7.1 TMBilling (Client Lock & Overlay)](#71-tmbilling)
    - [7.2 MGCTM Watchdog Daemon](#72-mgctm-watchdog-daemon)
    - [7.3 mtm (Auxiliary Watchdog & Resilience Guard)](#73-mtm-auxiliary-watchdog--resilience-guard)
    - [7.4 TMMonitor & HardwareHelper / TMLHMService](#74-tmmonitor--hardwarehelper--tmlhmservice)
@@ -609,9 +609,9 @@ Terletak di `app/static/js/kasir/modules/`:
 
 Klien warnet berlokasi di direktori `WarnetAgent/` dan terdiri dari 5 binary utama berbasis Rust serta script pendukung:
 
-### 7.1 TMBillingTauri
-- **Teknologi**: Rust + Tauri 1.5 (`WarnetAgent/TMBillingTauri/src-tauri/`).
-- **UI Frontend**: HTML5/CSS murni di `WarnetAgent/TMBillingTauri/src/` (Kiosk Lockscreen, Overlay Bar, Admin Unlock Dialog).
+### 7.1 TMBilling
+- **Teknologi**: Rust + Tauri 1.5 (`WarnetAgent/TMBilling/src-tauri/`).
+- **UI Frontend**: HTML5/CSS murni di `WarnetAgent/TMBilling/src/` (Kiosk Lockscreen, Overlay Bar, Admin Unlock Dialog).
 - **Commands IPC**:
   - `lock_pc`: Mengunci layar dan mengaktifkan proteksi antarmuka.
   - `unlock_pc`: Membuka kunci desktop Windows setelah sesi dibuka di kasir.
@@ -831,7 +831,7 @@ Repositori menyediakan skrip batch untuk instalasi server dan build aset:
 | :--- | :--- | :--- |
 | **`install.bat`** | `app-rust/packaging/` | Menyalin `tmbilling-server.exe`, menyiapkan direktori runtime, dan mendaftarkan autostart `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`. |
 | **`update.bat`** | `app-rust/packaging/` | Meneruskan ZIP ke `tmbilling-server.exe --apply-update` (CLI atau drag-and-drop). |
-| **`build_and_deploy.bat`** | Root (`/`) | Kompilasi seluruh binary klien Rust (`TMBillingTauri`, `TMBilling_Monitor`, `MGCTM`, `TMBilling_Uninstaller`, `mtm`, `TMLHMService`) dan menyalin binary rilis ke `WarnetAgent/Deploy/`. |
+| **`build_and_deploy.bat`** | Root (`/`) | Kompilasi seluruh binary klien Rust (`TMBilling`, `TMBilling_Monitor`, `MGCTM`, `TMBilling_Uninstaller`, `mtm`, `TMLHMService`) dan menyalin binary rilis ke `WarnetAgent/Deploy/`. |
 | **`install.bat`** | `WarnetAgent/Deploy/` | Instalasi otomatis klien PC warnet (konfigurasi IP server, registry, firewall, startup). |
 | **`uninstall.bat`** | `WarnetAgent/Deploy/` | Uninstalasi aman klien warnet via `TMBilling_Uninstaller.exe`. |
 | **`allow_firewall.bat`** | `WarnetAgent/Deploy/` | Konfigurasi aturan Windows Defender Firewall port 5900 TightVNC. |

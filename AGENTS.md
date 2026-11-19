@@ -1,6 +1,6 @@
 # TMBilling: Peta Repo (ringkas)
 
-Sistem Manajemen Billing Warnet & Game Center. Backend aktif: biner Rust `app-rust/` (axum + sqlx + SQLite WAL). Frontend Modular ES6 ada di `app/static/` dan `app/templates/`. Klien PC ada di `WarnetAgent/`.
+Sistem Manajemen Billing Warnet & Game Center. Backend aktif: biner Rust `app-rust/` (axum + sqlx + SQLite WAL). Frontend Modular ES6 ada di `app-rust/app/static/` dan `app-rust/app/templates/` (di-embed ke biner). Klien PC ada di `WarnetAgent/`. Server Python 1.6.5 dibekukan di `archive-1.6.5/` (referensi migrasi, bukan runtime).
 
 Dokumen acuan lengkap (WAJIB dibaca sebelum menyentuh kode):
 

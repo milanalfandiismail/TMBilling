@@ -3,11 +3,11 @@
 use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]
-#[folder = "../app/static"]
+#[folder = "app/static"]
 pub struct StaticAssets;
 
 #[derive(RustEmbed)]
-#[folder = "../app/templates"]
+#[folder = "app/templates"]
 pub struct TemplateAssets;
 
 /// Content-Type dari ekstensi berkas; cukup untuk aset yang dipakai dashboard.

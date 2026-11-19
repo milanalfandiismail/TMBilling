@@ -102,7 +102,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 
 | Direktori / Biner | Tanggung Jawab & Cakupan |
 |---|---|
-| `TMBillingTauri/` | Klien utama: UI kiosk lockscreen (`src/kiosk/`) & overlay (`src/overlay/`), Rust backend (`src-tauri/`) dengan Win32 hooks. `src/main.js` loop konfigurasi (60 dtk sehat / 5 dtk gagal, event `tm:refresh-config`), QRIS data URI di RAM (`qris_memory.rs`). Kredensial darurat dari registry/`config.ini`, fail-closed bila kosong. |
+| `TMBilling/` | Klien utama: UI kiosk lockscreen (`src/kiosk/`) & overlay (`src/overlay/`), Rust backend (`src-tauri/`) dengan Win32 hooks. `src/main.js` loop konfigurasi (60 dtk sehat / 5 dtk gagal, event `tm:refresh-config`), QRIS data URI di RAM (`qris_memory.rs`). Kredensial darurat dari registry/`config.ini`, fail-closed bila kosong. |
 | `MGCTM/` | Watchdog C++ pengawas `TMBilling.exe`. |
 | `mtm/` | Auxiliary watchdog & resilience guard. |
 | `TMBilling_Monitor/` | Telemetri Rust + `HardwareHelper.exe` (LibreHardwareMonitor): CPU/GPU load & temp, RAM, active window, NIC speed. |

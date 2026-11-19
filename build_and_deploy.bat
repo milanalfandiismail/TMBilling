@@ -9,12 +9,12 @@ echo.
 set "CURRENT_DIR=%~dp0"
 
 echo [1/5] Memulai kompilasi Tauri Client (TMBilling)...
-cd /d "%CURRENT_DIR%WarnetAgent\TMBillingTauri"
+cd /d "%CURRENT_DIR%WarnetAgent\TMBilling"
 if not exist "%CURRENT_DIR%WarnetAgent\TMBillingTauri\node_modules\" (
-    echo [INFO] node_modules belum ditemukan di TMBillingTauri, menjalankan npm install...
+    echo [INFO] node_modules belum ditemukan di TMBilling, menjalankan npm install...
     call npm install
     if %ERRORLEVEL% NEQ 0 (
-        echo [ERROR] Gagal melakukan npm install di TMBillingTauri!
+        echo [ERROR] Gagal melakukan npm install di TMBilling!
         pause
         exit /b %ERRORLEVEL%
     )
@@ -62,7 +62,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 echo.
 echo [2.5/5] Memulai kompilasi TMLHMService (C# Microservice untuk TMBilling Server)...
-cd /d "%CURRENT_DIR%app\services\server_monitor"
+cd /d "%CURRENT_DIR%app-rust\app\services\server_monitor"
 copy /Y "%CURRENT_DIR%WarnetAgent\TMBilling_Monitor\LibreHardwareMonitorLib.dll" ".\LibreHardwareMonitorLib.dll"
 C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /target:winexe /out:TMLHMService.exe /reference:LibreHardwareMonitorLib.dll /reference:System.Management.dll TMLHMService.cs
 if %ERRORLEVEL% NEQ 0 (

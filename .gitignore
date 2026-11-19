@@ -71,10 +71,10 @@ backups/
 app/static/uploads/qris
 
 # Media assets (PNG, JPG) - user upload sendiri
-WarnetClient/TMBillingTauri/src/assets/*.png
-WarnetClient/TMBillingTauri/src/assets/*.jpg
-WarnetClient/TMBillingTauri/src/assets/qris/
-!WarnetClient/TMBillingTauri/src/assets/**/placeholder
+WarnetClient/TMBilling/src/assets/*.png
+WarnetClient/TMBilling/src/assets/*.jpg
+WarnetClient/TMBilling/src/assets/qris/
+!WarnetClient/TMBilling/src/assets/**/placeholder
 
 # logs
 logs/
@@ -573,7 +573,7 @@ $RECYCLE.BIN/
 # Binari hasil build (regenerasi via build_and_deploy.bat / rilis ZIP)
 /WarnetAgent/Deploy/*.exe
 /WarnetAgent/TMBilling_Monitor/HardwareHelper.exe
-/app/services/server_monitor/TMLHMService.exe
+/app-rust/app/services/server_monitor/TMLHMService.exe
 
 # Agent tracks & Walkthroughs
 walkthrough.md
@@ -626,3 +626,8 @@ audit-screenshots/
 .commitmsg.txt
 .tagmsg.txt
 tests/e2e/mcp/results/
+
+# Arsip Python 1.6.5: artefak test & unggahan runtime
+/archive-1.6.5/tests/e2e/results/**
+/archive-1.6.5/tests/e2e/mcp/results/**
+/app-rust/app/static/uploads/qris/qris_*.jpg
