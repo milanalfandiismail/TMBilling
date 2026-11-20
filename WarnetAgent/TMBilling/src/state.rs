@@ -70,7 +70,8 @@ pub struct TmApp {
     pub close_hooked: bool,
     /// Jam lokal saat sesi pertama kali terlihat aktif di klien ini.
     pub started_at: Option<(u8, u8)>,
-    pub prev_remaining: Option<i64>,
+    pub alerts: AlertFlags,
+    pub auth_busy: bool,
     /// Layar overlay dipaksa tampil untuk verifikasi visual.
     pub demo_overlay: bool,
     pub overlay_tab: usize,
@@ -120,6 +121,68 @@ pub enum Alert {
     Min15,
     Min5,
     Min1,
+}
+
+/// Flag sekali-per-sesi seperti klien Tauri: reset hanya saat waktu bertambah.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct AlertFlags {
+    pub m15: bool,
+    pub m5: bool,
+    pub m1: bool,
+}
+
+impl AlertFlags {
+    pub fn update(&mut self, secs: i64) -> Option<Alert> {
+        if secs > 900 {
+            self.m15 = false;
+            self.m5 = false;
+            self.m1 = false;
+        } else if secs > 300 {
+            self.m5 = false;
+            self.m1 = false;
+        } else if secs > 60 {
+            self.m1 = false;
+        }
+        if secs <= 0 {
+            return None;
+        }
+        if secs <= 900 && !self.m15 {
+            self.m15 = true;
+            return Some(Alert::Min15);
+        }
+        if secs <= 300 && !self.m5 {
+            self.m5 = true;
+            return Some(Alert::Min5);
+        }
+        if secs <= 60 && !self.m1 {
+            self.m1 = true;
+            return Some(Alert::Min1);
+        }
+        None
+    }
+}
+
+/// Jam tidak boleh mundur hanya karena polling mengirim menit bulat lagi.
+pub fn sync_remaining(current: i64, server_secs: i64) -> i64 {
+    let drift = server_secs - current;
+    if current <= 0 || drift.abs() > 60 {
+        server_secs
+    } else {
+        current
+    }
+}
+
+/// Kunci meja sekali saat waktu habis, bukan berulang tiap detik.
+pub fn should_autolock(remaining: i64, locked: bool, has_session: bool) -> bool {
+    remaining <= 0 && !locked && has_session
+}
+
+/// Respons kosong tanpa shutdown_timer berarti tidak ada hitung mundur.
+pub fn shutdown_from_status(timer: Option<u32>, command: Option<&str>) -> Option<i64> {
+    if command == Some("lock") {
+        return None;
+    }
+    timer.filter(|t| *t > 0).map(i64::from)
 }
 
 /// Modal overlay yang sedang terbuka.
@@ -324,6 +387,18 @@ impl TmApp {
         self.apply_status(status);
     }
 
+    /// Hasil login dipakai bersama oleh login member dan admin.
+    pub fn apply_login_result(&mut self, ok: bool, err: Option<&str>) {
+        self.auth_busy = false;
+        if ok {
+            self.login.error = None;
+            return;
+        }
+        self.login.error = err.map(str::to_string).or_else(|| {
+            Some("Gagal masuk. Coba lagi.".to_string())
+        });
+    }
+
     pub fn reduce(&mut self, event: AppEvent) -> bool {
         match event {
             AppEvent::Config(cfg) => {
@@ -350,22 +425,6 @@ impl TmApp {
                 true
             }
         }
-    }
-
-    /// Alert pertama yang terlewati sejak update sebelumnya.
-    pub fn alert_for(&mut self, remaining: i64) -> Option<Alert> {
-        let prev = self.prev_remaining.replace(remaining)?;
-        if prev <= remaining {
-            return None;
-        }
-        [
-            (900, Alert::Min15),
-            (300, Alert::Min5),
-            (60, Alert::Min1),
-        ]
-        .into_iter()
-        .find(|(limit, _)| prev > *limit && remaining <= *limit)
-        .map(|(_, alert)| alert)
     }
 
     fn apply_identify(&mut self, res: IdentifyResponse) -> bool {
@@ -402,8 +461,10 @@ impl TmApp {
                     self.started_at = Some(crate::platform::window::local_hhmm());
                 }
                 // server mengirim sisa waktu dalam MENIT, UI memakai detik
-                self.remaining_secs = status.sisa_waktu.unwrap_or(0) as i64 * 60;
-                self.shutdown_secs = status.shutdown_timer.filter(|t| *t > 0).map(i64::from);
+                let server_secs = status.sisa_waktu.unwrap_or(0) as i64 * 60;
+                self.remaining_secs = sync_remaining(self.remaining_secs, server_secs);
+                self.shutdown_secs =
+                    shutdown_from_status(status.shutdown_timer, status.command.as_deref());
             }
         }
         true
@@ -443,6 +504,66 @@ mod tests {
             app.login_pending,
             "kosong right after login must not clear the pending flag"
         );
+    }
+
+    #[test]
+    fn warning_plays_once_per_threshold() {
+        let mut f = AlertFlags::default();
+        assert_eq!(f.update(900), Some(Alert::Min15));
+        assert_eq!(f.update(899), None);
+        assert_eq!(f.update(901), None);
+        f.update(600);
+        assert_eq!(f.update(300), Some(Alert::Min5));
+        assert_eq!(f.update(299), None);
+        assert_eq!(f.update(60), Some(Alert::Min1));
+        assert_eq!(f.update(59), None);
+    }
+
+    #[test]
+    fn top_up_rearms_the_warnings() {
+        let mut f = AlertFlags::default();
+        f.update(60);
+        f.update(4000);
+        assert_eq!(f.update(900), Some(Alert::Min15));
+    }
+
+    #[test]
+    fn poll_does_not_rewind_the_clock() {
+        assert_eq!(sync_remaining(389, 390), 389);
+        assert_eq!(sync_remaining(389, 420), 389, "koreksi menit bulat diabaikan");
+        assert_eq!(sync_remaining(389, 450), 450, "top-up diterima");
+        assert_eq!(sync_remaining(389, 330), 389);
+        assert_eq!(sync_remaining(389, 100), 100);
+    }
+
+    #[test]
+    fn autolock_fires_once_when_time_runs_out() {
+        assert!(should_autolock(0, false, true));
+        assert!(!should_autolock(0, true, true));
+        assert!(!should_autolock(0, false, false));
+        assert!(!should_autolock(5, false, true));
+    }
+
+    #[test]
+    fn lock_command_has_no_countdown() {
+        assert_eq!(shutdown_from_status(None, Some("lock")), None);
+        assert_eq!(shutdown_from_status(Some(180), None), Some(180));
+        assert_eq!(shutdown_from_status(Some(0), None), None);
+    }
+
+    #[test]
+    fn failed_admin_login_keeps_the_modal() {
+        let mut app = TmApp {
+            modal: Some(Modal::Admin),
+            ..TmApp::default()
+        };
+        app.apply_login_result(false, Some("Username atau password salah"));
+        assert_eq!(app.modal, Some(Modal::Admin));
+        assert_eq!(
+            app.login.error.as_deref(),
+            Some("Username atau password salah")
+        );
+        assert!(!app.auth_busy);
     }
 
     #[test]

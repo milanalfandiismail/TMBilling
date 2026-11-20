@@ -6,6 +6,21 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [2.0.7] - 2026-11-22
+
+### Fixed
+- Klik pada input di modal admin tidak lagi ikut memicu QRIS fullscreen: handler menghentikan
+  propagasi klik dan scrim memblokir mouse ke lapisan di bawahnya.
+- Timer tidak lagi mundur-naik tiap poll; nilai server hanya dipakai saat selisihnya lebih dari
+  satu menit atau saat top-up.
+- Peringatan suara 15/5/1 menit hanya berbunyi sekali per sesi, dan waktu habis kini logout
+  (bukan AFK) seperti klien Tauri.
+- Badge "Mati otomatis" tidak lagi menampilkan hitung mundur sisa ketika server mengirim
+  perintah lock tanpa shutdown_timer.
+- Area jendela yang baru diperbesar tidak lagi putih: HWND di-refresh setelah di-resize.
+- Tombol Masuk/Masuk-admin mengunci permintaan ganda dan modal admin tetap terbuka saat
+  kredensial ditolak, dengan pesan galat di dalam modal.
+
 ## [2.0.6] - 2026-11-21
 
 ### Fixed

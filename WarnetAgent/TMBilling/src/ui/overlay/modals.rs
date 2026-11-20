@@ -13,7 +13,11 @@ use crate::ui::tabs::TmTabs;
 
 /// Penghubung ActFn (tanpa ClickEvent) ke handler gpui.
 fn click(f: crate::ui::overlay::ActFn) -> impl Fn(&ClickEvent, &mut Window, &mut App) + 'static {
-    move |_: &ClickEvent, window, cx| f(window, cx)
+    // klik di dalam modal tidak boleh diteruskan ke layar di belakangnya
+    move |_: &ClickEvent, window, cx| {
+        cx.stop_propagation();
+        f(window, cx);
+    }
 }
 
 fn text(v: &serde_json::Value, key: &str) -> Option<String> {
@@ -55,8 +59,9 @@ fn value_text(v: String, tone: Rgba, mono: bool) -> impl IntoElement {
 fn scrim(inner: impl IntoElement + 'static) -> AnyElement {
     div()
         .id("tm-scrim")
-        // scrim tanpa id tidak ikut hit-test, jadi klik tembus ke tile QRIS di belakangnya
-        .on_click(|_: &ClickEvent, _: &mut Window, _: &mut App| {})
+        // occlude menahan klik supaya tidak menembus ke tile QRIS di belakangnya
+        .occlude()
+        .on_click(|_: &ClickEvent, _: &mut Window, cx: &mut App| cx.stop_propagation())
         .absolute()
         .top(px(0.0))
         .left(px(0.0))
@@ -303,7 +308,10 @@ fn click_focus(
     f: crate::ui::overlay::FocusFn,
     field: crate::state::LoginField,
 ) -> impl Fn(&ClickEvent, &mut Window, &mut App) {
-    move |_: &ClickEvent, window, cx| f(field, window, cx)
+    move |_: &ClickEvent, window, cx| {
+        cx.stop_propagation();
+        f(field, window, cx);
+    }
 }
 
 fn tm_button(label: &'static str, on_click: crate::ui::overlay::ActFn) -> AnyElement {

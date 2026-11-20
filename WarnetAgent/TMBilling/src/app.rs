@@ -31,13 +31,14 @@ impl TmApp {
             }
         }
         let changed = self.reduce(event);
-        let remaining = self.remaining_secs;
-        if let Some(alert) = self.alert_for(remaining) {
-            crate::audio::play(match alert {
-                Alert::Min15 => crate::audio::WARNING_15MIN,
-                Alert::Min5 => crate::audio::WARNING_5MIN,
-                Alert::Min1 => crate::audio::WARNING_1MIN,
-            });
+        if self.session.is_some() {
+            if let Some(alert) = self.alerts.update(self.remaining_secs) {
+                crate::audio::play(match alert {
+                    Alert::Min15 => crate::audio::WARNING_15MIN,
+                    Alert::Min5 => crate::audio::WARNING_5MIN,
+                    Alert::Min1 => crate::audio::WARNING_1MIN,
+                });
+            }
         }
         if changed {
             cx.notify();
@@ -59,6 +60,23 @@ impl TmApp {
                         app.remaining_secs = next;
                         dirty = true;
                     }
+                }
+                if crate::state::should_autolock(
+                    app.remaining_secs,
+                    app.locked,
+                    app.session.is_some(),
+                ) {
+                    // sama seperti Tauri: waktu habis = logout, bukan AFK
+                    app.session = None;
+                    app.modal = None;
+                    if let Some(client) = app.client.clone() {
+                        let (ip, mac) = crate::polling::local_net().unwrap_or_default();
+                        cx.spawn(async move |_, _| {
+                            let _ = client.logout(&ip, &mac).await;
+                        })
+                        .detach();
+                    }
+                    dirty = true;
                 }
                 match crate::state::tick_shutdown(app.shutdown_secs) {
                     crate::state::ShutdownTick::Idle => {}
@@ -109,7 +127,7 @@ impl TmApp {
     }
 
     fn submit_login(&mut self, cx: &mut Context<Self>) {
-        if !self.login.can_submit() {
+        if !self.login.can_submit() || self.auth_busy {
             return;
         }
         let Some(client) = self.client.clone() else {
@@ -118,6 +136,7 @@ impl TmApp {
             return;
         };
         self.login.busy = true;
+        self.auth_busy = true;
         self.login.error = None;
         let (ip, mac) = polling::local_net().unwrap_or_default();
         let user = self.login.username.trim().to_string();
@@ -130,21 +149,27 @@ impl TmApp {
                 match res {
                     Ok(r) if r.success => {
                         app.login.password.clear();
+                        app.apply_login_result(true, None);
                         app.login_pending = true;
                         app.refresh_status(cx);
                     }
                     Ok(r) => {
-                        app.login.error = Some(crate::state::login_error(400, r.error.as_deref()))
+                        let msg = crate::state::login_error(400, r.error.as_deref());
+                        app.apply_login_result(false, Some(&msg));
                     }
                     Err(crate::api::client::ApiError::Http { status, message }) => {
-                        app.login.error = Some(crate::state::login_error(status, Some(&message)))
+                        let msg = crate::state::login_error(status, Some(&message));
+                        app.apply_login_result(false, Some(&msg));
                     }
                     Err(crate::api::client::ApiError::Network(_)) => {
-                        app.login.error = Some(crate::state::login_error(0, None))
+                        let msg = crate::state::login_error(0, None);
+                        app.apply_login_result(false, Some(&msg));
                     }
                     Err(crate::api::client::ApiError::Parse) => {
-                        app.login.error =
-                            Some("Server mengirim jawaban tidak dikenal. Coba lagi.".into())
+                        app.apply_login_result(
+                            false,
+                            Some("Server mengirim jawaban tidak dikenal. Coba lagi."),
+                        );
                     }
                 }
                 cx.notify();
@@ -283,6 +308,10 @@ impl TmApp {
     fn submit_admin(&mut self, cx: &mut Context<Self>) {
         let (app_ip, app_mac) = crate::polling::local_net().unwrap_or_default();
         self.login.error = None;
+        self.auth_busy = true;
+        if self.auth_busy {
+            return;
+        }
         let (user, pass) = self.login.admin_credentials();
         if user.is_empty() || pass.is_empty() {
             self.login.error = Some("Username dan password wajib diisi.".to_string());
@@ -300,12 +329,21 @@ impl TmApp {
             this.update(cx, |app, cx| {
                 match result {
                     Ok(res) if res.success => {
+                        app.apply_login_result(true, None);
+                        app.auth_busy = false;
                         app.modal = None;
                         app.login.admin_pass.clear();
-                        app.login.error = None;
                     }
-                    Ok(res) => app.login.error = res.error,
-                    Err(err) => app.login.error = Some(err.to_string()),
+                    Ok(res) => {
+                        let msg = res
+                            .error
+                            .unwrap_or_else(|| "Gagal masuk. Coba lagi.".to_string());
+                        app.apply_login_result(false, Some(&msg));
+                    }
+                    Err(err) => {
+                        let msg = err.to_string();
+                        app.apply_login_result(false, Some(&msg));
+                    }
                 }
                 cx.notify();
             })
@@ -523,6 +561,8 @@ impl TmApp {
             } else {
                 wm::set_rect_quiet(h, target);
             }
+            // SetWindowPos tidak memicu paint; tanpa refresh area baru tampil putih
+            window.refresh();
         }
     }
 }
