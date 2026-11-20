@@ -145,19 +145,19 @@ impl AlertFlags {
         } else if secs > 60 {
             self.m1 = false;
         }
-        if secs <= 900 && !self.m15 {
+        // Pita yang sama dengan klien Tauri: hanya satu peringatan per lintasan.
+        if secs <= 900 && secs > 300 && !self.m15 {
             self.m15 = true;
-            return Some(Alert::Min15);
-        }
-        if secs <= 300 && !self.m5 {
+            Some(Alert::Min15)
+        } else if secs <= 300 && secs > 60 && !self.m5 {
             self.m5 = true;
-            return Some(Alert::Min5);
-        }
-        if secs <= 60 && !self.m1 {
+            Some(Alert::Min5)
+        } else if secs <= 60 && !self.m1 {
             self.m1 = true;
-            return Some(Alert::Min1);
+            Some(Alert::Min1)
+        } else {
+            None
         }
-        None
     }
 }
 

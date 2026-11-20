@@ -12,7 +12,7 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 - Jam overlay tidak lagi berayun 15 ↔ 14 menit: polling mengirim menit, klien menyimpannya sebagai detik
   (`TimeUpdate` dihapus; nilai server yang tertinggal diabaikan, top-up tetap diterima).
 - Audio peringatan berbunyi sekali per ambang (15/5/1 menit), tidak lagi berulang tiap poll.
-- Audio peringatan diaktifkan lagi setelah top-up waktu (15/5/1 menit), mengikuti perilaku klien Tauri.
+- Audio peringatan dievaluasi tiap detik dengan pita yang sama seperti klien Tauri (15/5/1 menit) dan diaktifkan lagi setelah top-up waktu.
 
 ## [2.0.9] - 2026-11-22
 

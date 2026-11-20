@@ -31,17 +31,23 @@ impl TmApp {
             }
         }
         let changed = self.reduce(event);
-        if self.session.is_some() {
-            if let Some(alert) = self.alerts.update(self.remaining_secs) {
-                crate::audio::play(match alert {
-                    Alert::Min15 => crate::audio::WARNING_15MIN,
-                    Alert::Min5 => crate::audio::WARNING_5MIN,
-                    Alert::Min1 => crate::audio::WARNING_1MIN,
-                });
-            }
-        }
+        self.play_alert();
         if changed {
             cx.notify();
+        }
+    }
+
+    /// Peringatan audio dievaluasi pada tiap detik (bukan hanya saat poll), sama seperti Tauri.
+    fn play_alert(&mut self) {
+        if self.session.is_none() {
+            return;
+        }
+        if let Some(alert) = self.alerts.update(self.remaining_secs) {
+            crate::audio::play(match alert {
+                Alert::Min15 => crate::audio::WARNING_15MIN,
+                Alert::Min5 => crate::audio::WARNING_5MIN,
+                Alert::Min1 => crate::audio::WARNING_1MIN,
+            });
         }
     }
 
@@ -58,6 +64,7 @@ impl TmApp {
                     let next = crate::state::tick_remaining(app.remaining_secs);
                     if next != app.remaining_secs {
                         app.remaining_secs = next;
+                        app.play_alert();
                         dirty = true;
                     }
                 }
