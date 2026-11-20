@@ -8,8 +8,17 @@ echo.
 
 set "CURRENT_DIR=%~dp0"
 
+where cargo >nul 2>&1
+if errorlevel 1 set "PATH=%USERPROFILE%\.cargo\bin;%PATH%"
+where cargo >nul 2>&1
+if errorlevel 1 (
+    echo [ERROR] cargo tidak ditemukan. Install Rust via rustup, atau tambahkan %USERPROFILE%\.cargo\bin ke PATH.
+    pause
+    exit /b 1
+)
+
 echo [1/5] Memulai kompilasi TMBilling Client (GPUI)...
-cd /d "%CURRENT_DIR%WarnetAgent\TMBilling"
+cd /d "%CURRENT_DIR%\WarnetAgent\TMBilling"
 cargo build --release
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Gagal melakukan build TMBilling Client!
@@ -17,7 +26,7 @@ if %ERRORLEVEL% NEQ 0 (
     exit /b %ERRORLEVEL%
 )
 echo Menyalin file TMBilling.exe ke folder Deploy...
-copy /Y "%CURRENT_DIR%WarnetAgent\TMBilling	argetelease\TMBilling.exe" "%CURRENT_DIR%WarnetAgent\Deploy\TMBilling.exe"
+copy /Y "%CURRENT_DIR%\WarnetAgent\TMBilling\target\release\TMBilling.exe" "%CURRENT_DIR%\WarnetAgent\Deploy\TMBilling.exe"
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Gagal menyalin TMBilling.exe!
     pause
