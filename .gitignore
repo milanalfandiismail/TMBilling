@@ -632,3 +632,5 @@ tests/e2e/mcp/results/
 /archive-1.6.5/tests/e2e/mcp/results/**
 /app-rust/app/static/uploads/qris/qris_*.jpg
 /WarnetAgent/TMBilling/target/
+/WarnetAgent/MGCTM/target/
+/WarnetAgent/mtm/target/
