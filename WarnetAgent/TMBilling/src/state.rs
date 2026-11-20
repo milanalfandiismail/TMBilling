@@ -32,6 +32,9 @@ pub struct TmApp {
     pub muted: bool,
     pub locked: bool,
     pub modal: Option<Modal>,
+    // dipakai modal konfirmasi power di Task 4
+    #[allow(dead_code)]
+    pub pending_power: Option<PowerAction>,
     /// (window is the small overlay card, modal needs the whole screen)
     pub applied_mode: Option<(bool, bool, usize)>,
     pub saved_rect: Option<(i32, i32, i32, i32)>,
@@ -84,6 +87,8 @@ pub enum Modal {
     AfkPin,
     Logout,
     Admin,
+    #[allow(dead_code)]
+    Power(PowerAction),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -111,6 +116,11 @@ pub struct LoginState {
     pub busy: bool,
     pub power: Option<PowerAction>,
     pub qris_full: bool,
+    // dipakai modal admin F11 di Task 3
+    #[allow(dead_code)]
+    pub admin_user: String,
+    #[allow(dead_code)]
+    pub admin_pass: String,
     pub info_tab: usize,
     pub info_page: usize,
 }
@@ -154,6 +164,34 @@ impl LoginState {
     pub fn masked_password(&self) -> String {
         "*".repeat(self.password.chars().count())
     }
+}
+
+#[allow(dead_code)]
+pub fn power_title(action: PowerAction) -> &'static str {
+    match action {
+        PowerAction::Restart => "Restart komputer?",
+        PowerAction::Shutdown => "Matikan komputer?",
+    }
+}
+
+#[allow(dead_code)]
+/// Pesan error login untuk layar kiosk. Status 0 berarti server tidak terjangkau.
+pub fn login_error(status: u16, message: Option<&str>) -> String {
+    let msg = message.unwrap_or("").trim();
+    if status == 0 {
+        return "Tidak bisa menghubungi server. Cek koneksi LAN.".into();
+    }
+    if status == 400 && msg.contains("Waktu habis") {
+        return "Waktu bermain habis. Silakan top-up di kasir.".into();
+    }
+    if !msg.is_empty() {
+        return if msg.ends_with('.') {
+            msg.to_string()
+        } else {
+            format!("{msg}.")
+        };
+    }
+    "Gagal masuk. Coba lagi.".into()
 }
 
 impl TmApp {

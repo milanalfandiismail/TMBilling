@@ -528,5 +528,7 @@ pub fn render(app: &TmApp, actions: &OverlayActions) -> Option<AnyElement> {
         Modal::AfkPin => scrim(afk_pin(app, actions)),
         Modal::Logout => scrim(logout(actions)),
         Modal::Admin => scrim(admin(app, actions)),
+        // Konfirmasi power dirender oleh host kiosk, bukan kartu overlay.
+        Modal::Power(_) => return None,
     })
 }

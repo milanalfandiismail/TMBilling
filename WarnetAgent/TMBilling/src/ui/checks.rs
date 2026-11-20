@@ -65,3 +65,31 @@ fn remote_commands_map_to_actions() {
     assert_eq!(remote_action("restart"), Some(RemoteAction::Restart));
     assert_eq!(remote_action("screenshot"), None);
 }
+
+#[test]
+fn login_error_maps_status_codes() {
+    use crate::state::login_error;
+    assert_eq!(
+        login_error(401, Some("Username atau password salah")),
+        "Username atau password salah."
+    );
+    assert_eq!(
+        login_error(400, Some("Waktu habis")),
+        "Waktu bermain habis. Silakan top-up di kasir."
+    );
+    assert_eq!(
+        login_error(429, Some("Terlalu banyak percobaan login. Coba lagi dalam 5 menit.")),
+        "Terlalu banyak percobaan login. Coba lagi dalam 5 menit."
+    );
+    assert_eq!(
+        login_error(0, None),
+        "Tidak bisa menghubungi server. Cek koneksi LAN."
+    );
+}
+
+#[test]
+fn power_confirmation_is_explicit() {
+    use crate::state::{power_title, PowerAction};
+    assert_eq!(power_title(PowerAction::Shutdown), "Matikan komputer?");
+    assert_eq!(power_title(PowerAction::Restart), "Restart komputer?");
+}
