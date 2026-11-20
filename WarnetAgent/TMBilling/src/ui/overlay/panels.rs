@@ -158,7 +158,7 @@ pub fn tools(app: &TmApp, scale: f32, actions: &OverlayActions) -> impl IntoElem
         )
 }
 
-pub fn qris(scale: f32) -> impl IntoElement {
+pub fn qris(scale: f32, actions: &OverlayActions) -> impl IntoElement {
     let size = 160.0 * scale;
     div()
         .flex()
@@ -172,14 +172,20 @@ pub fn qris(scale: f32) -> impl IntoElement {
                 .font_weight(FontWeight::BOLD)
                 .child("Bayar di kasir"),
         )
-        .child(
+        .child({
+            let open = actions.open.clone();
             div()
+                .id("qris-tap")
                 .mt(px(16.0 * scale))
                 .p(px(8.0 * scale))
                 .rounded(px(4.0 * scale))
                 .bg(rgb(0xFFFFFF))
-                .child(qr_tile(size)),
-        )
+                .cursor_pointer()
+                .on_click(move |_: &ClickEvent, _w: &mut Window, cx: &mut App| {
+                    open(crate::state::Modal::QrisFull, _w, cx)
+                })
+                .child(qr_tile(size))
+        })
         .child(
             div()
                 .mt(px(14.0 * scale))

@@ -49,3 +49,9 @@ fn volume_clamps_to_100() {
     assert_eq!(clamp_volume(0), 0);
 }
 
+#[test]
+fn rupiah_groups_thousands() {
+    assert_eq!(crate::ui::overlay::modals::rupiah(45_000), "Rp 45.000");
+    assert_eq!(crate::ui::overlay::modals::rupiah(1_250_000), "Rp 1.250.000");
+    assert_eq!(crate::ui::overlay::modals::rupiah(0), "Rp 0");
+}

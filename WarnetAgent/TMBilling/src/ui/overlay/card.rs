@@ -148,14 +148,26 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                 .flex_row()
                 .items_center()
                 .h(px(m.header_h))
-                .child(badge)
-                .child(
+                .child({
+                    let open = actions.open.clone();
                     div()
-                        .ml(px(if compact { 8.0 } else { 12.0 * scale }))
-                        .text_size(px(m.name_font))
-                        .text_color(TM.text)
-                        .child(name),
-                )
+                        .id("ov-member")
+                        .flex()
+                        .flex_row()
+                        .items_center()
+                        .cursor_pointer()
+                        .on_click(move |_: &ClickEvent, w: &mut Window, cx: &mut App| {
+                            open(crate::state::Modal::Member, w, cx)
+                        })
+                        .child(badge)
+                        .child(
+                            div()
+                                .ml(px(if compact { 8.0 } else { 12.0 * scale }))
+                                .text_size(px(m.name_font))
+                                .text_color(TM.text)
+                                .child(name),
+                        )
+                })
                 .child(div().flex_1())
                 .child(
                     div()
@@ -227,7 +239,7 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                 .into_any_element(),
             2 => div()
                 .mt(px(m.row_mt))
-                .child(panels::qris(scale))
+                .child(panels::qris(scale, actions))
                 .into_any_element(),
             _ => div()
                 .mt(px(m.row_mt))

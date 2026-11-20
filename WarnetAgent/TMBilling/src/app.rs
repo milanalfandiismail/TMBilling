@@ -2,12 +2,12 @@ use std::rc::Rc;
 
 use crate::api::client::ApiClient;
 use crate::polling::{self, AppEvent};
-use crate::state::{Alert, LoginField, PowerAction, Session, TmApp};
+use crate::state::{Alert, LoginField, PowerAction, Session, TmApp, Modal};
 use crate::theme::TM;
 use crate::ui::kiosk::header::header;
 use crate::ui::kiosk::{info, login, KioskActions};
 use crate::ui::overlay::card as overlay_card_mod;
-use crate::ui::overlay::{ActFn, OverlayActions, TabFn, ToolFn, ToolId};
+use crate::ui::overlay::{ModalFn, ActFn, OverlayActions, TabFn, ToolFn, ToolId};
 use crate::platform::window::overlay_geometry;
 use gpui_kit::prelude::*;
 use gpui_kit::*;
@@ -100,7 +100,40 @@ impl TmApp {
     }
 
     fn on_key(&mut self, ev: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
-        match ev.keystroke.key.as_str() {
+        let key = ev.keystroke.key.as_str();
+        if key == "escape" {
+            // shortcut: ESC menutup semua modal kecuali PIN (butuh aksi eksplisit)
+            if self.modal.is_some_and(|m| m != Modal::AfkPin) {
+                self.modal = None;
+                cx.notify();
+                return;
+            }
+        }
+        match self.modal {
+            Some(Modal::AfkPin) => {
+                match key {
+                    "backspace" => {
+                        self.pin.pop();
+                    }
+                    "enter" => self.submit_pin(cx),
+                    _ => {
+                        if let Some(text) = ev.keystroke.key_char.as_deref() {
+                            for ch in text.chars() {
+                                if self.pin.chars().count() < 12 {
+                                    self.pin.push(ch);
+                                }
+                            }
+                        }
+                    }
+                }
+                cx.notify();
+                return;
+            }
+            Some(Modal::Admin) => {}
+            Some(_) => return,
+            None => {}
+        }
+        match key {
             "backspace" => {
                 self.login.backspace();
             }
@@ -115,6 +148,64 @@ impl TmApp {
             }
         }
         cx.notify();
+    }
+
+    fn submit_pin(&mut self, cx: &mut Context<Self>) {
+        if self.pin.chars().count() < 4 {
+            cx.notify();
+            return;
+        }
+        let pin = self.pin.clone();
+        if let Some(client) = self.client.clone() {
+            let ip = self.pc_kode.clone();
+            cx.spawn(async move |this, cx| {
+                let _ = client.afk_lock(&ip, "", Some(&pin)).await;
+                let _ = this.update(cx, |app, cx| {
+                    app.locked = true;
+                    app.modal = None;
+                    app.pin.clear();
+                    cx.notify();
+                });
+            })
+            .detach();
+        } else {
+            self.locked = true;
+            self.modal = None;
+            self.pin.clear();
+            cx.notify();
+        }
+    }
+
+    fn submit_admin(&mut self, cx: &mut Context<Self>) {
+        let (app_ip, app_mac) = crate::polling::local_net().unwrap_or_default();
+        self.login.error = None;
+        if !self.login.can_submit() {
+            return;
+        }
+        let Some(client) = self.client.clone() else {
+            return;
+        };
+        let user = self.login.username.clone();
+        let pass = self.login.password.clone();
+        cx.spawn(async move |this, cx| {
+            let ip = app_ip.clone();
+            let mac = app_mac.clone();
+            let result = client.admin_login(&ip, &mac, &user, &pass).await;
+            this.update(cx, |app, cx| {
+                match result {
+                    Ok(res) if res.success => {
+                        app.modal = None;
+                        app.login.password.clear();
+                        app.login.error = None;
+                    }
+                    Ok(res) => app.login.error = res.error,
+                    Err(err) => app.login.error = Some(err.to_string()),
+                }
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
     }
 
     fn overlay_logout(&mut self, cx: &mut Context<Self>) {
@@ -152,16 +243,65 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
     let out_me = me.clone();
     let tab_me = me.clone();
     let tool_me = me.clone();
+    let open_me = me.clone();
+    let close_me = me.clone();
+    let prev_me = me.clone();
+    let next_me = me.clone();
+    let pin_me = me.clone();
+    let admin_me = me.clone();
+    let confirm_me = me.clone();
     OverlayActions {
+        logout_confirm: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            confirm_me.update(cx, |app, cx| {
+                app.modal = None;
+                app.overlay_logout(cx);
+            });
+        }) as ActFn,
+        open: Rc::new(move |modal: Modal, _w: &mut Window, cx: &mut App| {
+            open_me.update(cx, |app, cx| {
+                app.modal = Some(modal);
+                cx.notify();
+            });
+        }) as ModalFn,
+        close: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            close_me.update(cx, |app, cx| {
+                app.modal = None;
+                cx.notify();
+            });
+        }) as ActFn,
+        page_prev: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            prev_me.update(cx, |app, cx| {
+                app.menu_page = app.menu_page.saturating_sub(1).max(1);
+                cx.notify();
+            });
+        }) as ActFn,
+        page_next: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            next_me.update(cx, |app, cx| {
+                app.menu_page += 1;
+                cx.notify();
+            });
+        }) as ActFn,
+        pin_submit: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            pin_me.update(cx, |app, cx| app.submit_pin(cx));
+        }) as ActFn,
+        admin_submit: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            admin_me.update(cx, |app, cx| app.submit_admin(cx));
+        }) as ActFn,
         // shortcut: minimize & AFK hanya mengubah state lokal sampai Task 8/10 memasang aksinya
         minimize: Rc::new(move |_w: &mut Window, cx: &mut App| {
             min_me.update(cx, |_app, cx| cx.notify());
         }) as ActFn,
         afk: Rc::new(move |_w: &mut Window, cx: &mut App| {
-            afk_me.update(cx, |_app, cx| cx.notify());
+            afk_me.update(cx, |app, cx| {
+                app.modal = Some(Modal::AfkPin);
+                cx.notify();
+            });
         }) as ActFn,
         logout: Rc::new(move |_w: &mut Window, cx: &mut App| {
-            out_me.update(cx, |app, cx| app.overlay_logout(cx));
+            out_me.update(cx, |app, cx| {
+                app.modal = Some(Modal::Logout);
+                cx.notify();
+            });
         }) as ActFn,
         tab: Rc::new(move |tab: usize, _w: &mut Window, cx: &mut App| {
             tab_me.update(cx, |app, cx| {
@@ -299,8 +439,10 @@ impl Render for TmApp {
         let vh: f32 = window.viewport_size().height.into();
         let geom = overlay_geometry((vw, vh));
         let actions_ov = overlay_actions(cx);
+        let modal = crate::ui::overlay::modals::render(self, &actions_ov);
         div()
             .size_full()
+            .relative()
             .bg(TM.bg)
             .flex()
             .items_start()
@@ -308,6 +450,7 @@ impl Render for TmApp {
             .pt(px(geom.margin))
             .pr(px(geom.margin))
             .child(overlay_card_mod::card(self, geom, &actions_ov))
+            .children(modal)
     }
 }
 

@@ -52,6 +52,16 @@ fn main() {
                     // shortcut: sesi palsu untuk menilai tampilan overlay sebelum server hidup
                     if overlay {
                         app.demo_overlay = true;
+                        app.modal = match std::env::var("TM_MODAL").as_deref() {
+                            Ok("member") => Some(state::Modal::Member),
+                            Ok("menu") => Some(state::Modal::Menu),
+                            Ok("detail") => Some(state::Modal::Detail(0)),
+                            Ok("qris") => Some(state::Modal::QrisFull),
+                            Ok("pin") => Some(state::Modal::AfkPin),
+                            Ok("logout") => Some(state::Modal::Logout),
+                            Ok("admin") => Some(state::Modal::Admin),
+                            _ => None,
+                        };
                         app.overlay_tab = std::env::var("TM_OVERLAY_TAB")
                             .ok()
                             .and_then(|v| v.parse().ok())

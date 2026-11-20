@@ -31,6 +31,10 @@ pub struct TmApp {
     pub overlay_tab: usize,
     pub muted: bool,
     pub locked: bool,
+    pub modal: Option<Modal>,
+    pub pin: String,
+    pub menu_page: usize,
+    pub member_json: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -45,6 +49,18 @@ pub enum Alert {
     Min15,
     Min5,
     Min1,
+}
+
+/// Modal overlay yang sedang terbuka.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Modal {
+    Member,
+    Menu,
+    Detail(usize),
+    QrisFull,
+    AfkPin,
+    Logout,
+    Admin,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -125,7 +141,12 @@ impl TmApp {
                 true
             }
             AppEvent::Identified(res) => self.apply_identify(res),
-            AppEvent::Status(status) => self.apply_status(status),
+            AppEvent::Status(status) => {
+                if status.member.is_some() {
+                    self.member_json = status.member.clone();
+                }
+                self.apply_status(status)
+            }
             AppEvent::TimeUpdate(secs) => {
                 if self.remaining_secs == secs {
                     return false;
