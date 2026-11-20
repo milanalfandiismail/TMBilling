@@ -110,3 +110,48 @@ fn admin_fields_are_separate_from_login() {
     assert_eq!(login.admin_masked(), "*");
     assert!(login.username.is_empty() && login.password.is_empty());
 }
+
+#[test]
+fn view_follows_server_status() {
+    assert_eq!(crate::state::view_for_status("aktif"), crate::state::View::Overlay);
+    assert_eq!(crate::state::view_for_status("admin"), crate::state::View::Overlay);
+    assert_eq!(crate::state::view_for_status("kosong"), crate::state::View::Kiosk);
+    assert_eq!(crate::state::view_for_status("error"), crate::state::View::Kiosk);
+}
+
+#[test]
+fn login_success_does_not_switch_view_by_itself() {
+    let app = crate::state::TmApp {
+        session: Some(crate::state::Session {
+            nama: "budi".into(),
+            grup: "REGULAR".into(),
+            pc_kode: "PC-12".into(),
+            is_member: true,
+            is_emergency: false,
+        }),
+        ..Default::default()
+    };
+    assert_eq!(app.view, crate::state::View::Kiosk);
+}
+
+#[test]
+fn html_text_is_extracted_without_tags() {
+    let html = "<p>Dilarang <b>membawa</b> makanan</p><ul><li>Satu</li><li>Dua</li></ul>";
+    let text = crate::ui::html::text_of(html);
+    assert!(text.contains("Dilarang membawa makanan"));
+    assert!(text.contains("Satu"));
+    assert!(!text.contains('<'));
+}
+
+#[test]
+fn html_colors_are_parsed() {
+    assert_eq!(
+        crate::ui::html::parse_color("#34d399"),
+        Some(crate::theme::c(0x34D399))
+    );
+    assert_eq!(
+        crate::ui::html::parse_color("rgb(255, 0, 0)"),
+        Some(crate::theme::c(0xFF0000))
+    );
+    assert_eq!(crate::ui::html::parse_color("inherit"), None);
+}

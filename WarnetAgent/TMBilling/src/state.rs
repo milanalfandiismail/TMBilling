@@ -11,10 +11,26 @@ pub struct Session {
     pub is_emergency: bool,
 }
 
+/// Layar mana yang dirender. Server status yang menentukan, bukan respons login.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum View {
+    #[default]
+    Kiosk,
+    Overlay,
+}
+
+pub fn view_for_status(status: &str) -> View {
+    match status {
+        "kosong" | "error" => View::Kiosk,
+        _ => View::Overlay,
+    }
+}
+
 /// State murni tanpa gpui supaya transisinya bisa dites tanpa window.
 #[derive(Default)]
 pub struct TmApp {
     pub cfg: Option<WarnetConfig>,
+    pub view: View,
     pub session: Option<Session>,
     pub remaining_secs: i64,
     pub shutdown_secs: Option<i64>,
@@ -294,6 +310,7 @@ impl TmApp {
 
     fn apply_status(&mut self, status: StatusResponse) -> bool {
         self.connected = true;
+        self.view = view_for_status(&status.status);
         match status.status.as_str() {
             "kosong" | "error" => {
                 self.session = None;

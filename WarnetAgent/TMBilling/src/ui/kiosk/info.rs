@@ -3,22 +3,11 @@ use gpui_kit::*;
 
 use crate::state::{page_count, TmApp};
 use crate::theme::TM;
+use crate::ui::html;
 use crate::ui::kiosk::KioskActions;
 use crate::ui::pager::TmPager;
 use crate::ui::tabs::TmTabs;
 
-/// Teks aturan contoh; sumber aslinya setting server, disambung saat server mengirim daftar aturan.
-pub const RULES: [&str; 6] = [
-    "Dilarang membawa makanan atau minuman dari luar.",
-    "Simpan barang berharga di loker yang tersedia.",
-    "Dilarang membuka situs terlarang atau konten dewasa.",
-    "Matikan PC dan rapikan kursi setelah selesai bermain.",
-    "Kerusakan perangkat akibat kelalaian menjadi tanggungan pengguna.",
-    "Keluhan layanan sampaikan ke kasir, bukan ke sesama pengunjung.",
-];
-
-const RULES_PER_PAGE: usize = 6;
-const RULES_PER_PAGE_COMPACT: usize = 3;
 const PAKET_PER_PAGE: usize = 4;
 
 fn durasi(menit: i64) -> String {
@@ -54,31 +43,6 @@ fn paket_rows(app: &TmApp) -> Vec<(String, String, String)> {
             Some((nama, durasi(menit), rupiah(harga)))
         })
         .collect()
-}
-
-fn rule_row(n: usize, text: &'static str, compact: bool) -> impl IntoElement {
-    div()
-        .flex_shrink_0()
-        .w_full()
-        .h(px(if compact { 44.0 } else { 56.0 }))
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(14.0))
-        .child(
-            div()
-                .flex_shrink_0()
-                .w(px(18.0))
-                .text_size(px(12.0))
-                .text_color(TM.accent)
-                .child(format!("{n}")),
-        )
-        .child(
-            div()
-                .text_size(px(if compact { 12.0 } else { 13.0 }))
-                .text_color(TM.muted)
-                .child(text),
-        )
 }
 
 fn paket_row(nama: String, ket: String, harga: String) -> impl IntoElement {
@@ -143,13 +107,20 @@ fn body(app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoElement 
             .child(div().mt(px(16.0)).child(list))
             .child(pager(app, total, compact, actions));
     }
-    let per = if compact { RULES_PER_PAGE_COMPACT } else { RULES_PER_PAGE };
-    let total = page_count(RULES.len(), per);
-    let from = (page.saturating_sub(1)) * per;
-    let mut list = div().flex().flex_col().w_full();
-    for (i, text) in RULES.iter().enumerate().skip(from).take(per) {
-        list = list.child(rule_row(i + 1, text, compact));
-    }
+    let announcement = app
+        .cfg
+        .as_ref()
+        .and_then(|c| c.announcement.clone())
+        .unwrap_or_default();
+    let rules = if announcement.trim().is_empty() {
+        div()
+            .text_size(px(12.0))
+            .text_color(TM.dim)
+            .child("Tidak ada aturan aktif.")
+            .into_any_element()
+    } else {
+        html::render_html(&announcement, if compact { 11.0 } else { 12.0 }, TM.muted)
+    };
     div()
         .flex()
         .flex_col()
@@ -164,25 +135,13 @@ fn body(app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoElement 
                 .text_color(TM.text)
                 .child(if compact { "Aturan Warnet" } else { "Aturan bermain" }),
         )
-        .when(!compact, |d| {
-            d.child(
-                div()
-                    .mt(px(6.0))
-                    .text_size(px(11.0))
-                    .text_color(TM.dim)
-                    .child("Dengan bermain di sini, kamu menyetujui aturan berikut."),
-            )
-        })
         .child(
             div()
                 .flex()
-                .flex_row()
-                .items_end()
-                .w_full()
-                .mt(px(if compact { 5.0 } else { 8.0 }))
-                .ml(px(if compact { 0.0 } else { 8.0 }))
-                .child(div().flex_1().min_w(px(0.0)).child(list))
-                .child(div().flex_shrink_0().child(pager(app, total, compact, actions))),
+                .flex_col()
+                .mt(px(8.0))
+                .overflow_hidden()
+                .child(rules),
         )
 }
 

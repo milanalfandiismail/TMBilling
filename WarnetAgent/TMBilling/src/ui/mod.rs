@@ -15,3 +15,4 @@ pub use input::TmInput;
 pub use modal::modal_shell;
 pub use pager::TmPager;
 pub use tabs::TmTabs;
+pub mod html;

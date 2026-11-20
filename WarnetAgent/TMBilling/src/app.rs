@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::api::client::ApiClient;
 use crate::polling::{self, AppEvent};
-use crate::state::{Alert, LoginField, PowerAction, Session, TmApp, Modal};
+use crate::state::{Alert, LoginField, PowerAction, TmApp, Modal};
 use crate::theme::TM;
 use crate::ui::kiosk::header::header;
 use crate::ui::kiosk::{info, login, KioskActions};
@@ -93,14 +93,8 @@ impl TmApp {
                 app.login.busy = false;
                 match res {
                     Ok(r) if r.success => {
-                        app.session = Some(Session {
-                            nama: r.nama.unwrap_or_default(),
-                            grup: r.grup.unwrap_or_default(),
-                            pc_kode: r.pc_kode.unwrap_or_else(|| app.pc_kode.clone()),
-                            is_member: true,
-                            is_emergency: false,
-                        });
                         app.login.password.clear();
+                        app.refresh_status(cx);
                     }
                     Ok(r) => {
                         app.login.error = Some(crate::state::login_error(400, r.error.as_deref()))
@@ -233,6 +227,20 @@ impl TmApp {
             self.pin.clear();
             cx.notify();
         }
+    }
+
+    /// Mode ditentukan status server; login tidak boleh memindahkan layar sendiri.
+    fn refresh_status(&mut self, cx: &mut Context<Self>) {
+        let Some(client) = self.client.clone() else {
+            return;
+        };
+        let (ip, mac) = polling::local_net().unwrap_or_default();
+        cx.spawn(async move |this, cx| {
+            if let Ok(status) = client.status(&ip, &mac, false).await {
+                let _ = this.update(cx, |app, cx| app.apply(AppEvent::Status(status), cx));
+            }
+        })
+        .detach();
     }
 
     fn submit_admin(&mut self, cx: &mut Context<Self>) {
