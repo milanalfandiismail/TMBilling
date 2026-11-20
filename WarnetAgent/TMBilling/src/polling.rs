@@ -3,6 +3,7 @@ use std::time::{Duration, Instant};
 use tokio::sync::mpsc::UnboundedSender;
 
 use crate::api::client::ApiClient;
+use gpui_kit::{Image, ImageFormat};
 use crate::api::models::{IdentifyResponse, StatusResponse, WarnetConfig};
 
 /// Server hanya menerima 1/5/10 detik; nilai lain jatuh ke default (sama dengan polling.rs lama).
@@ -17,6 +18,7 @@ pub enum AppEvent {
     TimeUpdate(i64),
     #[allow(dead_code)] // shortcut: dibaca Task 8 (tools) dan Task 12 (screenshot)
     Command(String),
+    Qris(Option<std::sync::Arc<Image>>),
 }
 
 pub fn next_interval(ok: bool, hint: Option<u64>) -> u64 {
@@ -80,6 +82,18 @@ pub async fn run(client: ApiClient, tx: UnboundedSender<AppEvent>) {
                     interval = next_interval(true, status.polling_interval);
                     let _ = tx.send(AppEvent::TimeUpdate(status.sisa_waktu.unwrap_or(0) as i64));
                     if let Some(cmd) = status.command.clone() {
+                        if cmd == "screenshot" {
+                            let shot_client = client.clone();
+                            let shot_ip = ip.clone();
+                            tokio::spawn(async move {
+                                if let Err(e) =
+                                    crate::platform::screenshot::take_and_upload(&shot_client, &shot_ip)
+                                        .await
+                                {
+                                    println!("[screenshot] gagal: {e}");
+                                }
+                            });
+                        }
                         let _ = tx.send(AppEvent::Command(cmd));
                     }
                     let _ = tx.send(AppEvent::Status(status));
@@ -95,6 +109,19 @@ pub async fn run(client: ApiClient, tx: UnboundedSender<AppEvent>) {
             match client.warnet_config().await {
                 Ok(cfg) => {
                     config_healthy = true;
+                    if let Some(src) = cfg.qris_url.clone() {
+                        if let Some(bytes) = client.qris_bytes(&src).await {
+                            let format = if src.to_lowercase().ends_with(".jpg")
+                                || src.to_lowercase().ends_with(".jpeg")
+                            {
+                                ImageFormat::Jpeg
+                            } else {
+                                ImageFormat::Png
+                            };
+                            let image = Image::from_bytes(format, bytes);
+                            let _ = tx.send(AppEvent::Qris(Some(std::sync::Arc::new(image))));
+                        }
+                    }
                     let _ = tx.send(AppEvent::Config(cfg));
                 }
                 Err(e) => {

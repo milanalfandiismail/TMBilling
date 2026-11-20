@@ -15,6 +15,21 @@ use gpui_kit::*;
 
 impl TmApp {
     pub fn apply(&mut self, event: AppEvent, cx: &mut Context<Self>) {
+        let remote = match &event {
+            AppEvent::Command(cmd) => crate::state::remote_action(cmd),
+            _ => None,
+        };
+        if let Some(action) = remote {
+            match action {
+                crate::state::RemoteAction::Lock => {
+                    self.session = None;
+                    self.locked = true;
+                    self.modal = None;
+                }
+                crate::state::RemoteAction::Shutdown => self.run_power(PowerAction::Shutdown, cx),
+                crate::state::RemoteAction::Restart => self.run_power(PowerAction::Restart, cx),
+            }
+        }
         let changed = self.reduce(event);
         let remaining = self.remaining_secs;
         if let Some(alert) = self.alert_for(remaining) {
@@ -39,8 +54,10 @@ impl TmApp {
             self.login.info_tab = 1;
         }
         // shortcut: kredensial & base URL dibaca dari config.ini/registry di Task 12
-        let base_url = std::env::var("TM_SERVER_URL").unwrap_or_else(|_| "http://127.0.0.1:7015".into());
-        let api_key = std::env::var("TM_CLIENT_KEY").unwrap_or_default();
+        // Env wins so a dev machine can point at a sandbox server.
+        let cfg = crate::platform::credentials::load();
+        let base_url = std::env::var("TM_SERVER_URL").unwrap_or(cfg.url);
+        let api_key = std::env::var("TM_CLIENT_KEY").unwrap_or(cfg.api_key);
         let client = ApiClient::new(base_url, api_key);
         self.client = Some(client.clone());
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();

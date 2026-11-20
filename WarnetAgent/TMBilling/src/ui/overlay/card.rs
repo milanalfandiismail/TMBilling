@@ -246,7 +246,7 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                 .into_any_element(),
             2 => div()
                 .mt(px(m.row_mt))
-                .child(panels::qris(scale, actions))
+                .child(panels::qris(app, scale, actions))
                 .into_any_element(),
             _ => div()
                 .mt(px(m.row_mt))

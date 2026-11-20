@@ -3,7 +3,7 @@ use gpui_kit::*;
 
 use crate::state::TmApp;
 use crate::theme::TM;
-use crate::ui::kiosk::login::qr_tile;
+use crate::ui::kiosk::login::qr_image;
 use crate::ui::overlay::{OverlayActions, ToolId};
 
 /// Tinggi panel dari export FigCraft: tools 380x196, qris 380x248.
@@ -158,7 +158,7 @@ pub fn tools(app: &TmApp, scale: f32, actions: &OverlayActions) -> impl IntoElem
         )
 }
 
-pub fn qris(scale: f32, actions: &OverlayActions) -> impl IntoElement {
+pub fn qris(app: &TmApp, scale: f32, actions: &OverlayActions) -> impl IntoElement {
     let size = 160.0 * scale;
     div()
         .flex()
@@ -184,7 +184,7 @@ pub fn qris(scale: f32, actions: &OverlayActions) -> impl IntoElement {
                 .on_click(move |_: &ClickEvent, _w: &mut Window, cx: &mut App| {
                     open(crate::state::Modal::QrisFull, _w, cx)
                 })
-                .child(qr_tile(size))
+                .child(qr_image(app, size))
         })
         .child(
             div()

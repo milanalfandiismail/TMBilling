@@ -192,6 +192,41 @@ impl ApiClient {
         Ok(())
     }
 
+    /// Raw PNG body, no multipart and nothing written to disk.
+    pub async fn upload_screenshot(&self, ip: &str, png: Vec<u8>) -> Result<(), ApiError> {
+        let req = self
+            .http
+            .post(self.url("/api/v1/public/monitor/screenshot/upload"))
+            .header("X-Client-Key", &self.api_key)
+            .header("X-IP-Address", ip)
+            .header(reqwest::header::CONTENT_TYPE, "image/png")
+            .body(png);
+        self.send(req).await.map(|_| ())
+    }
+
+    /// Bytes of the QRIS image, reused from RAM while the source URL is unchanged.
+    pub async fn qris_bytes(&self, url: &str) -> Option<Vec<u8>> {
+        if let Some(hit) = crate::qris_cache::last_for(url) {
+            return Some(hit);
+        }
+        let resp = self
+            .http
+            .get(url)
+            .timeout(std::time::Duration::from_secs(10))
+            .send()
+            .await
+            .ok()?;
+        if !resp.status().is_success() {
+            return None;
+        }
+        let bytes = resp.bytes().await.ok()?.to_vec();
+        if bytes.is_empty() {
+            return None;
+        }
+        crate::qris_cache::remember(url, &bytes);
+        Some(bytes)
+    }
+
     pub async fn warnet_config(&self) -> Result<WarnetConfig, ApiError> {
         let mut config: WarnetConfig = self.get(&self.client_path("warnet")).await?;
         config.qris_url = qris_source(

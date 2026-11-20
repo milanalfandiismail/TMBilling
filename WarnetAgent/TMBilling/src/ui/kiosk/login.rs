@@ -97,7 +97,19 @@ pub(crate) fn qr_tile(size: f32) -> impl IntoElement {
     tile
 }
 
-fn qris_block(_app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoElement {
+pub(crate) fn qr_image(app: &TmApp, size: f32) -> impl IntoElement {
+    match &app.qris_image {
+        Some(image) => div()
+            .w(px(size))
+            .h(px(size))
+            .flex_shrink_0()
+            .child(img(image.clone()).w(px(size)).h(px(size)).object_fit(ObjectFit::Contain))
+            .into_any_element(),
+        None => qr_tile(size).into_any_element(),
+    }
+}
+
+fn qris_block(app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoElement {
     let caption = 10.0;
     let on_click = actions.qris.clone();
     let mut block = if compact {
@@ -122,7 +134,7 @@ fn qris_block(_app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoE
             .p(px(6.0))
             .rounded(px(2.0))
             .bg(rgb(0xFFFFFF))
-            .child(qr_tile(84.0));
+            .child(qr_image(app, 84.0));
         block = block
             .w(px(404.0))
             .h(px(200.0))
@@ -184,7 +196,7 @@ fn qris_block(_app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoE
                 .mt(px(3.0))
                 .child(div().text_size(px(28.0)).text_color(TM.text).child("Scan QRIS")),
         )
-        .child(div().mt(px(5.0)).child(qr_tile(200.0)))
+        .child(div().mt(px(5.0)).child(qr_image(app, 200.0)))
         .child(
             div()
                 .mt(px(6.0))

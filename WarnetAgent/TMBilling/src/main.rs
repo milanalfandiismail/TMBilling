@@ -5,6 +5,7 @@ mod audio;
 mod gallery;
 mod platform;
 mod polling;
+mod qris_cache;
 mod state;
 mod theme;
 mod ui;

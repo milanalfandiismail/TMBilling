@@ -39,6 +39,25 @@ pub struct TmApp {
     pub pin: String,
     pub menu_page: usize,
     pub member_json: Option<serde_json::Value>,
+    /// QRIS asli dari server; tile mock hanya dipakai bila None.
+    pub qris_image: Option<std::sync::Arc<gpui_kit::Image>>,
+}
+
+/// Perintah server yang harus dieksekusi klien (sama dengan polling.rs Tauri).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RemoteAction {
+    Lock,
+    Shutdown,
+    Restart,
+}
+
+pub fn remote_action(cmd: &str) -> Option<RemoteAction> {
+    match cmd {
+        "lock" | "logout" | "afk_lock" => Some(RemoteAction::Lock),
+        "shutdown" => Some(RemoteAction::Shutdown),
+        "restart" => Some(RemoteAction::Restart),
+        _ => None,
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -158,8 +177,11 @@ impl TmApp {
                 self.remaining_secs = secs;
                 true
             }
-            // shortcut: perintah eksekusi (lock/shutdown/restart/screenshot) dipasang Task 8/10/12
             AppEvent::Command(_) => false,
+            AppEvent::Qris(image) => {
+                self.qris_image = image;
+                true
+            }
         }
     }
 

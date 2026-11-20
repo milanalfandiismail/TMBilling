@@ -55,3 +55,13 @@ fn rupiah_groups_thousands() {
     assert_eq!(crate::ui::overlay::modals::rupiah(1_250_000), "Rp 1.250.000");
     assert_eq!(crate::ui::overlay::modals::rupiah(0), "Rp 0");
 }
+
+#[test]
+fn remote_commands_map_to_actions() {
+    use crate::state::{remote_action, RemoteAction};
+    assert_eq!(remote_action("lock"), Some(RemoteAction::Lock));
+    assert_eq!(remote_action("logout"), Some(RemoteAction::Lock));
+    assert_eq!(remote_action("shutdown"), Some(RemoteAction::Shutdown));
+    assert_eq!(remote_action("restart"), Some(RemoteAction::Restart));
+    assert_eq!(remote_action("screenshot"), None);
+}

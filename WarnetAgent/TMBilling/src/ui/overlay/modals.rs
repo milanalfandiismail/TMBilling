@@ -5,7 +5,7 @@ use crate::state::{Modal, TmApp};
 use crate::theme::{c, TM};
 use crate::ui::button::{ButtonTone, TmButton};
 use crate::ui::input::TmInput;
-use crate::ui::kiosk::login::qr_tile;
+use crate::ui::kiosk::login::qr_image;
 use crate::ui::overlay::OverlayActions;
 use crate::ui::tabs::TmTabs;
 
@@ -359,7 +359,7 @@ fn detail(app: &TmApp, actions: &OverlayActions, index: usize) -> AnyElement {
     )
 }
 
-fn qris_full(actions: &OverlayActions) -> AnyElement {
+fn qris_full(app: &TmApp, actions: &OverlayActions) -> AnyElement {
     div()
         .absolute()
         .top(px(0.0))
@@ -384,7 +384,7 @@ fn qris_full(actions: &OverlayActions) -> AnyElement {
                 .justify_center()
                 .w(px(420.0))
                 .h(px(420.0))
-                .child(qr_tile_block(400.0)),
+                .child(qr_tile_block(app, 400.0)),
         )
         .child(
             div()
@@ -396,7 +396,7 @@ fn qris_full(actions: &OverlayActions) -> AnyElement {
         .into_any_element()
 }
 
-fn qr_tile_block(size: f32) -> impl IntoElement {
+fn qr_tile_block(app: &TmApp, size: f32) -> impl IntoElement {
     div()
         .flex()
         .items_center()
@@ -404,7 +404,7 @@ fn qr_tile_block(size: f32) -> impl IntoElement {
         .w(px(size))
         .h(px(size))
         .bg(c(0xFFFFFF))
-        .child(qr_tile(size - 24.0))
+        .child(qr_image(app, size - 24.0))
 }
 
 fn afk_pin(app: &TmApp, actions: &OverlayActions) -> AnyElement {
@@ -524,7 +524,7 @@ pub fn render(app: &TmApp, actions: &OverlayActions) -> Option<AnyElement> {
         Modal::Member => scrim(member(app, actions)),
         Modal::Menu => scrim(menu(app, actions)),
         Modal::Detail(index) => scrim(detail(app, actions, index)),
-        Modal::QrisFull => qris_full(actions),
+        Modal::QrisFull => qris_full(app, actions),
         Modal::AfkPin => scrim(afk_pin(app, actions)),
         Modal::Logout => scrim(logout(actions)),
         Modal::Admin => scrim(admin(app, actions)),
