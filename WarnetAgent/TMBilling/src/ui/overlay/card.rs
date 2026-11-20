@@ -60,10 +60,10 @@ fn metrics(scale: f32, compact: bool) -> Metrics {
         timer_font: 46.0 * scale,
         timer_mt: 10.0 * scale,
         btn_h: 36.0 * scale,
-        btn_mt: 40.0 * scale,
-        tab_mt: 17.0 * scale,
+        btn_mt: 39.0 * scale,
+        tab_mt: 18.0 * scale,
         tab_font: 13.0 * scale,
-        row_mt: 6.0 * scale,
+        row_mt: 9.0 * scale,
         row_font: 11.0 * scale,
         min_w: 30.0 * scale,
         min_h: 24.0 * scale,
@@ -231,6 +231,7 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                     .active_color(TM.accent)
                     .item_width(tab_w)
                     .text_size(m.tab_font)
+                    .underline_offset(5.0)
                     .on_change({
                         let tab = actions.tab.clone();
                         move |index, window, cx| tab(index, window, cx)

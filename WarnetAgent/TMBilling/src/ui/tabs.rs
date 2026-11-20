@@ -13,6 +13,7 @@ pub struct TmTabs {
     item_width: Option<f32>,
     active_color: Option<Rgba>,
     text_size: Option<f32>,
+    underline_mt: f32,
 }
 
 impl TmTabs {
@@ -25,11 +26,17 @@ impl TmTabs {
             item_width: None,
             active_color: None,
             text_size: None,
+            underline_mt: 8.0,
         }
     }
 
     pub fn id_prefix(mut self, prefix: impl Into<SharedString>) -> Self {
         self.id_prefix = prefix.into();
+        self
+    }
+
+    pub fn underline_offset(mut self, mt: f32) -> Self {
+        self.underline_mt = mt;
         self
     }
 
@@ -79,9 +86,14 @@ impl TmTabs {
             })
                 .child(item)
                 .child(if is_active {
-                    div().h(px(2.0)).w_full().mt(px(8.0)).bg(TM.accent).into_any_element()
+                    div()
+                        .h(px(2.0))
+                        .w_full()
+                        .mt(px(self.underline_mt))
+                        .bg(TM.accent)
+                        .into_any_element()
                 } else {
-                    div().h(px(2.0)).w_full().mt(px(8.0)).into_any_element()
+                    div().h(px(2.0)).w_full().mt(px(self.underline_mt)).into_any_element()
                 });
             if let Some(w) = self.item_width {
                 tab = tab.w(px(w));
