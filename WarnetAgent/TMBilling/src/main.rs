@@ -24,6 +24,20 @@ fn requested_size() -> (f32, f32) {
     (1920.0, 1080.0)
 }
 
+/// Modal yang diminta lewat TM_MODAL, untuk screenshot verifikasi.
+fn env_modal() -> Option<state::Modal> {
+    match std::env::var("TM_MODAL").as_deref() {
+        Ok("member") => Some(state::Modal::Member),
+        Ok("menu") => Some(state::Modal::Menu),
+        Ok("detail") => Some(state::Modal::Detail(0)),
+        Ok("qris") => Some(state::Modal::QrisFull),
+        Ok("pin") => Some(state::Modal::AfkPin),
+        Ok("logout") => Some(state::Modal::Logout),
+        Ok("admin") => Some(state::Modal::Admin),
+        _ => None,
+    }
+}
+
 fn window_options() -> WindowOptions {
     let (w, h) = requested_size();
     WindowOptions {
@@ -75,18 +89,15 @@ fn main() {
                 cx.new(|cx: &mut Context<state::TmApp>| {
                     let mut app = state::TmApp::default();
                     // shortcut: sesi palsu untuk menilai tampilan overlay sebelum server hidup
-                    if overlay {
-                        app.demo_overlay = true;
-                        app.modal = match std::env::var("TM_MODAL").as_deref() {
-                            Ok("member") => Some(state::Modal::Member),
-                            Ok("menu") => Some(state::Modal::Menu),
-                            Ok("detail") => Some(state::Modal::Detail(0)),
-                            Ok("qris") => Some(state::Modal::QrisFull),
-                            Ok("pin") => Some(state::Modal::AfkPin),
-                            Ok("logout") => Some(state::Modal::Logout),
-                            Ok("admin") => Some(state::Modal::Admin),
+                    if !overlay {
+                        app.modal = match env_modal() {
+                            Some(m @ state::Modal::Admin) => Some(m),
                             _ => None,
                         };
+                    }
+                    if overlay {
+                        app.demo_overlay = true;
+                        app.modal = env_modal();
                         app.overlay_tab = std::env::var("TM_OVERLAY_TAB")
                             .ok()
                             .and_then(|v| v.parse().ok())

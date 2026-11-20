@@ -166,6 +166,11 @@ impl LoginState {
     }
 }
 
+pub fn admin_hotkey_allowed(has_session: bool) -> bool {
+    !has_session
+}
+
+// dipakai modal konfirmasi power di Task 4
 #[allow(dead_code)]
 pub fn power_title(action: PowerAction) -> &'static str {
     match action {

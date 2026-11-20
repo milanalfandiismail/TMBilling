@@ -93,3 +93,9 @@ fn power_confirmation_is_explicit() {
     assert_eq!(power_title(PowerAction::Shutdown), "Matikan komputer?");
     assert_eq!(power_title(PowerAction::Restart), "Restart komputer?");
 }
+
+#[test]
+fn admin_hotkey_only_on_kiosk() {
+    assert!(crate::state::admin_hotkey_allowed(false));
+    assert!(!crate::state::admin_hotkey_allowed(true));
+}

@@ -127,7 +127,10 @@ impl TmApp {
                 cx.notify();
                 return;
             }
-            "f11" => {
+            "f11" if crate::state::admin_hotkey_allowed(self.session.is_some()) => {
+                self.login.admin_user.clear();
+                self.login.admin_pass.clear();
+                self.login.error = None;
                 self.modal = Some(Modal::Admin);
                 cx.notify();
                 return;
@@ -254,6 +257,14 @@ impl TmApp {
             });
         })
         .detach();
+    }
+
+    /// Modal yang harus digambar di atas layar kiosk (Admin, Power, AFK, Logout).
+    fn modal_frames(&self, cx: &mut Context<Self>) -> Vec<AnyElement> {
+        let actions = overlay_actions(cx);
+        crate::ui::overlay::modals::render(self, &actions)
+            .into_iter()
+            .collect()
     }
 
     fn run_power(&mut self, action: PowerAction, cx: &mut Context<Self>) {
@@ -500,6 +511,7 @@ impl Render for TmApp {
         if self.session.is_none() {
             return div()
                 .size_full()
+                .relative()
                 .bg(TM.bg)
                 .px(px(if compact { 20.0 } else { 32.0 }))
                 .pt(px(if compact { 20.0 } else { 30.0 }))
@@ -520,7 +532,8 @@ impl Render for TmApp {
                         .mt(px(if compact { 12.0 } else { 206.0 }))
                         .child(login::screen(self, compact, &actions))
                         .child(info::screen(self, compact, &actions))
-                });
+                })
+                .children(self.modal_frames(cx));
         }
         let vp = window.viewport_size();
         let viewport = (f32::from(vp.width), f32::from(vp.height));
