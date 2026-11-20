@@ -42,6 +42,11 @@ pub fn hook_should_be_enabled(view: View, modal: Option<Modal>) -> bool {
     view == View::Kiosk || modal == Some(Modal::AfkPin)
 }
 
+/// Modal overlay butuh seluruh layar; jendela kartu 380x268 memotong dialognya.
+pub fn modal_fullscreen(view: View, modal: Option<Modal>) -> bool {
+    view == View::Overlay && modal.is_some()
+}
+
 pub fn view_for_status(status: &str) -> View {
     match status {
         "kosong" | "error" => View::Kiosk,
@@ -70,6 +75,8 @@ pub struct TmApp {
     pub demo_overlay: bool,
     pub overlay_tab: usize,
     pub locked: bool,
+    /// Login sudah diterima server, menunggu status pertama yang mengonfirmasi sesi.
+    pub login_pending: bool,
     pub modal: Option<Modal>,
     // dipakai modal konfirmasi power di Task 4
     #[allow(dead_code)]
@@ -152,12 +159,26 @@ pub fn human_time(secs: i64) -> String {
     }
 }
 
-/// Hitung mundur shutdown; habis di nol.
-pub fn tick_shutdown(current: Option<i64>) -> Option<i64> {
+/// Hasil satu detik hitung mundur shutdown.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ShutdownTick {
+    Idle,
+    Counting(i64),
+    Fire,
+}
+
+/// Hitung mundur shutdown; nol memicu aksi, bukan berhenti diam.
+pub fn tick_shutdown(current: Option<i64>) -> ShutdownTick {
     match current {
-        Some(secs) if secs > 1 => Some(secs - 1),
-        _ => None,
+        None => ShutdownTick::Idle,
+        Some(secs) if secs > 1 => ShutdownTick::Counting(secs - 1),
+        Some(_) => ShutdownTick::Fire,
     }
+}
+
+/// Sisa waktu lokal berkurang satu detik, tidak pernah negatif.
+pub fn tick_remaining(remaining: i64) -> i64 {
+    (remaining - 1).max(0)
 }
 
 /// Halaman dibulatkan ke atas; daftar kosong tetap satu halaman.
@@ -298,6 +319,11 @@ pub fn login_error(status: u16, message: Option<&str>) -> String {
 }
 
 impl TmApp {
+    #[cfg(test)]
+    pub(crate) fn apply_status_for_test(&mut self, status: crate::api::models::StatusResponse) {
+        self.apply_status(status);
+    }
+
     pub fn reduce(&mut self, event: AppEvent) -> bool {
         match event {
             AppEvent::Config(cfg) => {
@@ -364,6 +390,7 @@ impl TmApp {
                 self.shutdown_secs = None;
             }
             _ => {
+                self.login_pending = false;
                 self.session = Some(Session {
                     is_emergency: is_emergency_response(&status.status, status.nama.as_deref()),
                     nama: status.nama.unwrap_or_default(),
@@ -374,7 +401,8 @@ impl TmApp {
                 if self.started_at.is_none() {
                     self.started_at = Some(crate::platform::window::local_hhmm());
                 }
-                self.remaining_secs = status.sisa_waktu.unwrap_or(0) as i64;
+                // server mengirim sisa waktu dalam MENIT, UI memakai detik
+                self.remaining_secs = status.sisa_waktu.unwrap_or(0) as i64 * 60;
                 self.shutdown_secs = status.shutdown_timer.filter(|t| *t > 0).map(i64::from);
             }
         }
@@ -397,6 +425,27 @@ mod tests {
     }
 
     #[test]
+    fn server_minutes_become_seconds() {
+        let mut app = TmApp::default();
+        app.apply_status_for_test(status("aktif", Some(90)));
+        assert_eq!(app.remaining_secs, 90 * 60);
+    }
+
+    #[test]
+    fn view_does_not_change_until_status_says_aktif() {
+        let mut app = TmApp {
+            login_pending: true,
+            ..TmApp::default()
+        };
+        app.apply_status_for_test(status("kosong", None));
+        assert_eq!(app.view, View::Kiosk);
+        assert!(
+            app.login_pending,
+            "kosong right after login must not clear the pending flag"
+        );
+    }
+
+    #[test]
     fn empty_status_clears_the_session() {
         let mut app = TmApp::default();
         app.reduce(AppEvent::Status(status("aktif", Some(60))));
@@ -415,7 +464,7 @@ mod tests {
         app.reduce(AppEvent::Status(st));
         let session = app.session.unwrap();
         assert!(session.is_member);
-        assert_eq!(app.remaining_secs, 120);
+        assert_eq!(app.remaining_secs, 120 * 60);
         assert_eq!(app.shutdown_secs, Some(600));
     }
 

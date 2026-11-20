@@ -154,10 +154,17 @@ fn human_time_matches_tauri_format() {
 }
 
 #[test]
-fn shutdown_counts_down_and_stops_at_zero() {
-    assert_eq!(crate::state::tick_shutdown(Some(2)), Some(1));
-    assert_eq!(crate::state::tick_shutdown(Some(1)), None);
-    assert_eq!(crate::state::tick_shutdown(None), None);
+fn shutdown_counts_down_and_fires_at_zero() {
+    use crate::state::ShutdownTick;
+    assert_eq!(crate::state::tick_shutdown(Some(2)), ShutdownTick::Counting(1));
+    assert_eq!(crate::state::tick_shutdown(Some(1)), ShutdownTick::Fire);
+    assert_eq!(crate::state::tick_shutdown(None), ShutdownTick::Idle);
+}
+
+#[test]
+fn remaining_ticks_to_zero() {
+    assert_eq!(crate::state::tick_remaining(5), 4);
+    assert_eq!(crate::state::tick_remaining(0), 0);
 }
 
 #[test]

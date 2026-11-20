@@ -54,6 +54,9 @@ fn value_text(v: String, tone: Rgba, mono: bool) -> impl IntoElement {
 
 fn scrim(inner: impl IntoElement + 'static) -> AnyElement {
     div()
+        .id("tm-scrim")
+        // scrim tanpa id tidak ikut hit-test, jadi klik tembus ke tile QRIS di belakangnya
+        .on_click(|_: &ClickEvent, _: &mut Window, _: &mut App| {})
         .absolute()
         .top(px(0.0))
         .left(px(0.0))
@@ -296,6 +299,13 @@ fn pager_button(label: &'static str, on_click: crate::ui::overlay::ActFn) -> Any
         .into_any_element()
 }
 
+fn click_focus(
+    f: crate::ui::overlay::FocusFn,
+    field: crate::state::LoginField,
+) -> impl Fn(&ClickEvent, &mut Window, &mut App) {
+    move |_: &ClickEvent, window, cx| f(field, window, cx)
+}
+
 fn tm_button(label: &'static str, on_click: crate::ui::overlay::ActFn) -> AnyElement {
     TmButton::new(label, ButtonTone::Ghost)
         .on_click(click(on_click))
@@ -425,15 +435,25 @@ fn afk_pin(app: &TmApp, actions: &OverlayActions) -> AnyElement {
                 .child("Masukkan PIN untuk mengunci meja."),
         )
         .child(div().h(px(10.0)))
-        .child(match app.pin.is_empty() {
-            true => TmInput::new("Buat PIN / Password").height(40.0).focused(true).render().into_any_element(),
-            false => TmInput::new("Buat PIN / Password")
-                .value(app.pin.clone())
-                .height(40.0)
-                .focused(true)
-                .render()
-                .into_any_element(),
-        })
+        .child(
+            div()
+                .id("pin-field")
+                .cursor_pointer()
+                .on_click(click(actions.focus_pin.clone()))
+                .child(match app.pin.is_empty() {
+                    true => TmInput::new("Buat PIN / Password")
+                        .height(40.0)
+                        .focused(true)
+                        .render()
+                        .into_any_element(),
+                    false => TmInput::new("Buat PIN / Password")
+                        .value(app.pin.clone())
+                        .height(40.0)
+                        .focused(true)
+                        .render()
+                        .into_any_element(),
+                }),
+        )
         .child(
             div()
                 .pt(px(6.0))
@@ -487,7 +507,7 @@ fn admin(app: &TmApp, actions: &OverlayActions) -> AnyElement {
     };
     let mut body = div().flex().flex_col().gap(px(14.0));
     body = body
-        .child(field(
+        .child(div().id("admin-user").on_click(click_focus(actions.focus_admin.clone(), crate::state::LoginField::Username)).child(field(
             "Username",
             TmInput::new("Admin Username")
                 .value(app.login.admin_user.clone())
@@ -495,8 +515,8 @@ fn admin(app: &TmApp, actions: &OverlayActions) -> AnyElement {
                 .focused(app.login.admin_field == crate::state::LoginField::Username)
                 .render()
                 .into_any_element(),
-        ))
-        .child(field(
+        )))
+        .child(div().id("admin-pass").on_click(click_focus(actions.focus_admin.clone(), crate::state::LoginField::Password)).child(field(
             "Password",
             TmInput::new("Password")
                 .value(app.login.admin_masked())
@@ -504,7 +524,7 @@ fn admin(app: &TmApp, actions: &OverlayActions) -> AnyElement {
                 .focused(app.login.admin_field == crate::state::LoginField::Password)
                 .render()
                 .into_any_element(),
-        ));
+        )));
     if let Some(err) = app.login.error.clone() {
         body = body.child(
             div()

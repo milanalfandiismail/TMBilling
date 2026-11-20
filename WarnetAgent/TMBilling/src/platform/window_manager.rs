@@ -96,6 +96,21 @@ pub fn set_rect(h: HWND, rect: RECT, topmost: bool) {
     }
 }
 
+/// Geser tanpa hide/show: dipakai saat hanya tinggi kartu yang berubah (pindah tab).
+pub fn set_rect_quiet(h: HWND, rect: RECT) {
+    unsafe {
+        let _ = SetWindowPos(
+            h,
+            None,
+            rect.left,
+            rect.top,
+            rect.right - rect.left,
+            rect.bottom - rect.top,
+            SWP_NOACTIVATE | SWP_NOZORDER,
+        );
+    }
+}
+
 /// Release the desktop from kiosk mode even if the process is killed by a panic.
 pub struct TaskbarGuard;
 

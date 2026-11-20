@@ -106,6 +106,7 @@ fn main() {
                     }
                     if overlay {
                         app.demo_overlay = true;
+                        app.view = state::View::Overlay;
                         app.modal = env_modal();
                         app.overlay_tab = std::env::var("TM_OVERLAY_TAB")
                             .ok()

@@ -6,6 +6,21 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [2.0.6] - 2026-11-21
+
+### Fixed
+- Sisa waktu dibaca sebagai menit dari server dan ditampilkan dalam detik, jadi timer overlay
+  berjalan tiap detik (1 jam 30 menit) alih-alih macet di 0 menit.
+- Hitung mundur mati otomatis kini benar-benar mematikan PC saat mencapai nol.
+- Semua modal overlay memakai jendela penuh sehingga tidak terpotong, dan scrim menangkap klik
+  sehingga input PIN/admin bisa diklik (klik tidak lagi tembus ke tile QRIS kiosk).
+- Login kiosk menahan layar sampai server mengonfirmasi sesi (login_pending), plus log status
+  mentah untuk mendiagnosis respons server.
+- Transisi jendela: hide/show hanya saat pindah kiosk/overlay; perubahan tinggi kartu dan modal
+  penuh memakai SetWindowPos tanpa hide, menghilangkan kedip.
+
+---
+
 ## [2.0.5] - 2026-11-21
 
 ### Fixed

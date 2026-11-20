@@ -52,12 +52,30 @@ impl TmApp {
                 .timer(std::time::Duration::from_secs(1))
                 .await;
             let alive = this.update(cx, |app, cx| {
-                let next = crate::state::tick_shutdown(app.shutdown_secs);
-                if next == app.shutdown_secs {
-                    return;
+                let mut dirty = false;
+                if app.session.is_some() {
+                    let next = crate::state::tick_remaining(app.remaining_secs);
+                    if next != app.remaining_secs {
+                        app.remaining_secs = next;
+                        dirty = true;
+                    }
                 }
-                app.shutdown_secs = next;
-                cx.notify();
+                match crate::state::tick_shutdown(app.shutdown_secs) {
+                    crate::state::ShutdownTick::Idle => {}
+                    crate::state::ShutdownTick::Counting(next) => {
+                        app.shutdown_secs = Some(next);
+                        dirty = true;
+                    }
+                    crate::state::ShutdownTick::Fire => {
+                        // clear dulu supaya tidak memicu dua kali
+                        app.shutdown_secs = None;
+                        app.run_power(crate::state::PowerAction::Shutdown, cx);
+                        dirty = true;
+                    }
+                }
+                if dirty {
+                    cx.notify();
+                }
             });
             if alive.is_err() {
                 break;
@@ -112,6 +130,7 @@ impl TmApp {
                 match res {
                     Ok(r) if r.success => {
                         app.login.password.clear();
+                        app.login_pending = true;
                         app.refresh_status(cx);
                     }
                     Ok(r) => {
@@ -344,7 +363,18 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
     let admin_me = me.clone();
     let confirm_me = me.clone();
     let power_me = me.clone();
+    let pin_focus_me = me.clone();
+    let admin_focus_me = me.clone();
     OverlayActions {
+        focus_pin: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            pin_focus_me.update(cx, |_, cx| cx.notify());
+        }) as ActFn,
+        focus_admin: Rc::new(move |field: crate::state::LoginField, _w: &mut Window, cx: &mut App| {
+            admin_focus_me.update(cx, |app, cx| {
+                app.login.admin_field = field;
+                cx.notify();
+            });
+        }) as crate::ui::overlay::FocusFn,
         power_confirm: Rc::new(move |action: PowerAction, _w: &mut Window, cx: &mut App| {
             power_me.update(cx, |app, cx| {
                 app.modal = None;
@@ -436,7 +466,7 @@ impl TmApp {
     fn sync_window(&mut self, window: &mut Window) {
         use std::sync::atomic::Ordering;
         let overlay = self.session.is_some() && !self.locked;
-        let fullscreen_modal = matches!(self.modal, Some(Modal::QrisFull | Modal::Power(_)));
+        let fullscreen_modal = crate::state::modal_fullscreen(self.view, self.modal);
         state::OVERLAY_MODE.store(overlay, Ordering::Relaxed);
         crate::platform::keyboard::set_enabled(state::hook_should_be_enabled(self.view, self.modal));
 
@@ -444,6 +474,12 @@ impl TmApp {
         if self.applied_mode == Some(mode) {
             return;
         }
+        // hide/show hanya saat jenis jendela berubah; perubahan tinggi kartu cukup SetWindowPos
+        // hide/show hanya saat pindah kiosk<->overlay; modal penuh cukup resize di tempat
+        let mode_switch = match self.applied_mode {
+            Some((o, _, _)) => o != overlay,
+            None => true,
+        };
         self.applied_mode = Some(mode);
         let Some(h) = wm::hwnd(window) else { return };
         wm::strip_frame(h);
@@ -477,16 +513,17 @@ impl TmApp {
             wm::monitor_rect(h).map(|r| (r.left, r.top, r.right, r.bottom))
         };
 
-        // hide sebelum memindah rect supaya tidak ada frame lama yang sempat tampil
-        wm::hide(h);
         if let Some((l, t, r, b)) = rect {
-            wm::set_rect(
-                h,
-                windows::Win32::Foundation::RECT { left: l, top: t, right: r, bottom: b },
-                !overlay || fullscreen_modal,
-            );
+            let target = windows::Win32::Foundation::RECT { left: l, top: t, right: r, bottom: b };
+            if mode_switch {
+                // hide sebelum memindah rect supaya tidak ada frame lama yang sempat tampil
+                wm::hide(h);
+                wm::set_rect(h, target, !overlay || fullscreen_modal);
+                wm::show(h);
+            } else {
+                wm::set_rect_quiet(h, target);
+            }
         }
-        wm::show(h);
     }
 }
 

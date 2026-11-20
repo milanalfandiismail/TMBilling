@@ -24,6 +24,8 @@ pub struct OverlayActions {
     pub tab: TabFn,
     pub tool: ToolFn,
     pub power_confirm: PowerConfirmFn,
+    pub focus_pin: ActFn,
+    pub focus_admin: FocusFn,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -47,3 +49,4 @@ pub fn tool_command(tool: ToolId) -> Option<(&'static str, &'static [&'static st
 pub type ModalFn = Rc<dyn Fn(crate::state::Modal, &mut Window, &mut App)>;
 pub type ToolFn = Rc<dyn Fn(ToolId, &mut Window, &mut App)>;
 pub type PowerConfirmFn = Rc<dyn Fn(crate::state::PowerAction, &mut Window, &mut App)>;
+pub type FocusFn = Rc<dyn Fn(crate::state::LoginField, &mut Window, &mut App)>;

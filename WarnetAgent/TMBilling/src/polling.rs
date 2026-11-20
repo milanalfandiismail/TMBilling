@@ -78,7 +78,10 @@ pub async fn run(client: ApiClient, tx: UnboundedSender<AppEvent>) {
         if let Some((ip, mac)) = local_net() {
             match client.status(&ip, &mac, false).await {
                 Ok(status) => {
-                    println!("[poll] ok status={} sisa={:?}", status.status, status.sisa_waktu);
+                    println!(
+                    "[poll] ok status={} sisa={:?} shutdown={:?}",
+                    status.status, status.sisa_waktu, status.shutdown_timer
+                );
                     interval = next_interval(true, status.polling_interval);
                     let _ = tx.send(AppEvent::TimeUpdate(status.sisa_waktu.unwrap_or(0) as i64));
                     if let Some(cmd) = status.command.clone() {
