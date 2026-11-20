@@ -289,3 +289,25 @@ async fn apply_menolak_token_tidak_valid() {
     let (status, body) = apply(st, &sesi, "../../etc/passwd").await;
     assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
 }
+
+#[tokio::test]
+async fn apply_dua_kali_berturut_turut_tetap_berhasil() {
+    let (_dir, st) = state("dua-kali").await;
+    let sesi = login(st.clone()).await;
+    let bytes = std::fs::read(fixture("warnet_legacy.db")).unwrap();
+    // Data induk + anak wajib terhapus tanpa melanggar FK (kasus DB produksi berisi).
+    sqlx::raw_sql(
+        "INSERT INTO grup (id, nama, aktif) VALUES (900, 'Lama', 1);\
+         INSERT INTO pc (id, kode, grup_id) VALUES (900, 'PC-LAMA', 900);",
+    )
+    .execute(&st.pool)
+    .await
+    .unwrap();
+    for putaran in 1..=2 {
+        let (status, body) = preview(st.clone(), &sesi, &bytes).await;
+        assert_eq!(status, StatusCode::OK, "pratinjau {putaran}: {body}");
+        let token = body["token"].as_str().unwrap().to_string();
+        let (status, body) = apply(st.clone(), &sesi, &token).await;
+        assert_eq!(status, StatusCode::OK, "terapkan {putaran}: {body}");
+    }
+}

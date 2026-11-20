@@ -70,7 +70,7 @@ pub fn stage(st: &AppState, bytes: &[u8]) -> Result<Staged> {
 async fn buka(path: &Path) -> Result<SqlitePool> {
     let opts = SqliteConnectOptions::new()
         .filename(path)
-        .create_if_missing(false);
+        .read_only(true);
     SqlitePoolOptions::new()
         .max_connections(1)
         .connect_with(opts)

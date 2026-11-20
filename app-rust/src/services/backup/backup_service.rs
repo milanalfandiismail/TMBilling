@@ -180,11 +180,12 @@ pub async fn salin_tabel(pool: &SqlitePool, unpacked: &Path) -> Result<()> {
     sqlx::query(&format!("ATTACH DATABASE '{attach}' AS r"))
         .execute(&mut *conn)
         .await?;
-    sqlx::raw_sql("BEGIN IMMEDIATE").execute(&mut *conn).await?;
-    // Impor menimpa induk dan anak sekaligus; FK baru diperiksa saat COMMIT.
-    sqlx::raw_sql("PRAGMA defer_foreign_keys = ON")
+    // Impor menimpa induk dan anak sekaligus; FK dimatikan selama salin lalu diverifikasi.
+    // PRAGMA foreign_keys tidak berlaku bila dijalankan di dalam transaksi.
+    sqlx::raw_sql("PRAGMA foreign_keys = OFF")
         .execute(&mut *conn)
         .await?;
+    sqlx::raw_sql("BEGIN IMMEDIATE").execute(&mut *conn).await?;
     let daftar = tables(&mut conn, "r").await?;
     for table in daftar {
         let main_cols = columns(&mut conn, "main", &table).await?;
@@ -226,15 +227,20 @@ pub async fn salin_tabel(pool: &SqlitePool, unpacked: &Path) -> Result<()> {
         let pilih = nilai.join(",");
         sqlx::raw_sql(&format!("DELETE FROM main.\"{table}\""))
             .execute(&mut *conn)
-            .await?;
+            .await
+            .map_err(|e| anyhow!("hapus tabel {table}: {e}"))?;
         sqlx::raw_sql(&format!(
             "INSERT INTO main.\"{table}\" ({list}) SELECT {pilih} FROM r.\"{table}\""
         ))
         .execute(&mut *conn)
-        .await?;
+        .await
+        .map_err(|e| anyhow!("salin tabel {table}: {e}"))?;
     }
     sqlx::raw_sql("COMMIT").execute(&mut *conn).await?;
     let _ = sqlx::raw_sql("DETACH DATABASE r").execute(&mut *conn).await;
+    sqlx::raw_sql("PRAGMA foreign_keys = ON")
+        .execute(&mut *conn)
+        .await?;
     Ok(())
 }
 

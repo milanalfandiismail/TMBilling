@@ -1,11 +1,34 @@
 // Sub-tab Pengaturan: migrasi database Python 1.6.5 ke Rust.
 const DbMigration = {
     token: null,
+    file: null,
     init() {
         this.token = null;
+        this.file = null;
         this._setApplyEnabled(false);
         document.getElementById('db-import-status').textContent = '';
         document.getElementById('db-import-preview').classList.add('hidden');
+        document.getElementById('db-import-file-preview').classList.add('hidden');
+    },
+    pick(input) {
+        this._setFile(input.files[0] || null);
+    },
+    drop(ev) {
+        ev.preventDefault();
+        this._setFile(ev.dataTransfer.files[0] || null);
+    },
+    clearFile(ev) {
+        ev.stopPropagation();
+        this.init();
+        document.getElementById('db-import-file').value = '';
+    },
+    _setFile(file) {
+        this.file = file;
+        const strip = document.getElementById('db-import-file-preview');
+        document.getElementById('db-import-file-name').textContent = file ? file.name : '';
+        strip.classList.toggle('hidden', !file);
+        this.token = null;
+        this._setApplyEnabled(false);
     },
     _setApplyEnabled(on) {
         document.getElementById('db-import-apply-btn').disabled = !on;
@@ -19,7 +42,7 @@ const DbMigration = {
         if (el) el.textContent = (arr && arr.length) ? arr.join(', ') : kosong;
     },
     async preview() {
-        const file = document.getElementById('db-import-file').files[0];
+        const file = this.file;
         if (!file) {
             Toast.error('Pilih berkas database terlebih dahulu');
             return;

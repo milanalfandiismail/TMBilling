@@ -16,8 +16,22 @@
                 <span class="font-mono text-neutral-200">warnet.db</span> beserta
                 <span class="font-mono text-neutral-200">warnet.db-wal</span> bila server lama belum dihentikan dengan bersih.
             </p>
-            <input type="file" id="db-import-file" accept=".db,.zip"
-                class="block w-full text-[11px] sm:text-xs text-neutral-300 bg-[#050505] border border-[#1c1c1c] rounded p-2 file:mr-3 file:px-2.5 file:py-1.5 file:rounded file:border-0 file:bg-neutral-100 file:text-black file:text-[11px] file:font-bold">
+            <div id="db-import-dropzone" onclick="document.getElementById('db-import-file').click()"
+                ondragover="event.preventDefault()" ondrop="DbMigration.drop(event)"
+                class="border border-dashed border-[#262626] hover:border-neutral-500 rounded p-3 sm:p-4 text-center cursor-pointer transition-colors bg-[#080808]">
+                <div class="w-8 h-8 rounded-full bg-[#141414] border border-[#222] flex items-center justify-center mx-auto mb-1.5 text-neutral-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                    </svg>
+                </div>
+                <p class="text-[11px] sm:text-xs text-neutral-300 font-semibold">Klik atau seret berkas database ke sini</p>
+                <p class="text-[9px] text-neutral-500 mt-0.5">warnet.db atau .zip (warnet.db + warnet.db-wal)</p>
+                <input type="file" id="db-import-file" accept=".db,.zip" class="hidden" onchange="DbMigration.pick(this)">
+            </div>
+            <div id="db-import-file-preview" class="hidden bg-[#050505] border border-[#1c1c1c] rounded p-2 flex items-center justify-between gap-2">
+                <span id="db-import-file-name" class="text-[11px] text-neutral-200 font-mono break-all leading-tight"></span>
+                <button type="button" onclick="DbMigration.clearFile(event)" class="text-[10px] text-neutral-400 hover:text-red-400 shrink-0 font-medium">Batal</button>
+            </div>
             <div class="flex flex-wrap gap-2">
                 <button type="button" id="db-import-preview-btn" onclick="DbMigration.preview()"
                     class="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-[11px] sm:text-xs font-bold rounded transition-colors">Pratinjau</button>
