@@ -6,6 +6,17 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [2.0.4] - 2026-11-20
+
+### Changed
+- Klien PC ditulis ulang di GPUI (`WarnetAgent/TMBilling`, versi 2.0.0) tanpa webview:
+  kiosk login/aturan/paket, kartu overlay + timer, panel Alat/QRIS, tujuh modal,
+  kiosk lock & taskbar, tray/single instance/security gate/keyboard hook,
+  screenshot upload, cache QRIS, dan kredensial darurat 1:1 dengan klien lama.
+- Klien Tauri 1.6.5 beserta watchdog `MGCTM` dan `mtm` dipindah ke
+  `archive-1.6.5/WarnetAgent/`; `build_and_deploy.bat` kini membangun biner GPUI
+  (`cargo build --release`) lalu menyalinnya ke `WarnetAgent/Deploy`.
+
 ## [2.0.3] - 2026-11-18
 
 ### Fixed
