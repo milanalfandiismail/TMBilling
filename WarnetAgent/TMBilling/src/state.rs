@@ -23,6 +23,12 @@ pub struct TmApp {
     pub login: LoginState,
     pub client: Option<crate::api::client::ApiClient>,
     pub focus: Option<gpui_kit::FocusHandle>,
+    /// Jam lokal saat sesi pertama kali terlihat aktif di klien ini.
+    pub started_at: Option<(u8, u8)>,
+    pub prev_remaining: Option<i64>,
+    /// Layar overlay dipaksa tampil untuk verifikasi visual.
+    pub demo_overlay: bool,
+    pub overlay_tab: usize,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -30,6 +36,13 @@ pub enum LoginField {
     #[default]
     Username,
     Password,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Alert {
+    Min15,
+    Min5,
+    Min1,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -123,6 +136,22 @@ impl TmApp {
         }
     }
 
+    /// Alert pertama yang terlewati sejak update sebelumnya.
+    pub fn alert_for(&mut self, remaining: i64) -> Option<Alert> {
+        let prev = self.prev_remaining.replace(remaining)?;
+        if prev <= remaining {
+            return None;
+        }
+        [
+            (900, Alert::Min15),
+            (300, Alert::Min5),
+            (60, Alert::Min1),
+        ]
+        .into_iter()
+        .find(|(limit, _)| prev > *limit && remaining <= *limit)
+        .map(|(_, alert)| alert)
+    }
+
     fn apply_identify(&mut self, res: IdentifyResponse) -> bool {
         if !res.valid {
             return false;
@@ -151,6 +180,9 @@ impl TmApp {
                     pc_kode: status.pc_kode.unwrap_or_default(),
                     is_member: status.is_member.unwrap_or(false),
                 });
+                if self.started_at.is_none() {
+                    self.started_at = Some(crate::platform::window::local_hhmm());
+                }
                 self.remaining_secs = status.sisa_waktu.unwrap_or(0) as i64;
                 self.shutdown_secs = status.shutdown_timer.filter(|t| *t > 0).map(i64::from);
             }

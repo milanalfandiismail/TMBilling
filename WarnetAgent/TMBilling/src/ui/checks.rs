@@ -33,3 +33,12 @@ fn rules_page_count_rounds_up() {
     assert_eq!(crate::state::page_count(5, 4), 2);
     assert_eq!(crate::state::page_count(0, 6), 1);
 }
+
+#[test]
+fn overlay_clock_pads_hours() {
+    use crate::ui::overlay::card::clock;
+    assert_eq!(clock(5078), "01:24:38");
+    assert_eq!(clock(59), "00:00:59");
+    assert_eq!(clock(-5), "00:00:00");
+}
+

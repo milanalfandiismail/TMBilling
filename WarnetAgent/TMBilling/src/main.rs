@@ -1,7 +1,9 @@
 #[allow(dead_code)]
 mod api;
 mod app;
+mod audio;
 mod gallery;
+mod platform;
 mod polling;
 mod state;
 mod theme;
@@ -35,6 +37,7 @@ fn window_options() -> WindowOptions {
 
 fn main() {
     let gallery = std::env::args().any(|a| a == "--gallery");
+    let overlay = std::env::args().any(|a| a == "--overlay");
     gpui_kit::application().run(move |cx: &mut App| {
         gpui_kit::init(cx);
         if gallery {
@@ -46,6 +49,19 @@ fn main() {
             gpui_kit::open_window(window_options(), cx, |_, cx| {
                 cx.new(|cx: &mut Context<state::TmApp>| {
                     let mut app = state::TmApp::default();
+                    // shortcut: sesi palsu untuk menilai tampilan overlay sebelum server hidup
+                    if overlay {
+                        app.demo_overlay = true;
+                        app.session = Some(state::Session {
+                            nama: "budi".into(),
+                            grup: "REGULAR".into(),
+                            pc_kode: "PC-12".into(),
+                            is_member: true,
+                            is_emergency: false,
+                        });
+                        app.remaining_secs = 5078;
+                        app.started_at = Some((20, 12));
+                    }
                     app.start(cx);
                     app
                 })

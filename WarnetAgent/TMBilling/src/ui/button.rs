@@ -15,7 +15,7 @@ pub fn tone_colors(tone: ButtonTone) -> (Rgba, Rgba, Option<Rgba>) {
     match tone {
         ButtonTone::Primary => (TM.accent, c(0x050505), None),
         ButtonTone::Ghost => (TM.card, TM.text, Some(TM.border_strong)),
-        ButtonTone::Danger => (c(0x2A1414), TM.danger, None),
+        ButtonTone::Danger => (c(0x2A1414), TM.danger, Some(TM.danger)),
         ButtonTone::Warn => (c(0x2A2410), TM.warn, None),
     }
 }

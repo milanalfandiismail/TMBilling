@@ -1,7 +1,7 @@
 use gpui_kit::prelude::*;
 use gpui_kit::*;
 
-use crate::theme::{c, TM};
+use crate::theme::TM;
 
 type ChangeHandler = std::rc::Rc<dyn Fn(usize, &mut Window, &mut App)>;
 
@@ -11,6 +11,8 @@ pub struct TmTabs {
     id_prefix: SharedString,
     on_change: Option<ChangeHandler>,
     item_width: Option<f32>,
+    active_color: Option<Rgba>,
+    text_size: Option<f32>,
 }
 
 impl TmTabs {
@@ -21,11 +23,23 @@ impl TmTabs {
             id_prefix: "tm-tabs".into(),
             on_change: None,
             item_width: None,
+            active_color: None,
+            text_size: None,
         }
     }
 
     pub fn id_prefix(mut self, prefix: impl Into<SharedString>) -> Self {
         self.id_prefix = prefix.into();
+        self
+    }
+
+    pub fn text_size(mut self, size: f32) -> Self {
+        self.text_size = Some(size);
+        self
+    }
+
+    pub fn active_color(mut self, color: Rgba) -> Self {
+        self.active_color = Some(color);
         self
     }
 
@@ -57,14 +71,18 @@ impl TmTabs {
                 .items_center()
                 .px(px(14.0))
                 .pt(px(2.0))
-                .text_size(px(13.0))
-                .text_color(if is_active { TM.text } else { TM.muted })
+                .text_size(px(self.text_size.unwrap_or(13.0)))
+                .text_color(if is_active {
+                self.active_color.unwrap_or(TM.text)
+            } else {
+                TM.muted
+            })
                 .child(item)
-                .child(div().h(px(2.0)).w_full().mt(px(8.0)).bg(if is_active {
-                    TM.accent
+                .child(if is_active {
+                    div().h(px(2.0)).w_full().mt(px(8.0)).bg(TM.accent).into_any_element()
                 } else {
-                    c(0x00000000)
-                }));
+                    div().h(px(2.0)).w_full().mt(px(8.0)).into_any_element()
+                });
             if let Some(w) = self.item_width {
                 tab = tab.w(px(w));
             }

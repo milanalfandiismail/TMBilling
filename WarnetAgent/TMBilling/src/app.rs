@@ -1,23 +1,38 @@
 use std::rc::Rc;
 
 use crate::api::client::ApiClient;
-use crate::polling::{self, format_remaining, AppEvent};
-use crate::state::{LoginField, PowerAction, Session, TmApp};
+use crate::polling::{self, AppEvent};
+use crate::state::{Alert, LoginField, PowerAction, Session, TmApp};
 use crate::theme::TM;
 use crate::ui::kiosk::header::header;
 use crate::ui::kiosk::{info, login, KioskActions};
+use crate::ui::overlay::card as overlay_card_mod;
+use crate::ui::overlay::{ActFn, OverlayActions, TabFn};
+use crate::platform::window::overlay_geometry;
 use gpui_kit::prelude::*;
 use gpui_kit::*;
 
 impl TmApp {
     pub fn apply(&mut self, event: AppEvent, cx: &mut Context<Self>) {
-        if self.reduce(event) {
+        let changed = self.reduce(event);
+        let remaining = self.remaining_secs;
+        if let Some(alert) = self.alert_for(remaining) {
+            crate::audio::play(match alert {
+                Alert::Min15 => crate::audio::WARNING_15MIN,
+                Alert::Min5 => crate::audio::WARNING_5MIN,
+                Alert::Min1 => crate::audio::WARNING_1MIN,
+            });
+        }
+        if changed {
             cx.notify();
         }
     }
 
     pub fn start(&mut self, cx: &mut Context<Self>) {
         self.login.info_page = 1;
+        if self.demo_overlay {
+            return;
+        }
         // shortcut: tab awal dipaksa lewat env untuk verifikasi visual, dibuang saat dogfood
         if std::env::var("TM_INFO_TAB").ok().as_deref() == Some("1") {
             self.login.info_tab = 1;
@@ -102,6 +117,21 @@ impl TmApp {
         cx.notify();
     }
 
+    fn overlay_logout(&mut self, cx: &mut Context<Self>) {
+        let Some(client) = self.client.clone() else {
+            return;
+        };
+        let (ip, mac) = polling::local_net().unwrap_or_default();
+        cx.spawn(async move |this, cx| {
+            let _ = client.logout(&ip, &mac).await;
+            let _ = this.update(cx, |app, cx| {
+                app.session = None;
+                cx.notify();
+            });
+        })
+        .detach();
+    }
+
     fn run_power(&mut self, action: PowerAction, cx: &mut Context<Self>) {
         self.login.power = None;
         let flag = match action {
@@ -112,6 +142,32 @@ impl TmApp {
             .args([flag, "/f", "/t", "0"])
             .spawn();
         cx.notify();
+    }
+}
+
+pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
+    let me = cx.entity();
+    let min_me = me.clone();
+    let afk_me = me.clone();
+    let out_me = me.clone();
+    let tab_me = me.clone();
+    OverlayActions {
+        // shortcut: minimize & AFK hanya mengubah state lokal sampai Task 8/10 memasang aksinya
+        minimize: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            min_me.update(cx, |_app, cx| cx.notify());
+        }) as ActFn,
+        afk: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            afk_me.update(cx, |_app, cx| cx.notify());
+        }) as ActFn,
+        logout: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            out_me.update(cx, |app, cx| app.overlay_logout(cx));
+        }) as ActFn,
+        tab: Rc::new(move |tab: usize, _w: &mut Window, cx: &mut App| {
+            tab_me.update(cx, |app, cx| {
+                app.overlay_tab = tab;
+                cx.notify();
+            });
+        }) as TabFn,
     }
 }
 
@@ -205,30 +261,19 @@ impl Render for TmApp {
                         .child(info::screen(self, compact, &actions))
                 });
         }
-        // shortcut: layar overlay sementara, diganti Task 7
-        let state = match &self.session {
-            Some(s) if s.is_emergency => "mode darurat".to_string(),
-            Some(s) => format!("{} - {}", s.nama, s.grup),
-            None => String::new(),
-        };
+        let vw: f32 = window.viewport_size().width.into();
+        let vh: f32 = window.viewport_size().height.into();
+        let geom = overlay_geometry((vw, vh));
+        let actions_ov = overlay_actions(cx);
         div()
             .size_full()
             .bg(TM.bg)
             .flex()
-            .flex_col()
-            .justify_center()
-            .items_center()
-            .gap_2()
-            .child(div().text_color(TM.text).child(format!("TMBilling 2.0.0 | {state}")))
-            .child(
-                div()
-                    .text_color(if self.shutdown_secs.is_some() { TM.warn } else { TM.muted })
-                    .child(format!("sisa {}", format_remaining(self.remaining_secs))),
-            )
-            .child(
-                div()
-                    .text_color(if self.connected { TM.accent } else { TM.danger })
-                    .child(if self.connected { "terhubung" } else { "terputus" }),
-            )
+            .items_start()
+            .justify_end()
+            .pt(px(geom.margin))
+            .pr(px(geom.margin))
+            .child(overlay_card_mod::card(self, geom, &actions_ov))
     }
 }
+

@@ -5,6 +5,7 @@ mod checks;
 pub mod input;
 pub mod kiosk;
 pub mod modal;
+pub mod overlay;
 pub mod pager;
 pub mod tabs;
 
