@@ -477,42 +477,52 @@ fn logout(actions: &OverlayActions) -> AnyElement {
 }
 
 fn admin(app: &TmApp, actions: &OverlayActions) -> AnyElement {
-    let username = app.login.username.clone();
-    let password = app.login.masked_password();
-    let error = app.login.error.clone().unwrap_or_default();
-    let body = div()
-        .flex()
-        .flex_col()
-        .gap(px(8.0))
-        .child(
-            TmInput::new("Username")
-                .value(username)
-                .height(38.0)
-                .focused(app.login.field == crate::state::LoginField::Username)
-                .render(),
-        )
-        .child(
+    let field = |title: &'static str, input: AnyElement| {
+        div()
+            .flex()
+            .flex_col()
+            .gap(px(6.0))
+            .child(div().text_size(px(11.0)).text_color(TM.muted).child(title))
+            .child(input)
+    };
+    let mut body = div().flex().flex_col().gap(px(14.0));
+    body = body
+        .child(field(
+            "Username",
+            TmInput::new("Admin Username")
+                .value(app.login.admin_user.clone())
+                .height(44.0)
+                .focused(app.login.admin_field == crate::state::LoginField::Username)
+                .render()
+                .into_any_element(),
+        ))
+        .child(field(
+            "Password",
             TmInput::new("Password")
-                .value(password)
-                .height(38.0)
-                .focused(app.login.field == crate::state::LoginField::Password)
-                .render(),
-        )
-        .child(
+                .value(app.login.admin_masked())
+                .height(44.0)
+                .focused(app.login.admin_field == crate::state::LoginField::Password)
+                .render()
+                .into_any_element(),
+        ));
+    if let Some(err) = app.login.error.clone() {
+        body = body.child(
             div()
-                .text_size(px(10.0))
+                .text_size(px(11.0))
                 .text_color(TM.danger)
-                .child(error),
-        )
-        .into_any_element();
+                .child(err),
+        );
+    }
+    let body = body.px(px(20.0)).py(px(18.0)).into_any_element();
 
     dialog(
-        360.0,
+        480.0,
         "Login Admin",
         body,
         footer(vec![
             tm_button("Batal", actions.close.clone()),
             TmButton::new("Masuk", ButtonTone::Primary)
+                .height(44.0)
                 .on_click(click(actions.admin_submit.clone()))
                 .render()
                 .into_any_element(),

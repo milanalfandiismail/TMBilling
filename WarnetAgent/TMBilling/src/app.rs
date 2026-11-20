@@ -171,7 +171,24 @@ impl TmApp {
                 cx.notify();
                 return;
             }
-            Some(Modal::Admin) => {}
+            Some(Modal::Admin) => {
+                match key {
+                    "backspace" => {
+                        self.login.admin_backspace();
+                    }
+                    "tab" => self.login.admin_focus_next(),
+                    "enter" => self.submit_admin(cx),
+                    _ => {
+                        if let Some(text) = ev.keystroke.key_char.as_deref() {
+                            for ch in text.chars() {
+                                self.login.admin_type_char(ch);
+                            }
+                        }
+                    }
+                }
+                cx.notify();
+                return;
+            }
             Some(_) => return,
             None => {}
         }
@@ -221,14 +238,16 @@ impl TmApp {
     fn submit_admin(&mut self, cx: &mut Context<Self>) {
         let (app_ip, app_mac) = crate::polling::local_net().unwrap_or_default();
         self.login.error = None;
-        if !self.login.can_submit() {
+        let (user, pass) = self.login.admin_credentials();
+        if user.is_empty() || pass.is_empty() {
+            self.login.error = Some("Username dan password wajib diisi.".to_string());
             return;
         }
         let Some(client) = self.client.clone() else {
             return;
         };
-        let user = self.login.username.clone();
-        let pass = self.login.password.clone();
+        let user = user.to_string();
+        let pass = pass.to_string();
         cx.spawn(async move |this, cx| {
             let ip = app_ip.clone();
             let mac = app_mac.clone();
@@ -237,7 +256,7 @@ impl TmApp {
                 match result {
                     Ok(res) if res.success => {
                         app.modal = None;
-                        app.login.password.clear();
+                        app.login.admin_pass.clear();
                         app.login.error = None;
                     }
                     Ok(res) => app.login.error = res.error,

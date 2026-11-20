@@ -99,3 +99,14 @@ fn admin_hotkey_only_on_kiosk() {
     assert!(crate::state::admin_hotkey_allowed(false));
     assert!(!crate::state::admin_hotkey_allowed(true));
 }
+
+#[test]
+fn admin_fields_are_separate_from_login() {
+    let mut login = crate::state::LoginState::default();
+    login.admin_type_char('a');
+    login.admin_focus_next();
+    login.admin_type_char('b');
+    assert_eq!(login.admin_credentials(), ("a", "b"));
+    assert_eq!(login.admin_masked(), "*");
+    assert!(login.username.is_empty() && login.password.is_empty());
+}

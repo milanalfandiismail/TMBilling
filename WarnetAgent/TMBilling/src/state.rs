@@ -114,11 +114,9 @@ pub struct LoginState {
     pub error: Option<String>,
     pub busy: bool,
     pub qris_full: bool,
-    // dipakai modal admin F11 di Task 3
-    #[allow(dead_code)]
     pub admin_user: String,
-    #[allow(dead_code)]
     pub admin_pass: String,
+    pub admin_field: LoginField,
     pub info_tab: usize,
     pub info_page: usize,
 }
@@ -161,6 +159,46 @@ impl LoginState {
 
     pub fn masked_password(&self) -> String {
         "*".repeat(self.password.chars().count())
+    }
+
+    fn admin_active_mut(&mut self) -> &mut String {
+        match self.admin_field {
+            LoginField::Username => &mut self.admin_user,
+            LoginField::Password => &mut self.admin_pass,
+        }
+    }
+
+    pub fn admin_type_char(&mut self, ch: char) -> bool {
+        if ch.is_control() {
+            return false;
+        }
+        self.admin_active_mut().push(ch);
+        self.error = None;
+        true
+    }
+
+    pub fn admin_backspace(&mut self) -> bool {
+        if self.admin_active_mut().pop().is_none() {
+            return false;
+        }
+        self.error = None;
+        true
+    }
+
+    pub fn admin_focus_next(&mut self) {
+        self.admin_field = match self.admin_field {
+            LoginField::Username => LoginField::Password,
+            LoginField::Password => LoginField::Username,
+        };
+    }
+
+    pub fn admin_masked(&self) -> String {
+        "*".repeat(self.admin_pass.chars().count())
+    }
+
+    /// Username di-trim, password apa adanya.
+    pub fn admin_credentials(&self) -> (&str, &str) {
+        (self.admin_user.trim(), &self.admin_pass)
     }
 }
 

@@ -24,7 +24,9 @@ impl TmInput {
     }
 
     pub fn value(mut self, value: impl Into<SharedString>) -> Self {
-        self.value = Some(value.into());
+        let text = value.into();
+        // string kosong = belum diisi, jadi placeholder tetap tampil
+        self.value = if text.is_empty() { None } else { Some(text) };
         self
     }
 
