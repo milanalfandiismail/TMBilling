@@ -123,3 +123,6 @@ path = "tests/unit/scheduler_test.rs"
 [[test]]
 name = "mikrotik_test"
 path = "tests/contract/mikrotik_test.rs"
+[[test]]
+name = "db_migration_test"
+path = "tests/contract/db_migration_test.rs"

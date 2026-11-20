@@ -385,3 +385,54 @@ pub async fn scheduler_update(
         json!({"success": true, "message": "Konfigurasi scheduler berhasil disimpan"}),
     )
 }
+
+/// Unggah `.db`/ZIP Python 1.6.5 lalu kembalikan pratinjau selisih skema.
+pub async fn import_preview(
+    State(st): State<Arc<AppState>>,
+    k: Kasir,
+    mut form: Multipart,
+) -> Response {
+    if let Err(res) = admin_only(&k) {
+        return res;
+    }
+    let mut bytes = None;
+    while let Ok(Some(field)) = form.next_field().await {
+        if field.name() == Some("file") || field.file_name().is_some() {
+            if let Ok(data) = field.bytes().await {
+                bytes = Some(data.to_vec());
+                break;
+            }
+        }
+    }
+    let Some(bytes) = bytes.filter(|b| !b.is_empty()) else {
+        return http::json(400, json!({"error": "Berkas database wajib diunggah"}));
+    };
+    let hasil = match crate::services::backup::python_import::stage(&st, &bytes) {
+        Ok(staged) => match crate::services::backup::python_import::inspect(&staged.path).await {
+            Ok(preview) => Ok(json!({"success": true, "token": staged.token, "preview": preview})),
+            Err(e) => Err(e),
+        },
+        Err(e) => Err(e),
+    };
+    match hasil {
+        Ok(body) => http::json(200, body),
+        Err(e) => http::json(400, json!({"error": e.to_string()})),
+    }
+}
+
+/// Timpa database aktif dengan berkas yang sudah dipratinjau.
+pub async fn import_apply(
+    State(st): State<Arc<AppState>>,
+    k: Kasir,
+    body: axum::body::Bytes,
+) -> Response {
+    if let Err(res) = admin_only(&k) {
+        return res;
+    }
+    let data: Value = serde_json::from_slice(&body).unwrap_or_else(|_| json!({}));
+    let token = data.get("token").and_then(|v| v.as_str()).unwrap_or("");
+    match crate::services::backup::python_import::apply(&st, token).await {
+        Ok(result) => http::json(200, json!({"success": true, "result": result})),
+        Err(e) => http::json(400, json!({"success": false, "error": e.to_string()})),
+    }
+}

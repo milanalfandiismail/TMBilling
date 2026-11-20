@@ -601,6 +601,14 @@ pub fn router(state: Arc<AppState>) -> Router {
             post(database_routes::purge_and_vacuum),
         )
         .route(
+            "/api/v1/kasir/settings/database/import/preview",
+            post(database_routes::import_preview),
+        )
+        .route(
+            "/api/v1/kasir/settings/database/import/apply",
+            post(database_routes::import_apply),
+        )
+        .route(
             "/api/v1/kasir/settings/migration/status",
             get(migration_routes::status),
         )

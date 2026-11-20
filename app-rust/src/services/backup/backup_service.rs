@@ -181,6 +181,10 @@ pub async fn salin_tabel(pool: &SqlitePool, unpacked: &Path) -> Result<()> {
         .execute(&mut *conn)
         .await?;
     sqlx::raw_sql("BEGIN IMMEDIATE").execute(&mut *conn).await?;
+    // Impor menimpa induk dan anak sekaligus; FK baru diperiksa saat COMMIT.
+    sqlx::raw_sql("PRAGMA defer_foreign_keys = ON")
+        .execute(&mut *conn)
+        .await?;
     let daftar = tables(&mut conn, "r").await?;
     for table in daftar {
         let main_cols = columns(&mut conn, "main", &table).await?;
@@ -192,16 +196,39 @@ pub async fn salin_tabel(pool: &SqlitePool, unpacked: &Path) -> Result<()> {
         if shared.is_empty() {
             continue;
         }
-        let list = shared
-            .iter()
-            .map(|c| format!("\"{c}\""))
-            .collect::<Vec<_>>()
-            .join(",");
+        // Kolom NOT NULL baru tanpa default (mis. sesi.is_afk) tidak ada di DB sumber;
+        // isi nilai netral agar baris lama tetap bisa masuk.
+        let wajib: Vec<(String, String)> = sqlx::query_as(
+            "SELECT name, type FROM pragma_table_info(?) WHERE \"notnull\"=1 AND dflt_value IS NULL",
+        )
+        .bind(&table)
+        .fetch_all(&mut *conn)
+        .await?
+        .into_iter()
+        .filter(|(n, _): &(String, String)| !shared.iter().any(|c| c == n))
+        .map(|(n, t): (String, String)| {
+            let huruf = t.to_uppercase();
+            let isi = if huruf.contains("INT") || huruf.contains("BOOL") || huruf.contains("REAL") || huruf.contains("FLOA") || huruf.contains("DOUB") {
+                "0".to_string()
+            } else {
+                "''".to_string()
+            };
+            (n, isi)
+        })
+        .collect();
+        let mut kolom: Vec<String> = shared.iter().map(|c| format!("\"{c}\"")).collect();
+        let mut nilai: Vec<String> = shared.iter().map(|c| format!("\"{c}\"")).collect();
+        for (n, isi) in &wajib {
+            kolom.push(format!("\"{n}\""));
+            nilai.push(isi.clone());
+        }
+        let list = kolom.join(",");
+        let pilih = nilai.join(",");
         sqlx::raw_sql(&format!("DELETE FROM main.\"{table}\""))
             .execute(&mut *conn)
             .await?;
         sqlx::raw_sql(&format!(
-            "INSERT INTO main.\"{table}\" ({list}) SELECT {list} FROM r.\"{table}\""
+            "INSERT INTO main.\"{table}\" ({list}) SELECT {pilih} FROM r.\"{table}\""
         ))
         .execute(&mut *conn)
         .await?;
