@@ -634,3 +634,5 @@ tests/e2e/mcp/results/
 /WarnetAgent/TMBilling/target/
 /WarnetAgent/MGCTM/target/
 /WarnetAgent/mtm/target/
+/WarnetAgent/TMBilling_Monitor/target/
+/WarnetAgent/TMBilling_Uninstaller/target/
