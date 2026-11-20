@@ -32,6 +32,10 @@ pub struct TmApp {
     pub muted: bool,
     pub locked: bool,
     pub modal: Option<Modal>,
+    /// (window is the small overlay card, modal needs the whole screen)
+    pub applied_mode: Option<(bool, bool)>,
+    pub saved_rect: Option<(i32, i32, i32, i32)>,
+    pub taskbar_guard: Option<crate::platform::window_manager::TaskbarGuard>,
     pub pin: String,
     pub menu_page: usize,
     pub member_json: Option<serde_json::Value>,

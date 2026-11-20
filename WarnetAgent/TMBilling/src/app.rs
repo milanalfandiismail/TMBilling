@@ -9,6 +9,7 @@ use crate::ui::kiosk::{info, login, KioskActions};
 use crate::ui::overlay::card as overlay_card_mod;
 use crate::ui::overlay::{ModalFn, ActFn, OverlayActions, TabFn, ToolFn, ToolId};
 use crate::platform::window::overlay_geometry;
+use crate::platform::window_manager as wm;
 use gpui_kit::prelude::*;
 use gpui_kit::*;
 
@@ -101,6 +102,21 @@ impl TmApp {
 
     fn on_key(&mut self, ev: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
         let key = ev.keystroke.key.as_str();
+        match key {
+            // F11 is the admin hotkey of the Tauri client; F10 opens the read-only menu.
+            "f10" => {
+                self.menu_page = 1;
+                self.modal = Some(Modal::Menu);
+                cx.notify();
+                return;
+            }
+            "f11" => {
+                self.modal = Some(Modal::Admin);
+                cx.notify();
+                return;
+            }
+            _ => {}
+        }
         if key == "escape" {
             // shortcut: ESC menutup semua modal kecuali PIN (butuh aksi eksplisit)
             if self.modal.is_some_and(|m| m != Modal::AfkPin) {
@@ -398,11 +414,61 @@ pub fn kiosk_actions(cx: &mut Context<TmApp>) -> KioskActions {
     }
 }
 
+
+impl TmApp {
+    /// Kiosk (no session), overlay card (in session), AFK (locked) drive window chrome.
+    fn sync_window(&mut self, window: &mut Window) {
+        let overlay = self.session.is_some() && !self.locked;
+        let fullscreen_modal = matches!(self.modal, Some(Modal::QrisFull));
+        if self.applied_mode == Some((overlay, fullscreen_modal)) {
+            return;
+        }
+        self.applied_mode = Some((overlay, fullscreen_modal));
+        let Some(h) = wm::hwnd(window) else { return };
+        if overlay && !fullscreen_modal {
+            wm::set_taskbar_visibility(true);
+            let rect = self.saved_rect.take().or_else(|| {
+                let m = wm::monitor_rect(h)?;
+                let g = overlay_geometry((
+                    (m.right - m.left) as f32,
+                    (m.bottom - m.top) as f32,
+                ));
+                let m8 = g.margin as i32;
+                Some((
+                    m.right - g.width as i32 - m8,
+                    m.top + m8,
+                    m.right - m8,
+                    m.top + m8 + g.height as i32,
+                ))
+            });
+            if let Some((l, t, r, b)) = rect {
+                wm::set_rect(h, windows::Win32::Foundation::RECT { left: l, top: t, right: r, bottom: b }, false);
+            }
+            return;
+        }
+        if overlay {
+            if self.saved_rect.is_none() {
+                self.saved_rect = wm::window_rect(h).map(|r| (r.left, r.top, r.right, r.bottom));
+            }
+        } else if cfg!(not(debug_assertions)) {
+            // shortcut: dev builds keep the desktop taskbar, production hides it, restore on drop
+            if self.taskbar_guard.is_none() {
+                self.taskbar_guard = Some(wm::TaskbarGuard);
+            }
+            wm::set_taskbar_visibility(false);
+        }
+        if let Some(rect) = wm::monitor_rect(h) {
+            wm::set_rect(h, rect, true);
+        }
+    }
+}
+
 impl Render for TmApp {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let handle = self.focus.get_or_insert_with(|| cx.focus_handle()).clone();
         let actions = kiosk_actions(cx);
         window.focus(&handle, cx);
+        self.sync_window(window);
         let compact = window.viewport_size().width < px(1400.0);
         let title = self
             .cfg
