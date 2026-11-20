@@ -34,6 +34,7 @@ fn env_modal() -> Option<state::Modal> {
         Ok("pin") => Some(state::Modal::AfkPin),
         Ok("logout") => Some(state::Modal::Logout),
         Ok("admin") => Some(state::Modal::Admin),
+        Ok("power") => Some(state::Modal::Power(state::PowerAction::Restart)),
         _ => None,
     }
 }
@@ -91,7 +92,7 @@ fn main() {
                     // shortcut: sesi palsu untuk menilai tampilan overlay sebelum server hidup
                     if !overlay {
                         app.modal = match env_modal() {
-                            Some(m @ state::Modal::Admin) => Some(m),
+                            Some(m @ (state::Modal::Admin | state::Modal::Power(_))) => Some(m),
                             _ => None,
                         };
                     }

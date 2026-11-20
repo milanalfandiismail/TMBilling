@@ -23,6 +23,7 @@ pub struct OverlayActions {
     pub logout_confirm: ActFn,
     pub tab: TabFn,
     pub tool: ToolFn,
+    pub power_confirm: PowerConfirmFn,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -37,3 +38,4 @@ pub enum ToolId {
 
 pub type ModalFn = Rc<dyn Fn(crate::state::Modal, &mut Window, &mut App)>;
 pub type ToolFn = Rc<dyn Fn(ToolId, &mut Window, &mut App)>;
+pub type PowerConfirmFn = Rc<dyn Fn(crate::state::PowerAction, &mut Window, &mut App)>;

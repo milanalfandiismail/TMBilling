@@ -268,7 +268,6 @@ impl TmApp {
     }
 
     fn run_power(&mut self, action: PowerAction, cx: &mut Context<Self>) {
-        self.login.power = None;
         let flag = match action {
             PowerAction::Restart => "/r",
             PowerAction::Shutdown => "/s",
@@ -294,7 +293,14 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
     let pin_me = me.clone();
     let admin_me = me.clone();
     let confirm_me = me.clone();
+    let power_me = me.clone();
     OverlayActions {
+        power_confirm: Rc::new(move |action: PowerAction, _w: &mut Window, cx: &mut App| {
+            power_me.update(cx, |app, cx| {
+                app.modal = None;
+                app.run_power(action, cx);
+            });
+        }),
         logout_confirm: Rc::new(move |_w: &mut Window, cx: &mut App| {
             confirm_me.update(cx, |app, cx| {
                 app.modal = None;
@@ -362,8 +368,14 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
 impl TmApp {
     fn run_tool(&mut self, tool: ToolId, cx: &mut Context<Self>) {
         match tool {
-            ToolId::Restart => self.run_power(PowerAction::Restart, cx),
-            ToolId::Shutdown => self.run_power(PowerAction::Shutdown, cx),
+            ToolId::Restart => {
+                self.modal = Some(Modal::Power(PowerAction::Restart));
+                cx.notify();
+            }
+            ToolId::Shutdown => {
+                self.modal = Some(Modal::Power(PowerAction::Shutdown));
+                cx.notify();
+            }
             ToolId::Lock => {
                 self.locked = true;
                 if let Some(client) = self.client.clone() {
@@ -408,16 +420,9 @@ pub fn kiosk_actions(cx: &mut Context<TmApp>) -> KioskActions {
             submit_me.update(cx, |app, cx| app.submit_login(cx));
         }),
         power: Rc::new(move |action: Option<PowerAction>, _w: &mut Window, cx: &mut App| {
-            power_me.update(cx, |app, cx| match action {
-                None => {
-                    app.login.power = None;
-                    cx.notify();
-                }
-                Some(action) if app.login.power.is_none() => {
-                    app.login.power = Some(action);
-                    cx.notify();
-                }
-                Some(action) => app.run_power(action, cx),
+            power_me.update(cx, |app, cx| {
+                app.modal = action.map(Modal::Power);
+                cx.notify();
             });
         }),
         qris: Rc::new(move |open: bool, _w: &mut Window, cx: &mut App| {
@@ -447,7 +452,7 @@ impl TmApp {
     /// Kiosk (no session), overlay card (in session), AFK (locked) drive window chrome.
     fn sync_window(&mut self, window: &mut Window) {
         let overlay = self.session.is_some() && !self.locked;
-        let fullscreen_modal = matches!(self.modal, Some(Modal::QrisFull));
+        let fullscreen_modal = matches!(self.modal, Some(Modal::QrisFull | Modal::Power(_)));
         let mode = (overlay, fullscreen_modal, self.overlay_tab);
         if self.applied_mode == Some(mode) {
             return;

@@ -34,7 +34,6 @@ pub struct TmApp {
     pub modal: Option<Modal>,
     // dipakai modal konfirmasi power di Task 4
     #[allow(dead_code)]
-    pub pending_power: Option<PowerAction>,
     /// (window is the small overlay card, modal needs the whole screen)
     pub applied_mode: Option<(bool, bool, usize)>,
     pub saved_rect: Option<(i32, i32, i32, i32)>,
@@ -114,7 +113,6 @@ pub struct LoginState {
     pub field: LoginField,
     pub error: Option<String>,
     pub busy: bool,
-    pub power: Option<PowerAction>,
     pub qris_full: bool,
     // dipakai modal admin F11 di Task 3
     #[allow(dead_code)]

@@ -1,7 +1,9 @@
+use std::rc::Rc;
+
 use gpui_kit::prelude::*;
 use gpui_kit::*;
 
-use crate::state::{Modal, TmApp};
+use crate::state::{power_title, Modal, PowerAction, TmApp};
 use crate::theme::{c, TM};
 use crate::ui::button::{ButtonTone, TmButton};
 use crate::ui::input::TmInput;
@@ -518,6 +520,35 @@ fn admin(app: &TmApp, actions: &OverlayActions) -> AnyElement {
     )
 }
 
+fn power_confirm(action: PowerAction, actions: &OverlayActions) -> AnyElement {
+    let verb = match action {
+        PowerAction::Restart => "Ya, Restart",
+        PowerAction::Shutdown => "Ya, Matikan",
+    };
+    let body = div()
+        .px(px(20.0))
+        .py(px(18.0))
+        .text_size(px(12.0))
+        .text_color(TM.muted)
+        .child("Sesi bermain akan dihentikan dan semua aplikasi ditutup.")
+        .into_any_element();
+    let confirm = actions.power_confirm.clone();
+    dialog(
+        420.0,
+        power_title(action),
+        body,
+        footer(vec![
+            tm_button("Batal", actions.close.clone()),
+            TmButton::new(verb, ButtonTone::Danger)
+                .on_click(click(Rc::new(move |w: &mut Window, cx: &mut App| {
+                    confirm(action, w, cx)
+                })))
+                .render()
+                .into_any_element(),
+        ]),
+    )
+}
+
 pub fn render(app: &TmApp, actions: &OverlayActions) -> Option<AnyElement> {
     let modal = app.modal?;
     Some(match modal {
@@ -528,7 +559,6 @@ pub fn render(app: &TmApp, actions: &OverlayActions) -> Option<AnyElement> {
         Modal::AfkPin => scrim(afk_pin(app, actions)),
         Modal::Logout => scrim(logout(actions)),
         Modal::Admin => scrim(admin(app, actions)),
-        // Konfirmasi power dirender oleh host kiosk, bukan kartu overlay.
-        Modal::Power(_) => return None,
+        Modal::Power(action) => scrim(power_confirm(action, actions)),
     })
 }
