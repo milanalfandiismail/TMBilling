@@ -70,6 +70,7 @@ echo 3. Menyalin berkas Agen, Kiosk, dan Utilitas...
 copy /y "%~dp0MGCTM.exe" "%INSTALL_DIR%\" >nul 2>&1
 copy /y "%~dp0TMMonitor.exe" "%INSTALL_DIR%\" >nul 2>&1
 copy /y "%~dp0TMBilling.exe" "%INSTALL_DIR%\" >nul 2>&1
+copy /y "%~dp0HardwareHelper.sys" "%INSTALL_DIR%\" >nul 2>&1
 
 if exist "%~dp0TightVNC" (
     xcopy /e /y /i "%~dp0TightVNC" "%INSTALL_DIR%\TightVNC" >nul 2>&1

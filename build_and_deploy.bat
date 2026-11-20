@@ -52,6 +52,7 @@ if %ERRORLEVEL% NEQ 0 (
 )
 echo Menyalin file TMMonitor.exe ke folder Deploy...
 copy /Y "%CURRENT_DIR%WarnetAgent\TMBilling_Monitor\target\release\TMMonitor.exe" "%CURRENT_DIR%WarnetAgent\Deploy\TMMonitor.exe"
+copy /Y "%CURRENT_DIR%WarnetAgent\TMBilling_Monitor\HardwareHelper.sys"   "%CURRENT_DIR%WarnetAgent\Deploy\HardwareHelper.sys" >nul
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Gagal menyalin TMMonitor.exe!
     pause
