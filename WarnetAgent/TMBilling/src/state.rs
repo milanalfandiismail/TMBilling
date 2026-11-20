@@ -136,6 +136,15 @@ impl AlertFlags {
         if secs <= 0 {
             return None;
         }
+        // Top-up membuka kembali ambang yang lebih longgar (sama seperti klien Tauri).
+        if secs > 900 {
+            *self = AlertFlags::default();
+        } else if secs > 300 {
+            self.m5 = false;
+            self.m1 = false;
+        } else if secs > 60 {
+            self.m1 = false;
+        }
         if secs <= 900 && !self.m15 {
             self.m15 = true;
             return Some(Alert::Min15);
@@ -509,12 +518,13 @@ mod tests {
     }
 
     #[test]
-    fn bounce_does_not_replay_the_warning() {
+    fn top_up_reopens_the_warning() {
         let mut f = AlertFlags::default();
         assert_eq!(f.update(960), None, "di atas 15 menit belum ada peringatan");
         assert_eq!(f.update(900), Some(Alert::Min15));
-        assert_eq!(f.update(960), None, "server yang tertinggal tidak boleh membunyikan ulang");
-        assert_eq!(f.update(900), None);
+        assert_eq!(f.update(960), None, "naik ke atas 15 menit hanya membuka flag");
+        assert_eq!(f.update(900), Some(Alert::Min15), "setelah top-up peringatan boleh berbunyi lagi");
+        assert_eq!(f.update(300), Some(Alert::Min5));
     }
 
     #[test]
