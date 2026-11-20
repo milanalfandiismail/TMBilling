@@ -2,7 +2,7 @@ use gpui_kit::prelude::*;
 use gpui_kit::*;
 
 use crate::state::{LoginField, TmApp};
-use crate::theme::TM;
+use crate::theme::{c, TM};
 use crate::ui::button::{ButtonTone, TmButton};
 use crate::ui::kiosk::KioskActions;
 
@@ -230,6 +230,22 @@ fn qris_block(app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoEl
     div().child(clickable)
 }
 
+/// Banner galat login (figcraft kiosk/login-error).
+fn error_banner(msg: &str) -> impl IntoElement {
+    div()
+        .mt(px(12.0))
+        .w_full()
+        .px(px(12.0))
+        .py(px(9.0))
+        .rounded(px(TM.radius_sm))
+        .bg(c(0x2A1414))
+        .border_1()
+        .border_color(TM.danger)
+        .text_size(px(12.0))
+        .text_color(TM.danger)
+        .child(msg.to_string())
+}
+
 fn form(app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoElement {
     if compact {
         let submit = actions.submit.clone();
@@ -264,6 +280,7 @@ fn form(app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoElement 
                     actions,
                 )),
             )
+            .children(app.login.error.as_deref().map(error_banner))
             .child(
                 div().mt(px(24.0)).child(
                     TmButton::new("Masuk", ButtonTone::Primary)
@@ -281,15 +298,6 @@ fn form(app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoElement 
                     .text_color(TM.dim)
                     .child("Belum punya akun? Hubungi kasir."),
             );
-        if let Some(err) = &app.login.error {
-            col = col.child(
-                div()
-                    .mt(px(10.0))
-                    .text_size(px(11.0))
-                    .text_color(TM.danger)
-                    .child(err.clone()),
-            );
-        }
         return col;
     }
     let (w, ih, bh) = (440.0, 40.0, 56.0);
@@ -316,6 +324,7 @@ fn form(app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoElement 
                 .mt(px(if compact { 4.0 } else { 6.0 }))
                 .child(field("kiosk-password", "********", app, LoginField::Password, ih, w, actions)),
         )
+        .children(app.login.error.as_deref().map(error_banner))
         .child(
             div().mt(px(if compact { 12.0 } else { 22.0 })).child(
                 TmButton::new("Masuk", ButtonTone::Primary)
@@ -333,15 +342,6 @@ fn form(app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoElement 
                 .text_color(TM.dim)
                 .child("Belum punya akun? Hubungi kasir."),
         );
-    if let Some(err) = &app.login.error {
-        col = col.child(
-            div()
-                .mt(px(10.0))
-                .text_size(px(11.0))
-                .text_color(TM.danger)
-                .child(err.clone()),
-        );
-    }
     col
 }
 

@@ -103,12 +103,18 @@ impl TmApp {
                         app.login.password.clear();
                     }
                     Ok(r) => {
-                        app.login.error = Some(
-                            r.error
-                                .unwrap_or_else(|| "Nama pengguna atau password salah.".into()),
-                        )
+                        app.login.error = Some(crate::state::login_error(400, r.error.as_deref()))
                     }
-                    Err(e) => app.login.error = Some(e.to_string()),
+                    Err(crate::api::client::ApiError::Http { status, message }) => {
+                        app.login.error = Some(crate::state::login_error(status, Some(&message)))
+                    }
+                    Err(crate::api::client::ApiError::Network(_)) => {
+                        app.login.error = Some(crate::state::login_error(0, None))
+                    }
+                    Err(crate::api::client::ApiError::Parse) => {
+                        app.login.error =
+                            Some("Server mengirim jawaban tidak dikenal. Coba lagi.".into())
+                    }
                 }
                 cx.notify();
             })

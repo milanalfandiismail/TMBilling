@@ -96,6 +96,14 @@ fn main() {
                             _ => None,
                         };
                     }
+                    // shortcut: hook screenshot untuk banner galat login (tanpa server)
+                    if let Ok(kind) = std::env::var("TM_LOGIN_ERROR") {
+                        app.login.error = Some(match kind.as_str() {
+                            "auth" => state::login_error(401, Some("Username atau password salah")),
+                            "saldo" => state::login_error(400, Some("Waktu habis")),
+                            _ => state::login_error(0, None),
+                        });
+                    }
                     if overlay {
                         app.demo_overlay = true;
                         app.modal = env_modal();
