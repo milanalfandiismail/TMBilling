@@ -34,3 +34,17 @@ memeriksa hasilnya. Screenshot ditulis ke X:\Temp\opencode\harness.
 Kontrol yang diuji: kartu overlay muncul, tombol Logout membuka modal, Batal menutup modal,
 tombol Lock membuka PIN, Escape tidak menutup PIN, tab Alat dan QRIS tanpa area putih, kiosk
 fullscreen, tombol Masuk dengan field kosong menampilkan galat, F11 tidak membuat aplikasi keluar.
+
+## Uji E2E klien (server throwaway + klien nyata)
+
+```bash
+py tools/e2e/run_all.py        # 13 uji, ~2,5 menit, screenshot di X:/Temp/opencode/e2e-out
+```
+
+- Server dijalankan dari `app-rust/target/release/tmbilling-server.exe` di folder temp sendiri
+  (`instance/warnet.db` terpisah); password admin acak dibaca dari `initial_admin.txt`.
+- PC di-seed dengan IP LAN mesin dan MAC kosong, lalu klien mendaftarkan MAC-nya sendiri saat
+  identifikasi pertama.
+- Klien dijalankan dengan `TM_DEV_SAFE=1` dan `TM_NO_POWER=1` supaya hook keyboard tidak aktif
+  dan tombol Restart/Matikan tidak benar-benar mematikan mesin penguji.
+- Klik/ketik dikirim lewat `PostMessage` (klik = koordinat screenshot, sudah termasuk border 8 px).

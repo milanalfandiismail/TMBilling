@@ -6,6 +6,15 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [2.0.9] - 2026-11-22
+
+### Fixed
+- Klien: ketikan keyboard masuk lagi walau jalur IME/WM_CHAR tidak tersedia (fallback ke `keystroke.key`).
+- Klien: panggilan HTTP tidak lagi panic `there is no reactor running` (semua request berjalan di runtime Tokio proses).
+
+### Added
+- `tools/e2e/` suite 13 uji ujung-ke-ujung dengan server throwaway, PC terdaftar otomatis, dan screenshot.
+
 ## [2.0.8] - 2026-11-22
 
 ### Fixed

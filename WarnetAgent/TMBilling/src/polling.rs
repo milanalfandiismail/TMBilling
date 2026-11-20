@@ -140,6 +140,26 @@ pub async fn run(client: ApiClient, tx: UnboundedSender<AppEvent>) {
 }
 
 /// Runtime tokio terpisah: gpui tidak boleh menunggu future jaringan di thread UI.
+/// Semua panggilan HTTP klien berjalan di runtime Tokio milik proses ini; gpui
+/// tidak menyediakan reactor sehingga `client.*().await` di executor gpui panic.
+pub fn http_runtime() -> &'static tokio::runtime::Runtime {
+    static RT: std::sync::OnceLock<tokio::runtime::Runtime> = std::sync::OnceLock::new();
+    RT.get_or_init(|| {
+        tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .expect("runtime tokio")
+    })
+}
+
+pub async fn http<F>(fut: F) -> F::Output
+where
+    F: std::future::Future + Send + 'static,
+    F::Output: Send + 'static,
+{
+    http_runtime().spawn(fut).await.expect("task http")
+}
+
 pub fn spawn_runtime(client: ApiClient, tx: UnboundedSender<AppEvent>) {
     std::thread::spawn(move || {
         let rt = match tokio::runtime::Builder::new_multi_thread().enable_all().build() {

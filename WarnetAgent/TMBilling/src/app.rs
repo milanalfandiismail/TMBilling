@@ -72,7 +72,7 @@ impl TmApp {
                     if let Some(client) = app.client.clone() {
                         let (ip, mac) = crate::polling::local_net().unwrap_or_default();
                         cx.spawn(async move |_, _| {
-                            let _ = client.logout(&ip, &mac).await;
+                            let _ = polling::http(async move { client.logout(&ip, &mac).await }).await;
                         })
                         .detach();
                     }
@@ -148,7 +148,7 @@ impl TmApp {
         let pass = self.login.password.clone();
         cx.notify();
         cx.spawn(async move |this, cx| {
-            let res = client.member_login(&ip, &mac, &user, &pass).await;
+            let res = polling::http(async move { client.member_login(&ip, &mac, &user, &pass).await }).await;
             this.update(cx, |app, cx| {
                 app.login.busy = false;
                 match res {
@@ -220,7 +220,7 @@ impl TmApp {
                     }
                     "enter" => self.submit_pin(cx),
                     _ => {
-                        if let Some(text) = ev.keystroke.key_char.as_deref() {
+                        if let Some(text) = typed_text(ev) {
                             for ch in text.chars() {
                                 if self.pin.chars().count() < 12 {
                                     self.pin.push(ch);
@@ -240,7 +240,7 @@ impl TmApp {
                     "tab" => self.login.admin_focus_next(),
                     "enter" => self.submit_admin(cx),
                     _ => {
-                        if let Some(text) = ev.keystroke.key_char.as_deref() {
+                        if let Some(text) = typed_text(ev) {
                             for ch in text.chars() {
                                 self.login.admin_type_char(ch);
                             }
@@ -260,7 +260,7 @@ impl TmApp {
             "tab" => self.login.focus_next(),
             "enter" => self.submit_login(cx),
             _ => {
-                if let Some(text) = ev.keystroke.key_char.as_deref() {
+                if let Some(text) = typed_text(ev) {
                     for ch in text.chars() {
                         self.login.type_char(ch);
                     }
@@ -279,7 +279,7 @@ impl TmApp {
         if let Some(client) = self.client.clone() {
             let ip = self.pc_kode.clone();
             cx.spawn(async move |this, cx| {
-                let _ = client.afk_lock(&ip, "", Some(&pin)).await;
+                let _ = polling::http(async move { client.afk_lock(&ip, "", Some(&pin)).await }).await;
                 let _ = this.update(cx, |app, cx| {
                     app.locked = true;
                     app.modal = None;
@@ -303,7 +303,7 @@ impl TmApp {
         };
         let (ip, mac) = polling::local_net().unwrap_or_default();
         cx.spawn(async move |this, cx| {
-            if let Ok(status) = client.status(&ip, &mac, false).await {
+            if let Ok(status) = polling::http(async move { client.status(&ip, &mac, false).await }).await {
                 let _ = this.update(cx, |app, cx| app.apply(AppEvent::Status(status), cx));
             }
         })
@@ -331,7 +331,7 @@ impl TmApp {
         cx.spawn(async move |this, cx| {
             let ip = app_ip.clone();
             let mac = app_mac.clone();
-            let result = client.admin_login(&ip, &mac, &user, &pass).await;
+            let result = polling::http(async move { client.admin_login(&ip, &mac, &user, &pass).await }).await;
             this.update(cx, |app, cx| {
                 match result {
                     Ok(res) if res.success => {
@@ -364,7 +364,7 @@ impl TmApp {
         };
         let (ip, mac) = polling::local_net().unwrap_or_default();
         cx.spawn(async move |this, cx| {
-            let _ = client.logout(&ip, &mac).await;
+            let _ = polling::http(async move { client.logout(&ip, &mac).await }).await;
             let _ = this.update(cx, |app, cx| {
                 app.session = None;
                 cx.notify();
@@ -495,7 +495,7 @@ impl TmApp {
             self.locked = true;
             if let Some(client) = self.client.clone() {
                 cx.spawn(async move |_this, _cx| {
-                    let _ = client.afk_lock("", "", None).await;
+                    let _ = polling::http(async move { client.afk_lock("", "", None).await }).await;
                 })
                 .detach();
             }
@@ -690,3 +690,15 @@ impl Render for TmApp {
     }
 }
 
+/// gpui hanya mengisi `key_char` untuk jalur IME/WM_CHAR; keyboard biasa datang
+/// sebagai `key` tunggal, jadi teks jatuh ke situ agar ketikan nyata tetap masuk.
+fn typed_text(ev: &KeyDownEvent) -> Option<String> {
+    if let Some(text) = ev.keystroke.key_char.as_deref() {
+        return Some(text.to_string());
+    }
+    let key = ev.keystroke.key.as_str();
+    if key.chars().count() == 1 && key.chars().all(|c| c.is_ascii_graphic()) {
+        return Some(key.to_string());
+    }
+    None
+}
