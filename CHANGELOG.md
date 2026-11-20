@@ -6,6 +6,13 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [2.0.10] - 2026-11-21
+
+### Fixed
+- Jam overlay tidak lagi berayun 15 ↔ 14 menit: polling mengirim menit, klien menyimpannya sebagai detik
+  (`TimeUpdate` dihapus; nilai server yang tertinggal diabaikan, top-up tetap diterima).
+- Audio peringatan berbunyi sekali per sesi per ambang (15/5/1 menit), tidak lagi berulang tiap poll.
+
 ## [2.0.9] - 2026-11-22
 
 ### Fixed

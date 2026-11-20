@@ -133,16 +133,6 @@ pub struct AlertFlags {
 
 impl AlertFlags {
     pub fn update(&mut self, secs: i64) -> Option<Alert> {
-        if secs > 900 {
-            self.m15 = false;
-            self.m5 = false;
-            self.m1 = false;
-        } else if secs > 300 {
-            self.m5 = false;
-            self.m1 = false;
-        } else if secs > 60 {
-            self.m1 = false;
-        }
         if secs <= 0 {
             return None;
         }
@@ -162,10 +152,11 @@ impl AlertFlags {
     }
 }
 
-/// Jam tidak boleh mundur hanya karena polling mengirim menit bulat lagi.
+/// Polling mengirim menit bulat yang bisa lebih besar dari jam lokal (server baru
+/// menurunkan angka tiap menit), jadi kenaikan kecil diabaikan. Hanya top-up
+/// (> 1 menit di atas jam lokal) atau sesi yang dipotong jauh yang menimpa jam lokal.
 pub fn sync_remaining(current: i64, server_secs: i64) -> i64 {
-    let drift = server_secs - current;
-    if current <= 0 || drift.abs() > 60 {
+    if current <= 0 || server_secs > current + 60 || server_secs < current - 120 {
         server_secs
     } else {
         current
@@ -412,13 +403,6 @@ impl TmApp {
                 }
                 self.apply_status(status)
             }
-            AppEvent::TimeUpdate(secs) => {
-                if self.remaining_secs == secs {
-                    return false;
-                }
-                self.remaining_secs = secs;
-                true
-            }
             AppEvent::Command(_) => false,
             AppEvent::Qris(image) => {
                 self.qris_image = image;
@@ -440,6 +424,7 @@ impl TmApp {
     }
 
     fn apply_status(&mut self, status: StatusResponse) -> bool {
+        let had_session = self.session.is_some();
         self.connected = true;
         self.view = view_for_status(&status.status);
         match status.status.as_str() {
@@ -459,6 +444,10 @@ impl TmApp {
                 });
                 if self.started_at.is_none() {
                     self.started_at = Some(crate::platform::window::local_hhmm());
+                }
+                if !had_session {
+                    self.alerts = AlertFlags::default();
+                    self.remaining_secs = 0;
                 }
                 // server mengirim sisa waktu dalam MENIT, UI memakai detik
                 let server_secs = status.sisa_waktu.unwrap_or(0) as i64 * 60;
@@ -520,20 +509,21 @@ mod tests {
     }
 
     #[test]
-    fn top_up_rearms_the_warnings() {
+    fn bounce_does_not_replay_the_warning() {
         let mut f = AlertFlags::default();
-        f.update(60);
-        f.update(4000);
+        assert_eq!(f.update(960), None, "di atas 15 menit belum ada peringatan");
         assert_eq!(f.update(900), Some(Alert::Min15));
+        assert_eq!(f.update(960), None, "server yang tertinggal tidak boleh membunyikan ulang");
+        assert_eq!(f.update(900), None);
     }
 
     #[test]
     fn poll_does_not_rewind_the_clock() {
-        assert_eq!(sync_remaining(389, 390), 389);
-        assert_eq!(sync_remaining(389, 420), 389, "koreksi menit bulat diabaikan");
-        assert_eq!(sync_remaining(389, 450), 450, "top-up diterima");
-        assert_eq!(sync_remaining(389, 330), 389);
-        assert_eq!(sync_remaining(389, 100), 100);
+        assert_eq!(sync_remaining(940, 960), 940, "selisih satu menit bulat diabaikan");
+        assert_eq!(sync_remaining(940, 900), 940, "server tertinggal tidak memundurkan jam");
+        assert_eq!(sync_remaining(840, 960), 960, "top-up 2 menit diterima");
+        assert_eq!(sync_remaining(840, 600), 600, "sesi dipotong 4 menit diterima");
+        assert_eq!(sync_remaining(0, 900), 900, "sesi baru diterima");
     }
 
     #[test]
@@ -596,13 +586,6 @@ mod tests {
         st.shutdown_timer = Some(0);
         app.reduce(AppEvent::Status(st));
         assert_eq!(app.shutdown_secs, None);
-    }
-
-    #[test]
-    fn identical_time_update_does_not_repaint() {
-        let mut app = TmApp::default();
-        assert!(app.reduce(AppEvent::TimeUpdate(30)));
-        assert!(!app.reduce(AppEvent::TimeUpdate(30)));
     }
 
     #[test]

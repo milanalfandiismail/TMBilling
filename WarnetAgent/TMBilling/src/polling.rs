@@ -15,7 +15,6 @@ pub enum AppEvent {
     Identified(IdentifyResponse),
     Status(StatusResponse),
     Config(WarnetConfig),
-    TimeUpdate(i64),
     #[allow(dead_code)] // shortcut: dibaca Task 8 (tools) dan Task 12 (screenshot)
     Command(String),
     Qris(Option<std::sync::Arc<Image>>),
@@ -83,7 +82,6 @@ pub async fn run(client: ApiClient, tx: UnboundedSender<AppEvent>) {
                     status.status, status.sisa_waktu, status.shutdown_timer
                 );
                     interval = next_interval(true, status.polling_interval);
-                    let _ = tx.send(AppEvent::TimeUpdate(status.sisa_waktu.unwrap_or(0) as i64));
                     if let Some(cmd) = status.command.clone() {
                         if cmd == "screenshot" {
                             let shot_client = client.clone();
