@@ -237,7 +237,7 @@ const App = {
             'server_statistic', 'monitor', 'hardware_checker', 'uptime', 'maintenance', 'screenshot', 'remote_server',
             'settings', 'settings_general', 'settings_payment', 'settings_kiosk', 'settings_tv', 
             'settings_cloudflare_tunnel', 'settings_cloud_backup', 'settings_local_backup', 
-            'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'whitelist_ip',
+            'settings_db_cleanup', 'settings_scheduler', 'settings_migration', 'settings_db_migration', 'whitelist_ip',
             'mikrotik', 'analytics'
         ];
         if (this.user && this.user.role === 'kasir' && kasirOnlyRestricted.includes(tab)) {
@@ -322,6 +322,7 @@ const App = {
             settings_db_cleanup: 'Pembersihan Database',
             settings_scheduler: 'Auto Scheduler',
             settings_migration: 'Migrasi & Update',
+            settings_db_migration: 'Migrasi Database',
             tutorials: 'Dokumentasi & Tutorial',
             analytics: 'Analytics Owner',
             plugins: 'Plugins & Ekstensi',

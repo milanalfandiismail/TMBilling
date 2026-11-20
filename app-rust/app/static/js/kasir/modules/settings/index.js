@@ -228,6 +228,10 @@ const Settings = {
             }
         }
 
+        // Migrasi Database — reset form pratinjau
+        if (this.currentSubTab === 'db_migration') {
+            if (typeof DbMigration !== 'undefined') DbMigration.init();
+        }
         // Backup & Local files — fetch backup list
         if (this.currentSubTab === 'local_backup' || this.currentSubTab === 'cloud_backup' || this.currentSubTab === 'backup') {
             this.loadBackupFiles();

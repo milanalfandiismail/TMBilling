@@ -53,7 +53,7 @@
    - [4.30 In-Place Reactive Rerender & Zero Page Reload Engine](#430-in-place-reactive-rerender--zero-page-reload-engine)
    - [4.31 Zero-Config Security & Credential Bootstrap Architecture](#431-zero-config-security--credential-bootstrap-architecture)
 5. [Panduan Teknis Backend Rust (axum & sqlx)](#5-panduan-teknis-backend-rust-axum--sqlx)
-   - [5.1 Modul Routing Rust (27 Domain / 245 Route)](#51-modul-routing-rust)
+   - [5.1 Modul Routing Rust (27 Domain / 247 Route)](#51-modul-routing-rust)
    - [5.2 Service, Repository & Pola Arsitektur](#52-service-repository--pola-arsitektur)
    - [5.3 Skema Database (24 Tabel)](#53-skema-database-24-tabel)
 6. [Panduan Teknis Frontend (Modular Vanilla JS & CSS)](#6-panduan-teknis-frontend-modular-vanilla-js--css)
@@ -128,7 +128,7 @@ c:\Project GIT\TMBilling
 │   ├── README.md                       # Build, menjalankan, rilis, troubleshooting
 │   ├── src/
 │   │   ├── main.rs                     # Entry: --init, --apply-update, server normal
-│   │   ├── app.rs                      # Router axum: 245 registrasi .route(
+│   │   ├── app.rs                      # Router axum: 247 registrasi .route(
 │   │   ├── state.rs                    # AppState + write() (gerbang tulis tunggal)
 │   │   ├── config.rs                   # Config, .env, SECRET_KEY write-through
 │   │   ├── routes/                     # 27 domain, 63 file handler HTTP
@@ -512,7 +512,7 @@ c:\Project GIT\TMBilling
 ## 5. Panduan Teknis Backend Rust (axum & sqlx)
 
 ### 5.1 Modul Routing Rust
-Backend TMBilling terbagi ke dalam **27 direktori domain** di `app-rust/src/routes/` (63 file) dengan **245 registrasi `.route(`** di `app-rust/src/app.rs`:
+Backend TMBilling terbagi ke dalam **27 direktori domain** di `app-rust/src/routes/` (63 file) dengan **247 registrasi `.route(`** di `app-rust/src/app.rs`:
 
 | Domain | Prefix utama | Endpoint | Tanggung Jawab |
 |---|---|---|---|
@@ -530,7 +530,7 @@ Backend TMBilling terbagi ke dalam **27 direktori domain** di `app-rust/src/rout
 | `monitor/` | `/api/v1/kasir/monitor` | 21 | Telemetri, proses, screenshot, remote action, VNC client. |
 | `hardware/` | `/api/v1/kasir/uptime` | 2 | Uptime log & baseline hardware. |
 | `vnc/` | `/api/v1/kasir/vnc` | 5 | Start/stop/status proxy VNC + relay WebSocket. |
-| `settings/` | `/api/v1/kasir/settings` | 30 | Pengaturan, whitelist, backup/restore, migrasi & update, QRIS. |
+| `settings/` | `/api/v1/kasir/settings` | 32 | Pengaturan, whitelist, backup/restore, migrasi database, migrasi & update, QRIS. |
 | `backup/` | `/api/v1/kasir/backup` | 7 | Backup manual/otomatis & restore. |
 | `blackout/` | `/api/v1/kasir/blackout` | 9 | Deteksi & pemulihan sesi pasca mati lampu. |
 | `notes/` | `/api/v1/kasir/notes` | 6 | Scratchpad serah terima shift. |
@@ -676,8 +676,8 @@ Jika terjadi kegagalan:
 }
 ```
 
-### 8.2 Katalog Endpoint REST API (245 Route Rust)
-Total registrasi `.route(` di `app-rust/src/app.rs`: **245 route**. Sumber kebenaran endpoint adalah file tersebut; tabel di bawah merangkum per domain (jumlah = perkiraan per prefix, beberapa domain berbagi prefix).
+### 8.2 Katalog Endpoint REST API (247 Route Rust)
+Total registrasi `.route(` di `app-rust/src/app.rs`: **247 route**. Sumber kebenaran endpoint adalah file tersebut; tabel di bawah merangkum per domain (jumlah = perkiraan per prefix, beberapa domain berbagi prefix).
 
 > Endpoint kesehatan `GET /api/health` bersifat publik dan dipakai probe eksternal; payload-nya tidak memuat path atau angka sensitif.
 >
@@ -706,7 +706,7 @@ Total registrasi `.route(` di `app-rust/src/app.rs`: **245 route**. Sumber keben
 | report | `/api/v1/kasir/report` | 18 | billing, keuangan, struk, ekspor, hapus riwayat |
 | server_monitor | `/api/v1/kasir/server-monitor` | 4 | statistik host, kontrol LHM |
 | sesi | `/api/v1/kasir/sesi` | 11 | buka, tambah, pindah, tutup, refund, pause/AFK |
-| settings | `/api/v1/kasir/settings` | 30 | pengaturan, whitelist, token, QRIS, migrasi, update, scheduler |
+| settings | `/api/v1/kasir/settings` | 32 | pengaturan, whitelist, token, QRIS, migrasi database, migrasi, update, scheduler |
 | shift | `/api/v1/kasir/shift` | 9 | buka, tutup, ringkasan, riwayat, struk |
 | tournament | `/api/v1/kasir/tournament` | 6 | turnamen, tim, tahap, match |
 | tutorial | `/api/v1/kasir/tutorials` | 8 | CRUD artikel, upload media, cleanup |

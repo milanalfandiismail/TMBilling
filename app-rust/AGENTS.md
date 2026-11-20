@@ -39,7 +39,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [DOCUMENTATION.md](
 | `README.md` | Ringkasan publik, sorotan fitur, dan quickstart server Rust. |
 | `docs/superpowers/plans/`, `docs/superpowers/specs/` | Rencana/desain agent; di-ignore Git, bukan runtime. |
 | `AGENTS.md` | Peta modul untuk AI agent (dokumen ini). |
-| `DOCUMENTATION.md` | Dokumentasi teknis lengkap (arsitektur, 245 route, 24 tabel, frontend, klien, operasional). |
+| `DOCUMENTATION.md` | Dokumentasi teknis lengkap (arsitektur, 247 route, 24 tabel, frontend, klien, operasional). |
 | `README.md` | Build, menjalankan server, rilis, troubleshooting. |
 | `LICENSE` | MIT License. |
 | `app/static/`, `app/templates/` | Aset frontend bersama yang di-embed ke biner Rust saat build. |
@@ -53,7 +53,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [DOCUMENTATION.md](
 - `app-rust/src/db/mod.rs`: buka pool SQLite (WAL, foreign key, busy timeout). `app-rust/src/db/migrate.rs`: `ensure_schema` aditif + snapshot + stempel revisi. `app-rust/src/db/write_lock.rs`: gerbang tulis (`WRITE_LOCK_SLOW` bila antre lama).
 
 #### B. Router (`app-rust/src/app.rs`)
-- 245 registrasi `.route(`; sumber kebenaran endpoint.
+- 247 registrasi `.route(`; sumber kebenaran endpoint.
 - Urutan guard: publik/client agent (tanpa guard) → `csrf` → `whitelist` → `admin_only`/`shift_required` pada domain sensitif.
 - `/static/{*path}` disajikan dari aset ter-embed dengan `Cache-Control: immutable`; `assets::cache_version()` (hash isi) dipakai sebagai `?v=`.
 - `/api/health` publik; halaman `/kasir/`, `/kasir/documentation`, `/kasir/login` dirender minijinja.
@@ -73,7 +73,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [DOCUMENTATION.md](
 | `report/` | Laporan billing/keuangan, struk, ekspor PDF/Excel, cleanup. |
 | `monitor/`, `hardware/` | Telemetri, proses, screenshot privat, remote action, baseline hardware. |
 | `vnc/` | Start/stop/status proxy + relay WebSocket RFB. |
-| `settings/` | Pengaturan, API key, whitelist, backup/restore, migrasi & update, QRIS. |
+| `settings/` | Pengaturan, API key, whitelist, backup/restore, impor database Python 1.6.5, migrasi & update, QRIS. |
 | `backup/`, `blackout/`, `notes/`, `maintenance/`, `game/`, `tournament/`, `tutorial/`, `user/`, `arsip/`, `public/`, `server_monitor/`, `mikrotik/` | Domain operasional lain; nama folder = fitur. |
 
 #### D. Service (`app-rust/src/services/` — 27 domain, 62 file)

@@ -1,0 +1,76 @@
+<!-- ==================== SUB-TAB: MIGRASI DATABASE PYTHON ==================== -->
+<div id="subtab-db_migration" class="subtab-content hidden space-y-2.5 sm:space-y-3">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-2.5 sm:gap-3 items-start">
+        <!-- Unggah & pratinjau -->
+        <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 lg:p-4 space-y-3">
+            <div class="flex items-center gap-2 border-b border-[#1c1c1c] pb-2">
+                <div class="w-6 h-6 rounded bg-[#171717] border border-[#262626] flex items-center justify-center text-neutral-300">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1.5 3 4 3h8c2.5 0 4-1 4-3V7c0-2-1.5-3-4-3H8C5.5 4 4 5 4 7zm4 1h8M8 12h8m-8 4h5"></path>
+                    </svg>
+                </div>
+                <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">Berkas Database Python 1.6.5</h3>
+            </div>
+            <p class="text-[11px] sm:text-xs text-neutral-400 leading-relaxed">
+                Unggah <span class="font-mono text-neutral-200">warnet.db</span> dari instalasi Python, atau ZIP yang berisi
+                <span class="font-mono text-neutral-200">warnet.db</span> beserta
+                <span class="font-mono text-neutral-200">warnet.db-wal</span> bila server lama belum dihentikan dengan bersih.
+            </p>
+            <input type="file" id="db-import-file" accept=".db,.zip"
+                class="block w-full text-[11px] sm:text-xs text-neutral-300 bg-[#050505] border border-[#1c1c1c] rounded p-2 file:mr-3 file:px-2.5 file:py-1.5 file:rounded file:border-0 file:bg-neutral-100 file:text-black file:text-[11px] file:font-bold">
+            <div class="flex flex-wrap gap-2">
+                <button type="button" id="db-import-preview-btn" onclick="DbMigration.preview()"
+                    class="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-black text-[11px] sm:text-xs font-bold rounded transition-colors">Pratinjau</button>
+                <button type="button" id="db-import-apply-btn" onclick="DbMigration.apply()" disabled
+                    class="px-3 py-2 bg-red-600 hover:bg-red-500 text-white text-[11px] sm:text-xs font-bold rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed">Terapkan Migrasi</button>
+            </div>
+            <div id="db-import-status" class="text-[11px] sm:text-xs text-neutral-400"></div>
+        </div>
+
+        <!-- Hasil pratinjau -->
+        <div id="db-import-preview" class="hidden bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-3.5 lg:p-4 space-y-2.5">
+            <div class="flex items-center justify-between border-b border-[#1c1c1c] pb-2">
+                <h3 class="text-xs sm:text-sm font-bold text-neutral-200 uppercase tracking-wider">Hasil Pratinjau</h3>
+                <span id="db-import-token-badge" class="px-2 py-0.5 rounded text-[9px] font-bold font-mono bg-neutral-800 text-neutral-400">-</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Tabel Terbaca</span>
+                    <span id="db-import-tables" class="text-sm font-mono font-bold text-neutral-200 block mt-0.5">-</span>
+                </div>
+                <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Total Baris</span>
+                    <span id="db-import-rows" class="text-sm font-mono font-bold text-neutral-200 block mt-0.5">-</span>
+                </div>
+                <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Revisi Python</span>
+                    <span id="db-import-revision" class="text-xs font-mono font-bold text-neutral-300 block mt-0.5">-</span>
+                </div>
+                <div class="bg-[#050505] border border-[#1c1c1c] rounded p-2">
+                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Sesi Aktif Ganda</span>
+                    <span id="db-import-duplikat" class="text-xs font-mono font-bold text-neutral-300 block mt-0.5">-</span>
+                </div>
+            </div>
+            <div class="space-y-1.5">
+                <div>
+                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Tabel yang akan dibuat</span>
+                    <p id="db-import-missing-tables" class="text-[11px] font-mono text-amber-400 break-words">-</p>
+                </div>
+                <div>
+                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Kolom yang akan ditambahkan</span>
+                    <p id="db-import-missing-columns" class="text-[11px] font-mono text-neutral-300 break-words">-</p>
+                </div>
+                <div>
+                    <span class="text-[9px] text-neutral-500 uppercase font-bold tracking-wider block">Index yang akan dibuat</span>
+                    <p id="db-import-missing-indexes" class="text-[11px] font-mono text-neutral-300 break-words">-</p>
+                </div>
+            </div>
+            <div id="db-import-warning" class="hidden bg-red-950/40 border border-red-900 rounded p-2 text-[11px] text-red-300 leading-relaxed"></div>
+            <p class="text-[10px] sm:text-[11px] text-neutral-500 leading-relaxed border-t border-[#1c1c1c] pt-2">
+                Hentikan server Python terlebih dahulu. Data pada database Rust aktif akan digantikan seluruhnya;
+                snapshot <span class="font-mono">pre_import_*.db</span> dibuat otomatis sebelum penimpaan.
+                Semua pengguna harus login ulang setelah migrasi.
+            </p>
+        </div>
+    </div>
+</div>
