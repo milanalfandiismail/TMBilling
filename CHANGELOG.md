@@ -14,10 +14,15 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
   kiosk lock & taskbar, tray/single instance/security gate/keyboard hook,
   screenshot upload, cache QRIS, dan kredensial darurat 1:1 dengan klien lama.
 - Klien Tauri 1.6.5 diarsipkan di `archive-1.6.5/WarnetAgent/TMBillingTauri/`;
-  watchdog `MGCTM` dan `mtm` tetap di `WarnetAgent/` dan masih dibangun oleh
-  `build_and_deploy.bat` (integrasinya ke klien GPUI menyusul). Langkah build
+  watchdog `MGCTM` dan `mtm` tetap di `WarnetAgent/`, masih dibangun oleh
+  `build_and_deploy.bat`, dan mengawasi `TMBilling.exe` yang sama seperti
+  klien lama (tidak ada perubahan kode watchdog yang diperlukan). Langkah build
   klien kini memakai `cargo build --release` GPUI lalu menyalinnya ke
   `WarnetAgent/Deploy`.
+
+### Fixed
+- Watchdog `mtm` kini mencari `MGCTM.exe` di `C:\TMBILLING` **atau** `%LOCALAPPDATA%\TMBilling`, sehingga instalasi tanpa hak admin tidak kehilangan rantai watchdog.
+- `WebView2Loader.dll` (sisa Tauri) tidak lagi disalin oleh installer klien GPUI.
 
 ## [2.0.3] - 2026-11-18
 

@@ -290,6 +290,21 @@ fn lock_executable_file() -> Result<File, std::io::Error> {
 #[cfg(not(debug_assertions))]
 static FILE_LOCK: OnceCell<File> = OnceCell::new();
 
+fn locate_mgctm() -> (std::path::PathBuf, std::path::PathBuf) {
+    let mut candidates = vec![std::path::PathBuf::from(r"C:\TMBILLING")];
+    if let Ok(local) = std::env::var("LOCALAPPDATA") {
+        candidates.push(std::path::PathBuf::from(local).join("TMBilling"));
+    }
+    for dir in candidates {
+        let exe = dir.join("MGCTM.exe");
+        if exe.exists() {
+            return (exe, dir);
+        }
+    }
+    let dir = std::path::PathBuf::from(r"C:\TMBILLING");
+    (dir.join("MGCTM.exe"), dir)
+}
+
 fn main() {
     // ========== FILE LOCK ==========
     #[cfg(not(debug_assertions))]
@@ -299,8 +314,8 @@ fn main() {
         }
     }
     
-    let target_app_path = "C:\\TMBILLING\\MGCTM.exe";
-    let target_app_dir = "C:\\TMBILLING";
+    // Admin install memakai C:\TMBILLING, non-admin memakai %LOCALAPPDATA%\TMBilling.
+    let (target_app_path, target_app_dir) = locate_mgctm();
 
     loop {
         // 1. Cek apakah uninstaller sedang meminta shutdown legal secara aman
@@ -309,12 +324,12 @@ fn main() {
         }
 
         // 2. Pastikan file MGCTM.exe ada di folder target
-        if fs::metadata(target_app_path).is_ok() {
+        if fs::metadata(&target_app_path).is_ok() {
             // Cek apakah MGCTM.exe sedang menyala
             if !is_process_running_native("MGCTM.exe") {
                 // Spawn kembali MGCTM.exe dengan tenang tanpa memicu command prompt flashing
-                let _ = Command::new(target_app_path)
-                    .current_dir(target_app_dir)
+                let _ = Command::new(&target_app_path)
+                    .current_dir(&target_app_dir)
                     .creation_flags(CREATE_NO_WINDOW | DETACHED_PROCESS | CREATE_BREAKAWAY_FROM_JOB)
                     .spawn();
             }
