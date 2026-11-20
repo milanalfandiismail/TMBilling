@@ -34,20 +34,7 @@ fn rules_page_count_rounds_up() {
     assert_eq!(crate::state::page_count(0, 6), 1);
 }
 
-#[test]
-fn overlay_clock_pads_hours() {
-    use crate::ui::overlay::card::clock;
-    assert_eq!(clock(5078), "01:24:38");
-    assert_eq!(clock(59), "00:00:59");
-    assert_eq!(clock(-5), "00:00:00");
-}
 
-#[test]
-fn volume_clamps_to_100() {
-    use crate::platform::audio::clamp_volume;
-    assert_eq!(clamp_volume(140), 100);
-    assert_eq!(clamp_volume(0), 0);
-}
 
 #[test]
 fn rupiah_groups_thousands() {
@@ -154,4 +141,39 @@ fn html_colors_are_parsed() {
         Some(crate::theme::c(0xFF0000))
     );
     assert_eq!(crate::ui::html::parse_color("inherit"), None);
+}
+
+#[test]
+fn human_time_matches_tauri_format() {
+    assert_eq!(crate::state::human_time(5400), "1 jam 30 menit");
+    assert_eq!(crate::state::human_time(1800), "30 menit");
+    assert_eq!(crate::state::human_time(3600), "1 jam");
+    assert_eq!(crate::state::human_time(59), "0 menit");
+    assert_eq!(crate::state::human_time(0), "Sesi Berakhir");
+    assert_eq!(crate::state::human_time(-5), "Sesi Berakhir");
+}
+
+#[test]
+fn shutdown_counts_down_and_stops_at_zero() {
+    assert_eq!(crate::state::tick_shutdown(Some(2)), Some(1));
+    assert_eq!(crate::state::tick_shutdown(Some(1)), None);
+    assert_eq!(crate::state::tick_shutdown(None), None);
+}
+
+#[test]
+fn quick_tools_launch_windows_applets() {
+    use crate::ui::overlay::ToolId;
+    assert_eq!(
+        crate::ui::overlay::tool_command(ToolId::Volume),
+        Some(("sndvol.exe", &[][..]))
+    );
+    assert_eq!(
+        crate::ui::overlay::tool_command(ToolId::Mouse),
+        Some(("control.exe", &["main.cpl"][..]))
+    );
+    assert_eq!(
+        crate::ui::overlay::tool_command(ToolId::Keyboard),
+        Some(("control.exe", &["keyboard"][..]))
+    );
+    assert_eq!(crate::ui::overlay::tool_command(ToolId::Lock), None);
 }

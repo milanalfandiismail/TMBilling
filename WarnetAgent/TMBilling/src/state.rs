@@ -45,7 +45,6 @@ pub struct TmApp {
     /// Layar overlay dipaksa tampil untuk verifikasi visual.
     pub demo_overlay: bool,
     pub overlay_tab: usize,
-    pub muted: bool,
     pub locked: bool,
     pub modal: Option<Modal>,
     // dipakai modal konfirmasi power di Task 4
@@ -113,6 +112,30 @@ pub enum PowerAction {
 }
 
 /// Layar login kiosk. Murni tanpa gpui supaya input bisa dites.
+/// Format durasi seperti klien Tauri: "1 jam 30 menit", "30 menit", "Sesi Berakhir".
+pub fn human_time(secs: i64) -> String {
+    if secs <= 0 {
+        return "Sesi Berakhir".to_string();
+    }
+    let minutes = secs / 60;
+    let hours = minutes / 60;
+    let rest = minutes % 60;
+    match (hours, rest) {
+        (0, 0) => "0 menit".to_string(),
+        (0, m) => format!("{m} menit"),
+        (h, 0) => format!("{h} jam"),
+        (h, m) => format!("{h} jam {m} menit"),
+    }
+}
+
+/// Hitung mundur shutdown; habis di nol.
+pub fn tick_shutdown(current: Option<i64>) -> Option<i64> {
+    match current {
+        Some(secs) if secs > 1 => Some(secs - 1),
+        _ => None,
+    }
+}
+
 /// Halaman dibulatkan ke atas; daftar kosong tetap satu halaman.
 pub fn page_count(total: usize, per_page: usize) -> usize {
     if per_page == 0 {

@@ -1,4 +1,3 @@
-pub mod audio;
 pub mod credentials;
 pub mod keyboard;
 pub mod screenshot;

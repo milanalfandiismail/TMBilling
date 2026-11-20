@@ -28,12 +28,20 @@ pub struct OverlayActions {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum ToolId {
-    Restart = 0,
-    Shutdown = 1,
-    Lock = 2,
-    Volume = 3,
-    Mouse = 4,
-    Keyboard = 5,
+    Lock = 0,
+    Volume = 1,
+    Mouse = 2,
+    Keyboard = 3,
+}
+
+/// Alat Cepat membuka applet Windows, sama seperti klien Tauri.
+pub fn tool_command(tool: ToolId) -> Option<(&'static str, &'static [&'static str])> {
+    match tool {
+        ToolId::Volume => Some(("sndvol.exe", &[])),
+        ToolId::Mouse => Some(("control.exe", &["main.cpl"])),
+        ToolId::Keyboard => Some(("control.exe", &["keyboard"])),
+        ToolId::Lock => None,
+    }
 }
 
 pub type ModalFn = Rc<dyn Fn(crate::state::Modal, &mut Window, &mut App)>;

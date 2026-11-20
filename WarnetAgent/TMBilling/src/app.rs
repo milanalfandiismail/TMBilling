@@ -46,6 +46,24 @@ impl TmApp {
 
     pub fn start(&mut self, cx: &mut Context<Self>) {
         self.login.info_page = 1;
+        // Satu detik per tick: hitung mundur shutdown harus jalan tanpa menunggu polling.
+        cx.spawn(async move |this, cx| loop {
+            cx.background_executor()
+                .timer(std::time::Duration::from_secs(1))
+                .await;
+            let alive = this.update(cx, |app, cx| {
+                let next = crate::state::tick_shutdown(app.shutdown_secs);
+                if next == app.shutdown_secs {
+                    return;
+                }
+                app.shutdown_secs = next;
+                cx.notify();
+            });
+            if alive.is_err() {
+                break;
+            }
+        })
+        .detach();
         if self.demo_overlay {
             return;
         }
@@ -400,89 +418,22 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
 
 impl TmApp {
     fn run_tool(&mut self, tool: ToolId, cx: &mut Context<Self>) {
-        match tool {
-            ToolId::Restart => {
-                self.modal = Some(Modal::Power(PowerAction::Restart));
-                cx.notify();
+        if tool == ToolId::Lock {
+            self.locked = true;
+            if let Some(client) = self.client.clone() {
+                cx.spawn(async move |_this, _cx| {
+                    let _ = client.afk_lock("", "", None).await;
+                })
+                .detach();
             }
-            ToolId::Shutdown => {
-                self.modal = Some(Modal::Power(PowerAction::Shutdown));
-                cx.notify();
-            }
-            ToolId::Lock => {
-                self.locked = true;
-                if let Some(client) = self.client.clone() {
-                    cx.spawn(async move |_this, _cx| {
-                        let _ = client.afk_lock("", "", None).await;
-                    })
-                    .detach();
-                }
-                cx.notify();
-            }
-            ToolId::Volume => {
-                self.muted = !crate::platform::audio::is_muted();
-                crate::platform::audio::set_muted(self.muted);
-                if !self.muted {
-                    // Sama seperti klien Tauri: suara dikembalikan ke 100% saat dibuka.
-                    crate::platform::audio::set_master_volume(100);
-                }
-                cx.notify();
-            }
-            // shortcut: blokir mouse/keyboard menunggu hook Win32 di Task 11
-            ToolId::Mouse | ToolId::Keyboard => cx.notify(),
+            cx.notify();
+            return;
+        }
+        if let Some((exe, args)) = crate::ui::overlay::tool_command(tool) {
+            let _ = std::process::Command::new(exe).args(args).spawn();
         }
     }
-}
 
-pub fn kiosk_actions(cx: &mut Context<TmApp>) -> KioskActions {
-    let me = cx.entity();
-    let field_me = me.clone();
-    let submit_me = me.clone();
-    let power_me = me.clone();
-    let qris_me = me.clone();
-    let tab_me = me.clone();
-    let page_me = me.clone();
-    KioskActions {
-        field: Rc::new(move |field: LoginField, _w: &mut Window, cx: &mut App| {
-            field_me.update(cx, |app, cx| {
-                app.login.field = field;
-                cx.notify();
-            });
-        }),
-        submit: Rc::new(move |_w: &mut Window, cx: &mut App| {
-            submit_me.update(cx, |app, cx| app.submit_login(cx));
-        }),
-        power: Rc::new(move |action: Option<PowerAction>, _w: &mut Window, cx: &mut App| {
-            power_me.update(cx, |app, cx| {
-                app.modal = action.map(Modal::Power);
-                cx.notify();
-            });
-        }),
-        qris: Rc::new(move |open: bool, _w: &mut Window, cx: &mut App| {
-            qris_me.update(cx, |app, cx| {
-                app.login.qris_full = open;
-                cx.notify();
-            });
-        }),
-        tab: Rc::new(move |tab: usize, _w: &mut Window, cx: &mut App| {
-            tab_me.update(cx, |app, cx| {
-                app.login.info_tab = tab;
-                app.login.info_page = 1;
-                cx.notify();
-            });
-        }),
-        page: Rc::new(move |page: usize, _w: &mut Window, cx: &mut App| {
-            page_me.update(cx, |app, cx| {
-                app.login.info_page = page;
-                cx.notify();
-            });
-        }),
-    }
-}
-
-
-impl TmApp {
-    /// Kiosk (no session), overlay card (in session), AFK (locked) drive window chrome.
     fn sync_window(&mut self, window: &mut Window) {
         let overlay = self.session.is_some() && !self.locked;
         let fullscreen_modal = matches!(self.modal, Some(Modal::QrisFull | Modal::Power(_)));
@@ -530,6 +481,52 @@ impl TmApp {
         if let Some(rect) = wm::monitor_rect(h) {
             wm::set_rect(h, rect, true);
         }
+    }
+}
+
+fn kiosk_actions(cx: &mut Context<TmApp>) -> KioskActions {
+    let me = cx.entity();
+    let field_me = me.clone();
+    let submit_me = me.clone();
+    let power_me = me.clone();
+    let qris_me = me.clone();
+    let tab_me = me.clone();
+    let page_me = me.clone();
+    KioskActions {
+        field: Rc::new(move |field: LoginField, _w: &mut Window, cx: &mut App| {
+            field_me.update(cx, |app, cx| {
+                app.login.field = field;
+                cx.notify();
+            });
+        }),
+        submit: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            submit_me.update(cx, |app, cx| app.submit_login(cx));
+        }),
+        power: Rc::new(move |action: Option<PowerAction>, _w: &mut Window, cx: &mut App| {
+            power_me.update(cx, |app, cx| {
+                app.modal = action.map(Modal::Power);
+                cx.notify();
+            });
+        }),
+        qris: Rc::new(move |open: bool, _w: &mut Window, cx: &mut App| {
+            qris_me.update(cx, |app, cx| {
+                app.login.qris_full = open;
+                cx.notify();
+            });
+        }),
+        tab: Rc::new(move |tab: usize, _w: &mut Window, cx: &mut App| {
+            tab_me.update(cx, |app, cx| {
+                app.login.info_tab = tab;
+                app.login.info_page = 1;
+                cx.notify();
+            });
+        }),
+        page: Rc::new(move |page: usize, _w: &mut Window, cx: &mut App| {
+            page_me.update(cx, |app, cx| {
+                app.login.info_page = page;
+                cx.notify();
+            });
+        }),
     }
 }
 

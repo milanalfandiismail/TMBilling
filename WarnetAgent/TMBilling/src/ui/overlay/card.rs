@@ -9,13 +9,6 @@ use crate::ui::button::{ButtonTone, TmButton};
 use crate::ui::overlay::{panels, OverlayActions};
 use crate::ui::tabs::TmTabs;
 
-/// H:MM:SS dengan jam dua digit, sama seperti export FigCraft.
-pub fn clock(secs: i64) -> String {
-    let secs = secs.max(0);
-    let (h, m, s) = (secs / 3600, (secs % 3600) / 60, secs % 60);
-    format!("{h:02}:{m:02}:{s:02}")
-}
-
 struct Metrics {
     pad: f32,
     header_h: f32,
@@ -201,7 +194,7 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                 .font_family("Consolas")
                 .font_weight(FontWeight::BOLD)
                 .text_color(timer_color)
-                .child(clock(remaining)),
+                .child(crate::state::human_time(remaining)),
         )
         .child(
             div()

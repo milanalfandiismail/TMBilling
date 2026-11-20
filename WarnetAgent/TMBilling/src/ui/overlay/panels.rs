@@ -14,8 +14,6 @@ pub const QRIS_H: f32 = 248.0;
 fn icon(id: ToolId, scale: f32, color: Rgba) -> AnyElement {
     let bar = |w: f32, h: f32| div().w(px(w * scale)).h(px(h * scale)).rounded(px(1.0)).bg(color);
     match id {
-        ToolId::Restart => div().text_size(px(16.0 * scale)).text_color(color).child("\u{21bb}").into_any_element(),
-        ToolId::Shutdown => div().text_size(px(16.0 * scale)).text_color(color).child("\u{23fb}").into_any_element(),
         ToolId::Lock => div()
             .flex()
             .flex_col()
@@ -142,16 +140,14 @@ pub fn tools(app: &TmApp, scale: f32, actions: &OverlayActions) -> impl IntoElem
                         .flex()
                         .flex_row()
                         .gap(px(9.0 * scale))
-                        .child(tool_tile(ToolId::Restart, "Restart", scale, false, actions))
-                        .child(tool_tile(ToolId::Shutdown, "Shutdown", scale, false, actions))
-                        .child(tool_tile(ToolId::Lock, "Lock", scale, app.locked, actions)),
+                        .child(tool_tile(ToolId::Lock, "Lock", scale, app.locked, actions))
+                        .child(tool_tile(ToolId::Volume, "Volume", scale, false, actions)),
                 )
                 .child(
                     div()
                         .flex()
                         .flex_row()
                         .gap(px(9.0 * scale))
-                        .child(tool_tile(ToolId::Volume, "Volume", scale, app.muted, actions))
                         .child(tool_tile(ToolId::Mouse, "Mouse", scale, false, actions))
                         .child(tool_tile(ToolId::Keyboard, "Keyboard", scale, false, actions)),
                 ),
