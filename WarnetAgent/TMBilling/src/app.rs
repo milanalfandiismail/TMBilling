@@ -426,6 +426,7 @@ impl TmApp {
         self.applied_mode = Some((overlay, fullscreen_modal));
         let Some(h) = wm::hwnd(window) else { return };
         if overlay && !fullscreen_modal {
+            crate::platform::keyboard::set_enabled(false);
             wm::set_taskbar_visibility(true);
             let rect = self.saved_rect.take().or_else(|| {
                 let m = wm::monitor_rect(h)?;

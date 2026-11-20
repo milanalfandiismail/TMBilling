@@ -36,6 +36,30 @@ fn window_options() -> WindowOptions {
 }
 
 fn main() {
+    #[cfg(not(debug_assertions))]
+    {
+        use platform::security;
+        if let Err(e) = security::verify_process_name("TMBilling.exe") {
+            eprintln!("[SECURITY] {e}");
+            std::process::exit(1);
+        }
+        if let Err(e) = security::verify_file_integrity() {
+            eprintln!("[SECURITY] {e}");
+            eprintln!("[SECURITY] Please reinstall TMBilling Client");
+            std::process::exit(1);
+        }
+        if let Ok(lock) = security::lock_executable_file() {
+            let _ = security::FILE_LOCK.set(lock);
+        }
+    }
+
+    // Second launch just focuses the window of the running client.
+    let _instance = match platform::single_instance::acquire("TMBilling") {
+        Some(guard) => guard,
+        None => return,
+    };
+    platform::keyboard::init();
+
     let gallery = std::env::args().any(|a| a == "--gallery");
     let overlay = std::env::args().any(|a| a == "--overlay");
     gpui_kit::application().run(move |cx: &mut App| {
@@ -82,5 +106,7 @@ fn main() {
             })
             .expect("failed to open window");
         }
+        platform::tray::install();
     });
+    platform::keyboard::cleanup();
 }
