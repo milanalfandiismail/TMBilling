@@ -29,6 +29,8 @@ pub struct TmApp {
     /// Layar overlay dipaksa tampil untuk verifikasi visual.
     pub demo_overlay: bool,
     pub overlay_tab: usize,
+    pub muted: bool,
+    pub locked: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

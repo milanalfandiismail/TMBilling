@@ -78,7 +78,7 @@ const QR_MOCK: [&str; 21] = [
     "#######.##....#..####",
 ];
 
-fn qr_tile(size: f32) -> impl IntoElement {
+pub(crate) fn qr_tile(size: f32) -> impl IntoElement {
     let unit = ((size / 21.0) * 2.0).floor() / 2.0;
     let mut tile = div().w(px(size)).h(px(size)).flex_shrink_0().flex().flex_col();
     for line in QR_MOCK {

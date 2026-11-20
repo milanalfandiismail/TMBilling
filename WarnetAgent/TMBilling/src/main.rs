@@ -52,6 +52,10 @@ fn main() {
                     // shortcut: sesi palsu untuk menilai tampilan overlay sebelum server hidup
                     if overlay {
                         app.demo_overlay = true;
+                        app.overlay_tab = std::env::var("TM_OVERLAY_TAB")
+                            .ok()
+                            .and_then(|v| v.parse().ok())
+                            .unwrap_or(0);
                         app.session = Some(state::Session {
                             nama: "budi".into(),
                             grup: "REGULAR".into(),

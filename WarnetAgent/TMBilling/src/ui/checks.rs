@@ -42,3 +42,10 @@ fn overlay_clock_pads_hours() {
     assert_eq!(clock(-5), "00:00:00");
 }
 
+#[test]
+fn volume_clamps_to_100() {
+    use crate::platform::audio::clamp_volume;
+    assert_eq!(clamp_volume(140), 100);
+    assert_eq!(clamp_volume(0), 0);
+}
+

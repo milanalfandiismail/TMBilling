@@ -6,7 +6,7 @@ use crate::state::TmApp;
 use crate::theme::TM;
 use crate::ui::badge::{badge_colors, BadgeTone, TmBadge};
 use crate::ui::button::{ButtonTone, TmButton};
-use crate::ui::overlay::OverlayActions;
+use crate::ui::overlay::{panels, OverlayActions};
 use crate::ui::tabs::TmTabs;
 
 /// H:MM:SS dengan jam dua digit, sama seperti export FigCraft.
@@ -126,12 +126,17 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
     let logout_click = actions.logout.clone();
     let name = app.session.as_ref().map(|s| s.nama.clone()).unwrap_or_default();
     let badge = badge_chip(app, compact, scale);
+    let extra_h = match app.overlay_tab {
+        1 => (panels::TOOLS_H - 30.0) * scale,
+        2 => (panels::QRIS_H - 30.0) * scale,
+        _ => 0.0,
+    };
 
     div()
         .flex()
         .flex_col()
         .w(px(geom.width))
-        .h(px(geom.height))
+        .h(px(geom.height + extra_h))
         .p(px(m.pad))
         .rounded(px(m.radius))
         .border_1()
@@ -215,25 +220,24 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                     .render(),
             ),
         )
-        .child(
-            div()
+        .child(match app.overlay_tab {
+            1 => div()
+                .mt(px(m.row_mt))
+                .child(panels::tools(app, scale, actions))
+                .into_any_element(),
+            2 => div()
+                .mt(px(m.row_mt))
+                .child(panels::qris(scale))
+                .into_any_element(),
+            _ => div()
                 .mt(px(m.row_mt))
                 .flex()
                 .flex_row()
                 .items_center()
                 .justify_between()
-                .child(
-                    div()
-                        .text_size(px(m.row_font))
-                        .text_color(TM.dim)
-                        .child("Mulai"),
-                )
-                .child(
-                    div()
-                        .text_size(px(m.row_font))
-                        .text_color(TM.text)
-                        .child(mul),
-                ),
-        )
+                .child(div().text_size(px(m.row_font)).text_color(TM.dim).child("Mulai"))
+                .child(div().text_size(px(m.row_font)).text_color(TM.text).child(mul))
+                .into_any_element(),
+        })
         .into_any_element()
 }

@@ -7,7 +7,7 @@ use crate::theme::TM;
 use crate::ui::kiosk::header::header;
 use crate::ui::kiosk::{info, login, KioskActions};
 use crate::ui::overlay::card as overlay_card_mod;
-use crate::ui::overlay::{ActFn, OverlayActions, TabFn};
+use crate::ui::overlay::{ActFn, OverlayActions, TabFn, ToolFn, ToolId};
 use crate::platform::window::overlay_geometry;
 use gpui_kit::prelude::*;
 use gpui_kit::*;
@@ -151,6 +151,7 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
     let afk_me = me.clone();
     let out_me = me.clone();
     let tab_me = me.clone();
+    let tool_me = me.clone();
     OverlayActions {
         // shortcut: minimize & AFK hanya mengubah state lokal sampai Task 8/10 memasang aksinya
         minimize: Rc::new(move |_w: &mut Window, cx: &mut App| {
@@ -168,6 +169,39 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
                 cx.notify();
             });
         }) as TabFn,
+        tool: Rc::new(move |tool: ToolId, _w: &mut Window, cx: &mut App| {
+            tool_me.update(cx, |app, cx| app.run_tool(tool, cx));
+        }) as ToolFn,
+    }
+}
+
+impl TmApp {
+    fn run_tool(&mut self, tool: ToolId, cx: &mut Context<Self>) {
+        match tool {
+            ToolId::Restart => self.run_power(PowerAction::Restart, cx),
+            ToolId::Shutdown => self.run_power(PowerAction::Shutdown, cx),
+            ToolId::Lock => {
+                self.locked = true;
+                if let Some(client) = self.client.clone() {
+                    cx.spawn(async move |_this, _cx| {
+                        let _ = client.afk_lock("", "", None).await;
+                    })
+                    .detach();
+                }
+                cx.notify();
+            }
+            ToolId::Volume => {
+                self.muted = !crate::platform::audio::is_muted();
+                crate::platform::audio::set_muted(self.muted);
+                if !self.muted {
+                    // Sama seperti klien Tauri: suara dikembalikan ke 100% saat dibuka.
+                    crate::platform::audio::set_master_volume(100);
+                }
+                cx.notify();
+            }
+            // shortcut: blokir mouse/keyboard menunggu hook Win32 di Task 11
+            ToolId::Mouse | ToolId::Keyboard => cx.notify(),
+        }
     }
 }
 
