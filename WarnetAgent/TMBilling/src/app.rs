@@ -127,7 +127,12 @@ impl TmApp {
     }
 
     fn submit_login(&mut self, cx: &mut Context<Self>) {
-        if !self.login.can_submit() || self.auth_busy {
+        if self.auth_busy {
+            return;
+        }
+        if !self.login.can_submit() {
+            self.login.error = Some("Username dan password wajib diisi.".into());
+            cx.notify();
             return;
         }
         let Some(client) = self.client.clone() else {
@@ -306,22 +311,23 @@ impl TmApp {
     }
 
     fn submit_admin(&mut self, cx: &mut Context<Self>) {
-        let (app_ip, app_mac) = crate::polling::local_net().unwrap_or_default();
-        self.login.error = None;
-        self.auth_busy = true;
         if self.auth_busy {
             return;
         }
+        let (app_ip, app_mac) = crate::polling::local_net().unwrap_or_default();
         let (user, pass) = self.login.admin_credentials();
+        let (user, pass) = (user.to_string(), pass.to_string());
         if user.is_empty() || pass.is_empty() {
             self.login.error = Some("Username dan password wajib diisi.".to_string());
+            cx.notify();
             return;
         }
+        self.login.error = None;
+        self.auth_busy = true;
         let Some(client) = self.client.clone() else {
+            self.auth_busy = false;
             return;
         };
-        let user = user.to_string();
-        let pass = pass.to_string();
         cx.spawn(async move |this, cx| {
             let ip = app_ip.clone();
             let mac = app_mac.clone();
@@ -541,7 +547,7 @@ impl TmApp {
                 if self.saved_rect.is_none() {
                     self.saved_rect = wm::window_rect(h).map(|r| (r.left, r.top, r.right, r.bottom));
                 }
-            } else if cfg!(not(debug_assertions)) {
+            } else if cfg!(not(debug_assertions)) && !crate::dev_safe() {
                 // shortcut: dev builds keep the desktop taskbar, production hides it, restore on drop
                 if self.taskbar_guard.is_none() {
                     self.taskbar_guard = Some(wm::TaskbarGuard);
@@ -552,16 +558,12 @@ impl TmApp {
         };
 
         if let Some((l, t, r, b)) = rect {
-            let target = windows::Win32::Foundation::RECT { left: l, top: t, right: r, bottom: b };
+            // ukuran lewat gpui supaya layout ikut tahu; SetWindowPos langsung membuat area baru putih
+            window.resize(gpui_kit::Size::new(px((r - l) as f32), px((b - t) as f32)));
+            wm::move_to(h, l, t);
             if mode_switch {
-                // hide sebelum memindah rect supaya tidak ada frame lama yang sempat tampil
-                wm::hide(h);
-                wm::set_rect(h, target, !overlay || fullscreen_modal);
-                wm::show(h);
-            } else {
-                wm::set_rect_quiet(h, target);
+                wm::focus(h);
             }
-            // SetWindowPos tidak memicu paint; tanpa refresh area baru tampil putih
             window.refresh();
         }
     }

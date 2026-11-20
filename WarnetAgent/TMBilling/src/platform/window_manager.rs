@@ -7,8 +7,8 @@ use windows::Win32::Graphics::Gdi::{
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     GetWindowLongPtrW, SetWindowLongPtrW, GWL_STYLE, SWP_FRAMECHANGED, SWP_NOMOVE, SWP_NOSIZE,
-    SWP_NOZORDER, WS_BORDER, WS_CAPTION, WS_THICKFRAME,
-    FindWindowW, GetWindowRect, SetWindowPos, ShowWindow, HWND_NOTOPMOST, HWND_TOPMOST, SW_HIDE,
+    SWP_NOZORDER, WS_BORDER, WS_CAPTION, WS_THICKFRAME, SetForegroundWindow, BringWindowToTop,
+    FindWindowW, GetWindowRect, SetWindowPos, ShowWindow, HWND_TOPMOST, SW_HIDE,
     SW_SHOW, SWP_NOACTIVATE, SWP_NOOWNERZORDER,
 };
 
@@ -81,32 +81,24 @@ pub fn monitor_rect(h: HWND) -> Option<RECT> {
     }
 }
 
-pub fn set_rect(h: HWND, rect: RECT, topmost: bool) {
-    let after = if topmost { HWND_TOPMOST } else { HWND_NOTOPMOST };
+pub fn focus(h: HWND) {
     unsafe {
-        let _ = SetWindowPos(
-            h,
-            Some(after),
-            rect.left,
-            rect.top,
-            rect.right - rect.left,
-            rect.bottom - rect.top,
-            SWP_NOACTIVATE | SWP_NOOWNERZORDER,
-        );
+        let _ = SetForegroundWindow(h);
+        let _ = BringWindowToTop(h);
     }
 }
 
-/// Geser tanpa hide/show: dipakai saat hanya tinggi kartu yang berubah (pindah tab).
-pub fn set_rect_quiet(h: HWND, rect: RECT) {
+/// Pindahkan tanpa mengubah ukuran (ukuran diurus gpui lewat Window::resize).
+pub fn move_to(h: HWND, x: i32, y: i32) {
     unsafe {
         let _ = SetWindowPos(
             h,
-            None,
-            rect.left,
-            rect.top,
-            rect.right - rect.left,
-            rect.bottom - rect.top,
-            SWP_NOACTIVATE | SWP_NOZORDER,
+            Some(HWND_TOPMOST),
+            x,
+            y,
+            0,
+            0,
+            SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER,
         );
     }
 }
@@ -117,18 +109,5 @@ pub struct TaskbarGuard;
 impl Drop for TaskbarGuard {
     fn drop(&mut self) {
         set_taskbar_visibility(true);
-    }
-}
-
-/// Sembunyikan jendela sebelum mengubah rect agar tidak ada frame lama yang tampil.
-pub fn hide(h: HWND) {
-    unsafe {
-        let _ = ShowWindow(h, SW_HIDE);
-    }
-}
-
-pub fn show(h: HWND) {
-    unsafe {
-        let _ = ShowWindow(h, SW_SHOW);
     }
 }

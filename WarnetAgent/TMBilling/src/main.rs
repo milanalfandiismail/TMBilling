@@ -51,6 +51,11 @@ fn window_options() -> WindowOptions {
     }
 }
 
+/// Mode uji desktop: tanpa keyboard hook dan tanpa sembunyikan taskbar.
+pub fn dev_safe() -> bool {
+    std::env::var("TM_DEV_SAFE").map(|v| v == "1").unwrap_or(false)
+}
+
 fn main() {
     #[cfg(not(debug_assertions))]
     {

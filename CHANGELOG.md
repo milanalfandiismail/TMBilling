@@ -6,6 +6,21 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [2.0.8] - 2026-11-22
+
+### Fixed
+- Jendela overlay dan kiosk kini selalu on-top, sehingga klik tombol (Logout, Lock/AFK, tab,
+  Batal) benar-benar sampai ke aplikasi walau ada jendela lain di atasnya.
+- Modal overlay memakai jalur resize gpui, jadi dialog berada di tengah dan tidak ada area putih
+  saat jendela membesar.
+- Tombol Masuk admin tidak lagi langsung kembali tanpa reaksi: field kosong menampilkan pesan
+  galat di dalam modal.
+- Tombol Masuk kiosk dengan field kosong menampilkan pesan, bukan diam.
+
+### Added
+- TM_DEV_SAFE=1 mematikan keyboard hook dan taskbar hiding saat menguji di desktop.
+- tools/harness.py menguji seluruh kontrol overlay dan kiosk terhadap server asli.
+
 ## [2.0.7] - 2026-11-22
 
 ### Fixed

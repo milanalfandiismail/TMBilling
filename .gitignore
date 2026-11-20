@@ -636,3 +636,4 @@ tests/e2e/mcp/results/
 /WarnetAgent/mtm/target/
 /WarnetAgent/TMBilling_Monitor/target/
 /WarnetAgent/TMBilling_Uninstaller/target/
+/WarnetAgent/TMBilling/harness_out.txt
