@@ -19,6 +19,29 @@ pub enum View {
     Overlay,
 }
 
+/// True saat kartu overlay tampil; dipakai handler close window.
+pub static OVERLAY_MODE: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CloseAction {
+    Block,
+    Minimize,
+}
+
+pub fn close_action(overlay: bool) -> CloseAction {
+    if overlay {
+        CloseAction::Minimize
+    } else {
+        CloseAction::Block
+    }
+}
+
+/// Hook keyboard wajib hidup di kiosk dan saat PIN AFK, mati di overlay.
+pub fn hook_should_be_enabled(view: View, modal: Option<Modal>) -> bool {
+    view == View::Kiosk || modal == Some(Modal::AfkPin)
+}
+
 pub fn view_for_status(status: &str) -> View {
     match status {
         "kosong" | "error" => View::Kiosk,
@@ -39,6 +62,7 @@ pub struct TmApp {
     pub login: LoginState,
     pub client: Option<crate::api::client::ApiClient>,
     pub focus: Option<gpui_kit::FocusHandle>,
+    pub close_hooked: bool,
     /// Jam lokal saat sesi pertama kali terlihat aktif di klien ini.
     pub started_at: Option<(u8, u8)>,
     pub prev_remaining: Option<i64>,
@@ -152,7 +176,6 @@ pub struct LoginState {
     pub field: LoginField,
     pub error: Option<String>,
     pub busy: bool,
-    pub qris_full: bool,
     pub admin_user: String,
     pub admin_pass: String,
     pub admin_field: LoginField,

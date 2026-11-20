@@ -104,3 +104,16 @@ impl Drop for TaskbarGuard {
         set_taskbar_visibility(true);
     }
 }
+
+/// Sembunyikan jendela sebelum mengubah rect agar tidak ada frame lama yang tampil.
+pub fn hide(h: HWND) {
+    unsafe {
+        let _ = ShowWindow(h, SW_HIDE);
+    }
+}
+
+pub fn show(h: HWND) {
+    unsafe {
+        let _ = ShowWindow(h, SW_SHOW);
+    }
+}

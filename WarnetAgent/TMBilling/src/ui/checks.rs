@@ -177,3 +177,13 @@ fn quick_tools_launch_windows_applets() {
     );
     assert_eq!(crate::ui::overlay::tool_command(ToolId::Lock), None);
 }
+
+#[test]
+fn close_behaviour_follows_mode() {
+    use crate::state::{close_action, hook_should_be_enabled, CloseAction, Modal, View};
+    assert_eq!(close_action(true), CloseAction::Minimize);
+    assert_eq!(close_action(false), CloseAction::Block);
+    assert!(hook_should_be_enabled(View::Kiosk, None));
+    assert!(!hook_should_be_enabled(View::Overlay, None));
+    assert!(hook_should_be_enabled(View::Overlay, Some(Modal::AfkPin)));
+}

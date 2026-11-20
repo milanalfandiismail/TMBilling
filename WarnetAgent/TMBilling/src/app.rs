@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use crate::api::client::ApiClient;
 use crate::polling::{self, AppEvent};
-use crate::state::{Alert, LoginField, PowerAction, TmApp, Modal};
+use crate::state::{self, Alert, LoginField, PowerAction, TmApp, Modal};
 use crate::theme::TM;
 use crate::ui::kiosk::header::header;
 use crate::ui::kiosk::{info, login, KioskActions};
@@ -332,7 +332,6 @@ impl TmApp {
 
 pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
     let me = cx.entity();
-    let min_me = me.clone();
     let afk_me = me.clone();
     let out_me = me.clone();
     let tab_me = me.clone();
@@ -389,8 +388,8 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
             admin_me.update(cx, |app, cx| app.submit_admin(cx));
         }) as ActFn,
         // shortcut: minimize & AFK hanya mengubah state lokal sampai Task 8/10 memasang aksinya
-        minimize: Rc::new(move |_w: &mut Window, cx: &mut App| {
-            min_me.update(cx, |_app, cx| cx.notify());
+        minimize: Rc::new(move |w: &mut Window, _cx: &mut App| {
+            w.minimize_window();
         }) as ActFn,
         afk: Rc::new(move |_w: &mut Window, cx: &mut App| {
             afk_me.update(cx, |app, cx| {
@@ -435,8 +434,12 @@ impl TmApp {
     }
 
     fn sync_window(&mut self, window: &mut Window) {
+        use std::sync::atomic::Ordering;
         let overlay = self.session.is_some() && !self.locked;
         let fullscreen_modal = matches!(self.modal, Some(Modal::QrisFull | Modal::Power(_)));
+        state::OVERLAY_MODE.store(overlay, Ordering::Relaxed);
+        crate::platform::keyboard::set_enabled(state::hook_should_be_enabled(self.view, self.modal));
+
         let mode = (overlay, fullscreen_modal, self.overlay_tab);
         if self.applied_mode == Some(mode) {
             return;
@@ -444,43 +447,46 @@ impl TmApp {
         self.applied_mode = Some(mode);
         let Some(h) = wm::hwnd(window) else { return };
         wm::strip_frame(h);
-        if overlay && !fullscreen_modal {
-            crate::platform::keyboard::set_enabled(false);
+
+        let rect = if overlay && !fullscreen_modal {
             wm::set_taskbar_visibility(true);
-            let rect = self.saved_rect.take().or_else(|| {
+            self.saved_rect.take().or_else(|| {
                 let m = wm::monitor_rect(h)?;
-                let g = overlay_geometry((
-                    (m.right - m.left) as f32,
-                    (m.bottom - m.top) as f32,
-                ));
+                let g = overlay_geometry(((m.right - m.left) as f32, (m.bottom - m.top) as f32));
                 let m8 = g.margin as i32;
-                let h = g.height + overlay_card_mod::extra_height(self.overlay_tab, g);
+                let hh = g.height + overlay_card_mod::extra_height(self.overlay_tab, g);
                 Some((
                     m.right - g.width as i32 - m8,
                     m.top + m8,
                     m.right - m8,
-                    m.top + m8 + h.ceil() as i32,
+                    m.top + m8 + hh.ceil() as i32,
                 ))
-            });
-            if let Some((l, t, r, b)) = rect {
-                wm::set_rect(h, windows::Win32::Foundation::RECT { left: l, top: t, right: r, bottom: b }, false);
+            })
+        } else {
+            if overlay {
+                if self.saved_rect.is_none() {
+                    self.saved_rect = wm::window_rect(h).map(|r| (r.left, r.top, r.right, r.bottom));
+                }
+            } else if cfg!(not(debug_assertions)) {
+                // shortcut: dev builds keep the desktop taskbar, production hides it, restore on drop
+                if self.taskbar_guard.is_none() {
+                    self.taskbar_guard = Some(wm::TaskbarGuard);
+                }
+                wm::set_taskbar_visibility(false);
             }
-            return;
+            wm::monitor_rect(h).map(|r| (r.left, r.top, r.right, r.bottom))
+        };
+
+        // hide sebelum memindah rect supaya tidak ada frame lama yang sempat tampil
+        wm::hide(h);
+        if let Some((l, t, r, b)) = rect {
+            wm::set_rect(
+                h,
+                windows::Win32::Foundation::RECT { left: l, top: t, right: r, bottom: b },
+                !overlay || fullscreen_modal,
+            );
         }
-        if overlay {
-            if self.saved_rect.is_none() {
-                self.saved_rect = wm::window_rect(h).map(|r| (r.left, r.top, r.right, r.bottom));
-            }
-        } else if cfg!(not(debug_assertions)) {
-            // shortcut: dev builds keep the desktop taskbar, production hides it, restore on drop
-            if self.taskbar_guard.is_none() {
-                self.taskbar_guard = Some(wm::TaskbarGuard);
-            }
-            wm::set_taskbar_visibility(false);
-        }
-        if let Some(rect) = wm::monitor_rect(h) {
-            wm::set_rect(h, rect, true);
-        }
+        wm::show(h);
     }
 }
 
@@ -510,7 +516,7 @@ fn kiosk_actions(cx: &mut Context<TmApp>) -> KioskActions {
         }),
         qris: Rc::new(move |open: bool, _w: &mut Window, cx: &mut App| {
             qris_me.update(cx, |app, cx| {
-                app.login.qris_full = open;
+                app.modal = if open { Some(Modal::QrisFull) } else { None };
                 cx.notify();
             });
         }),
@@ -532,6 +538,20 @@ fn kiosk_actions(cx: &mut Context<TmApp>) -> KioskActions {
 
 impl Render for TmApp {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if !self.close_hooked {
+            self.close_hooked = true;
+            window.on_window_should_close(cx, |window, _cx| {
+                use std::sync::atomic::Ordering;
+                if state::close_action(state::OVERLAY_MODE.load(Ordering::Relaxed))
+                    == state::CloseAction::Minimize
+                {
+                    window.minimize_window();
+                }
+                // kiosk tidak boleh bisa ditutup: permintaan close selalu ditolak
+                false
+            });
+        }
+
         let handle = self.focus.get_or_insert_with(|| cx.focus_handle()).clone();
         let actions = kiosk_actions(cx);
         window.focus(&handle, cx);
@@ -554,7 +574,7 @@ impl Render for TmApp {
                 .flex_col()
                 .gap(px(0.0))
                 .track_focus(&handle)
-                .on_key_down(cx.listener(Self::on_key))
+                .capture_key_down(cx.listener(Self::on_key))
                 .child(header(&title, &pc, self.shutdown_secs, compact, &actions))
                 .child({
                     let stack = if compact {
