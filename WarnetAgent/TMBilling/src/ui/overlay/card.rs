@@ -98,6 +98,16 @@ fn badge_chip(app: &TmApp, compact: bool, scale: f32) -> AnyElement {
         .into_any_element()
 }
 
+/// Extra height the tab panel adds below the card body; the window is resized to match.
+pub fn extra_height(tab: usize, geom: OverlayGeometry) -> f32 {
+    let scale = geom.width / 380.0;
+    match tab {
+        1 => (panels::TOOLS_H - 30.0) * scale,
+        2 => (panels::QRIS_H - 30.0) * scale,
+        _ => 0.0,
+    }
+}
+
 pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> impl IntoElement {
     let compact = geom.width < 340.0;
     let scale = geom.width / 380.0;
@@ -126,11 +136,7 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
     let logout_click = actions.logout.clone();
     let name = app.session.as_ref().map(|s| s.nama.clone()).unwrap_or_default();
     let badge = badge_chip(app, compact, scale);
-    let extra_h = match app.overlay_tab {
-        1 => (panels::TOOLS_H - 30.0) * scale,
-        2 => (panels::QRIS_H - 30.0) * scale,
-        _ => 0.0,
-    };
+    let extra_h = extra_height(app.overlay_tab, geom);
 
     div()
         .flex()

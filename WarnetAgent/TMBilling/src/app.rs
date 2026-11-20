@@ -420,11 +420,13 @@ impl TmApp {
     fn sync_window(&mut self, window: &mut Window) {
         let overlay = self.session.is_some() && !self.locked;
         let fullscreen_modal = matches!(self.modal, Some(Modal::QrisFull));
-        if self.applied_mode == Some((overlay, fullscreen_modal)) {
+        let mode = (overlay, fullscreen_modal, self.overlay_tab);
+        if self.applied_mode == Some(mode) {
             return;
         }
-        self.applied_mode = Some((overlay, fullscreen_modal));
+        self.applied_mode = Some(mode);
         let Some(h) = wm::hwnd(window) else { return };
+        wm::strip_frame(h);
         if overlay && !fullscreen_modal {
             crate::platform::keyboard::set_enabled(false);
             wm::set_taskbar_visibility(true);
@@ -435,11 +437,12 @@ impl TmApp {
                     (m.bottom - m.top) as f32,
                 ));
                 let m8 = g.margin as i32;
+                let h = g.height + overlay_card_mod::extra_height(self.overlay_tab, g);
                 Some((
                     m.right - g.width as i32 - m8,
                     m.top + m8,
                     m.right - m8,
-                    m.top + m8 + g.height as i32,
+                    m.top + m8 + h.ceil() as i32,
                 ))
             });
             if let Some((l, t, r, b)) = rect {
@@ -502,9 +505,13 @@ impl Render for TmApp {
                         .child(info::screen(self, compact, &actions))
                 });
         }
-        let vw: f32 = window.viewport_size().width.into();
-        let vh: f32 = window.viewport_size().height.into();
-        let geom = overlay_geometry((vw, vh));
+        let vp = window.viewport_size();
+        let viewport = (f32::from(vp.width), f32::from(vp.height));
+        // The window itself is the card here, so the monitor is what decides the size tier.
+        let geom = wm::hwnd(window)
+            .and_then(wm::monitor_rect)
+            .map(|m| overlay_geometry(((m.right - m.left) as f32, (m.bottom - m.top) as f32)))
+            .unwrap_or_else(|| overlay_geometry(viewport));
         let actions_ov = overlay_actions(cx);
         let modal = crate::ui::overlay::modals::render(self, &actions_ov);
         div()
@@ -513,9 +520,7 @@ impl Render for TmApp {
             .bg(TM.bg)
             .flex()
             .items_start()
-            .justify_end()
-            .pt(px(geom.margin))
-            .pr(px(geom.margin))
+            .justify_start()
             .child(overlay_card_mod::card(self, geom, &actions_ov))
             .children(modal)
     }

@@ -6,6 +6,8 @@ use windows::Win32::Graphics::Gdi::{
     GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
+    GetWindowLongPtrW, SetWindowLongPtrW, GWL_STYLE, SWP_FRAMECHANGED, SWP_NOMOVE, SWP_NOSIZE,
+    SWP_NOZORDER, WS_BORDER, WS_CAPTION, WS_THICKFRAME,
     FindWindowW, GetWindowRect, SetWindowPos, ShowWindow, HWND_NOTOPMOST, HWND_TOPMOST, SW_HIDE,
     SW_SHOW, SWP_NOACTIVATE, SWP_NOOWNERZORDER,
 };
@@ -32,6 +34,27 @@ pub fn hwnd(window: &Window) -> Option<HWND> {
     match HasWindowHandle::window_handle(window).ok()?.as_raw() {
         RawWindowHandle::Win32(h) => Some(HWND(h.hwnd.get() as *mut core::ffi::c_void)),
         _ => None,
+    }
+}
+
+/// Drops the resize frame so the client area equals the window rect; otherwise an
+/// invisible 8px border shows up as a gap around the kiosk and overlay surfaces.
+pub fn strip_frame(h: HWND) {
+    unsafe {
+        let style = GetWindowLongPtrW(h, GWL_STYLE) as u32;
+        let trimmed = style & !(WS_CAPTION.0 | WS_THICKFRAME.0 | WS_BORDER.0);
+        if trimmed != style {
+            SetWindowLongPtrW(h, GWL_STYLE, trimmed as isize);
+            let _ = SetWindowPos(
+                h,
+                None,
+                0,
+                0,
+                0,
+                0,
+                SWP_FRAMECHANGED | SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER,
+            );
+        }
     }
 }
 
