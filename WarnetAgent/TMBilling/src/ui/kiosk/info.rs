@@ -112,29 +112,35 @@ fn body(app: &TmApp, compact: bool, actions: &KioskActions) -> impl IntoElement 
         .as_ref()
         .and_then(|c| c.announcement.clone())
         .unwrap_or_default();
-    let rules = if announcement.trim().is_empty() {
+    let has_html = !announcement.trim().is_empty();
+    let rules = if has_html {
+        html::render_html(&announcement, if compact { 11.0 } else { 12.0 }, TM.muted)
+    } else {
         div()
             .text_size(px(12.0))
             .text_color(TM.dim)
             .child("Tidak ada aturan aktif.")
             .into_any_element()
+    };
+    // HTML dari server sudah memuat judulnya sendiri; heading statis hanya untuk teks polos
+    let heading = if has_html {
+        div().into_any_element()
     } else {
-        html::render_html(&announcement, if compact { 11.0 } else { 12.0 }, TM.muted)
+        div()
+            .mt(px(if compact { 0.0 } else { 14.0 }))
+            .ml(px(if compact { 0.0 } else { 8.0 }))
+            .text_size(px(if compact { 14.0 } else { 15.0 }))
+            .when(compact, |d| d.line_height(px(16.0)))
+            .font_weight(FontWeight::SEMIBOLD)
+            .text_color(TM.text)
+            .child("Aturan Warnet")
+            .into_any_element()
     };
     div()
         .flex()
         .flex_col()
         .w_full()
-        .child(
-            div()
-                .mt(px(if compact { 0.0 } else { 14.0 }))
-                .ml(px(if compact { 0.0 } else { 8.0 }))
-                .text_size(px(if compact { 14.0 } else { 15.0 }))
-                .when(compact, |d| d.line_height(px(16.0)))
-                .font_weight(FontWeight::SEMIBOLD)
-                .text_color(TM.text)
-                .child(if compact { "Aturan Warnet" } else { "Aturan bermain" }),
-        )
+        .child(heading)
         .child(
             div()
                 .flex()

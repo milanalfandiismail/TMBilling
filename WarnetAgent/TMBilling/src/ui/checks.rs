@@ -187,3 +187,9 @@ fn close_behaviour_follows_mode() {
     assert!(!hook_should_be_enabled(View::Overlay, None));
     assert!(hook_should_be_enabled(View::Overlay, Some(Modal::AfkPin)));
 }
+
+#[test]
+fn html_block_colour_is_applied() {
+    let blocks = crate::ui::html::parse("<p style=\"color:#34D399\">x</p>");
+    assert_eq!(blocks[0].1[0].style.color, crate::ui::html::parse_color("#34D399"));
+}

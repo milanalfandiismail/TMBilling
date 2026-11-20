@@ -6,6 +6,21 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
 
 ---
 
+## [2.0.5] - 2026-11-21
+
+### Fixed
+- Kiosk mengikuti status server, bukan respons login: sesi baru tidak lagi membuat layar kiosk berkedip masuk lalu keluar.
+- Aturan warnet dirender dari HTML announcement server (warna, tebal, miring), bukan teks statis.
+- Timer overlay memakai format manusiawi (1 jam 24 menit) alih-alih 01:24:38.
+- Hitung mundur mati otomatis berjalan tiap detik dan berhenti di NONAKTIF.
+- Alat cepat kembali 1:1 dengan klien lama: Kunci/AFK, Volume, Mouse, Keyboard.
+- Alt+F4 di overlay mengecilkan jendela, di kiosk diabaikan; tombol minimize berfungsi.
+- Hook keyboard dipasang ulang tiap perpindahan mode sehingga kiosk kembali terkunci setelah sesi selesai.
+- Ketukan pada QRIS kiosk membuka tampilan penuh; perpindahan mode memakai hide/set/show agar jendela tidak menyisakan frame lama.
+- Tombol Masuk menampilkan galat spesifik (kredensial salah, waktu habis, server mati) tanpa keluar dari kiosk; modal F11 hanya muncul di kiosk dengan placeholder Admin Username/Password; konfirmasi Restart/Matikan memakai modal.
+
+---
+
 ## [2.0.4] - 2026-11-20
 
 ### Changed

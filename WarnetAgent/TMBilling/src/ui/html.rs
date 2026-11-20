@@ -5,17 +5,17 @@ use crate::theme::c;
 use gpui_kit::Rgba;
 
 #[derive(Clone, PartialEq, Default)]
-struct Style {
-    color: Option<Rgba>,
+pub(crate) struct Style {
+    pub(crate) color: Option<Rgba>,
     bold: bool,
     italic: bool,
     underline: bool,
 }
 
 #[derive(Clone)]
-struct Run {
+pub(crate) struct Run {
     text: String,
-    style: Style,
+    pub(crate) style: Style,
 }
 
 /// Warna dari atribut style: #rgb, #rrggbb, rgb(r,g,b), atau nama umum.
@@ -139,7 +139,7 @@ fn is_inline(tag: &str) -> bool {
 }
 
 /// Blok teks + gaya, dipakai bersama oleh render dan text_of.
-fn parse(html: &str) -> Vec<(String, Vec<Run>)> {
+pub(crate) fn parse(html: &str) -> Vec<(String, Vec<Run>)> {
     let mut blocks: Vec<(String, Vec<Run>)> = Vec::new();
     let mut runs: Vec<Run> = Vec::new();
     let mut style = Style::default();
@@ -193,7 +193,7 @@ fn parse(html: &str) -> Vec<(String, Vec<Run>)> {
             flush(&mut runs, &mut blocks, &tag);
             tag = name.clone();
             stack.clear();
-            style = Style::default();
+            style = style_from_attrs(attrs, &Style::default());
         } else if is_inline(&name) {
             stack.push(style.clone());
             style = style_from_attrs(attrs, &style);

@@ -189,9 +189,9 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                 .mt(px(m.timer_mt))
                 .flex()
                 .justify_center()
-                .text_size(px(m.timer_font))
-                .line_height(px(m.timer_font))
-                .font_family("Consolas")
+                .text_size(px(m.timer_font * 0.62))
+                .line_height(px(m.timer_font * 0.72))
+                .text_align(gpui_kit::TextAlign::Center)
                 .font_weight(FontWeight::BOLD)
                 .text_color(timer_color)
                 .child(crate::state::human_time(remaining)),
