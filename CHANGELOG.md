@@ -13,9 +13,11 @@ Format pencatatan mengikuti panduan [Keep a Changelog](https://keepachangelog.co
   kiosk login/aturan/paket, kartu overlay + timer, panel Alat/QRIS, tujuh modal,
   kiosk lock & taskbar, tray/single instance/security gate/keyboard hook,
   screenshot upload, cache QRIS, dan kredensial darurat 1:1 dengan klien lama.
-- Klien Tauri 1.6.5 beserta watchdog `MGCTM` dan `mtm` dipindah ke
-  `archive-1.6.5/WarnetAgent/`; `build_and_deploy.bat` kini membangun biner GPUI
-  (`cargo build --release`) lalu menyalinnya ke `WarnetAgent/Deploy`.
+- Klien Tauri 1.6.5 diarsipkan di `archive-1.6.5/WarnetAgent/TMBillingTauri/`;
+  watchdog `MGCTM` dan `mtm` tetap di `WarnetAgent/` dan masih dibangun oleh
+  `build_and_deploy.bat` (integrasinya ke klien GPUI menyusul). Langkah build
+  klien kini memakai `cargo build --release` GPUI lalu menyalinnya ke
+  `WarnetAgent/Deploy`.
 
 ## [2.0.3] - 2026-11-18
 
