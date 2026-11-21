@@ -799,9 +799,15 @@ impl TmApp {
             window.on_next_frame(move |_, _| {
                 wm::place(wm::handle(raw), l, t, w, height);
                 wm::flush();
+                wm::trace(format!("frame-after-resize rect={:?}", wm::window_rect(wm::handle(raw))));
             });
             wm::focus(h);
             wm::flush();
+            wm::trace(format!(
+                "transition mode={overlay}/{fullscreen_modal} asked={w}x{height} at=({l},{t}) real={:?} viewport={:?}",
+                wm::window_rect(h),
+                window.viewport_size()
+            ));
             cx.notify();
             window.refresh();
         }
@@ -874,6 +880,10 @@ fn kiosk_actions(cx: &mut Context<TmApp>) -> KioskActions {
 
 impl Render for TmApp {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        self.frames += 1;
+        if self.frames % 10 == 0 {
+            wm::trace(format!("render #{} viewport={:?}", self.frames, window.viewport_size()));
+        }
         if !self.close_hooked {
             self.close_hooked = true;
             window.on_window_should_close(cx, |window, _cx| {

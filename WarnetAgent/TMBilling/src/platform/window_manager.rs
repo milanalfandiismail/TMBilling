@@ -92,6 +92,25 @@ pub fn monitor_rect(h: HWND) -> Option<RECT> {
 
 /// `ResizeBuffers` tidak langsung dipakai DWM; tanpa ini jendela menampilkan
 /// isi lama sampai ada aktivasi (Alt+Tab), terutama di VM/WARP.
+/// Diagnostik VM: jejak geometri ke %TEMP%\tmbilling-ui.log bila TM_UI_LOG=1.
+pub fn trace(msg: impl AsRef<str>) {
+    use std::io::Write;
+    use std::sync::OnceLock;
+    static START: OnceLock<std::time::Instant> = OnceLock::new();
+    if std::env::var_os("TM_UI_LOG").is_none() {
+        return;
+    }
+    let start = START.get_or_init(std::time::Instant::now);
+    let path = std::env::temp_dir().join("tmbilling-ui.log");
+    if let Ok(mut f) = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+    {
+        let _ = writeln!(f, "[{:>6}ms] {}", start.elapsed().as_millis(), msg.as_ref());
+    }
+}
+
 pub fn flush() {
     unsafe {
         let _ = windows::Win32::Graphics::Dwm::DwmFlush();

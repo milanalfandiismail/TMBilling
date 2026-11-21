@@ -129,6 +129,8 @@ pub struct TmApp {
     pub qris_hidden: bool,
     /// Fase kedip caret; di-toggle timer 530 ms hanya saat ada field aktif.
     pub caret_on: bool,
+    /// Penghitung frame untuk jejak diagnostik TM_UI_LOG.
+    pub frames: u64,
 }
 
 /// Perintah server yang harus dieksekusi klien (sama dengan polling.rs Tauri).
