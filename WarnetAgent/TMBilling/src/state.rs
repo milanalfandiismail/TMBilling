@@ -40,6 +40,9 @@ pub fn close_action(overlay: bool) -> CloseAction {
 }
 
 /// Hook keyboard wajib hidup di kiosk dan saat PIN AFK, mati di overlay.
+/// Overlay dapat memakai jendela transparan hanya bila DirectComposition aktif.
+/// gpui memakai jalur itu kecuali dimatikan lewat env, dan tanpa alpha layar
+
 pub fn hook_should_be_enabled(view: View, modal: Option<Modal>, is_afk: bool) -> bool {
     view == View::Kiosk || is_afk || modal == Some(Modal::AfkPin)
 }
@@ -112,13 +115,14 @@ pub struct TmApp {
     /// harus lewat hide -> resize -> reveal agar tidak ada frame putih.
     pub applied_rect: Option<(i32, i32, i32, i32)>,
     pub saved_rect: Option<(i32, i32, i32, i32)>,
+    /// Handle + waktu mulai transisi yang sedang menunggu reveal.
+    pub pending_reveal: Option<(isize, std::time::Instant)>,
     /// Sesi admin/emergency aktif: polling mengirim role admin.
     pub is_admin_session: bool,
     /// SHA-256 kredensial darurat dari registry/config.ini; kosong = fitur mati.
     pub emergency_user: String,
     pub emergency_token: String,
     /// Window disembunyikan selama transisi geometri; HWND disimpan sebagai isize.
-    pub pending_reveal: Option<(isize, std::time::Instant)>,
     pub taskbar_guard: Option<crate::platform::window_manager::TaskbarGuard>,
     pub pin: String,
     pub menu_page: usize,

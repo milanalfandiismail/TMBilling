@@ -96,9 +96,13 @@ impl TmApp {
                 if app.session.is_some() {
                     let next = crate::state::tick_remaining(app.remaining_secs);
                     if next != app.remaining_secs {
+                        let before =
+                            crate::state::timer_text(app.is_admin_session, app.remaining_secs);
                         app.remaining_secs = next;
                         app.play_alert();
-                        dirty = true;
+                        // teks hanya menampilkan menit: jangan repaint tiap detik
+                        dirty = crate::state::timer_text(app.is_admin_session, app.remaining_secs)
+                            != before;
                     }
                 }
                 if crate::state::should_autolock(app.remaining_secs, app.session.is_some()) {
@@ -713,6 +717,37 @@ impl TmApp {
         .detach();
     }
 
+    /// Reveal hanya setelah gpui melukis dengan ukuran target: 3 frame berturut
+    /// atau 8 percobaan. Sebelum itu jendela tetap tersembunyi.
+    fn reveal_when_ready(window: &mut Window, raw: isize, target: (i32, i32), stable: u8, tries: u8) {
+        let size = window.viewport_size();
+        let ok = (size.width.as_f32() - target.0 as f32).abs() <= 2.0
+            && (size.height.as_f32() - target.1 as f32).abs() <= 2.0;
+        if (ok && stable >= 1) || tries >= 8 {
+            Self::reveal(wm::handle(raw), target);
+            return;
+        }
+        window.on_next_frame(move |window, _| {
+            Self::reveal_when_ready(window, raw, target, if ok { stable + 1 } else { 0 }, tries + 1);
+        });
+    }
+
+    /// Aktivasi + flush memaksa DWM memakai surface baru; tanpa ini VM
+    /// menampilkan frame lama sampai ada Alt+Tab.
+    fn reveal(h: windows::Win32::Foundation::HWND, expected: (i32, i32)) {
+        if wm::minimized() {
+            return;
+        }
+        if let Some(rect) = wm::window_rect(h) {
+            if rect.right - rect.left != expected.0 || rect.bottom - rect.top != expected.1 {
+                return;
+            }
+        }
+        wm::reveal(h);
+        wm::focus(h);
+        wm::flush();
+    }
+
     fn sync_window(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         use std::sync::atomic::Ordering;
         let overlay = self.session.is_some() && !self.is_afk;
@@ -768,66 +803,52 @@ impl TmApp {
         };
 
         if let Some((l, t, r, b)) = rect {
+            let w = r - l;
+            let height = b - t;
             let rect_changed = self.applied_rect != Some((l, t, r, b));
             let transition = shape_changed || rect_changed;
+            // Sembunyikan dulu: selama resize async gpui melukis scene baru ke
+            // surface lama, sehingga isi kartu sempat tampil kecil di kiri atas.
             if transition {
-                wm::cloak(h, true);
+                wm::hide(h);
             }
-            // place satu-satunya penentu ukuran: resize menambah border_offset basi
-            // yang membuat jendela 16x8 lebih besar dari kartu.
-            wm::place(h, l, t, r - l, b - t);
+            // gpui menambah border_offset basi 16x8 pada permintaan resize (frame
+            // sudah dicopot lewat strip_frame), jadi minta ukuran yang sudah
+            // dikurangi offset itu; place di bawah tetap penentu final.
+            const GPUI_BORDER_OFFSET: (f32, f32) = (16.0, 8.0);
+            window.resize(gpui_kit::Size::new(
+                px(w as f32 - GPUI_BORDER_OFFSET.0),
+                px(height as f32 - GPUI_BORDER_OFFSET.1),
+            ));
+            wm::place(h, l, t, w, height);
             self.applied_rect = Some((l, t, r, b));
             if transition {
                 let raw = h.0 as isize;
-                self.pending_reveal = Some((raw, std::time::Instant::now()));
-                reveal_when_ready(window, raw, ((r - l) as f32, (b - t) as f32), 0, 0);
-                // Jaring pengaman: kalau gpui tidak menghasilkan frame saat hidden,
-                // window tetap tampil setelah 150 ms.
+                let started = std::time::Instant::now();
+                self.pending_reveal = Some((raw, started));
+                Self::reveal_when_ready(window, raw, (w, height), 0, 0);
+                // jaring pengaman: frame bisa berhenti (mis. window tak terlihat).
                 cx.spawn(async move |this, cx| {
                     cx.background_executor()
-                        .timer(std::time::Duration::from_millis(150))
+                        .timer(std::time::Duration::from_millis(200))
                         .await;
-                    let _ = this.update(cx, |app, cx| {
-                        let done = app.applied_rect == Some((l, t, r, b));
-                        if done && app.pending_reveal.take().is_some() && !wm::minimized() {
-                            wm::cloak(wm::handle(raw), false);
-                            wm::reveal(wm::handle(raw));
+                    this.update(cx, |app, cx| {
+                        if app.pending_reveal.map(|(_, at)| at) == Some(started) {
+                            app.pending_reveal = None;
+                            Self::reveal(wm::handle(raw), (w, height));
                             cx.notify();
                         }
-                    });
+                    })
+                    .ok();
                 })
                 .detach();
             } else {
                 wm::focus(h);
             }
+            cx.notify();
             window.refresh();
         }
     }
-}
-
-/// Tampilkan window setelah viewport gpui sama dengan ukuran barunya pada empat
-/// frame berurutan, agar frame lama tidak sempat terlihat.
-fn reveal_when_ready(
-    window: &mut Window,
-    raw: isize,
-    target: (f32, f32),
-    stable: u8,
-    tries: u8,
-) {
-    window.on_next_frame(move |window, _| {
-        let vp = window.viewport_size();
-        let ok = (f32::from(vp.width) - target.0).abs() <= 2.0
-            && (f32::from(vp.height) - target.1).abs() <= 2.0;
-        if wm::minimized() {
-            return;
-        }
-        if (ok && stable >= 3) || tries >= 8 {
-            wm::cloak(wm::handle(raw), false);
-            wm::reveal(wm::handle(raw));
-        } else {
-            reveal_when_ready(window, raw, target, if ok { stable + 1 } else { 0 }, tries + 1);
-        }
-    });
 }
 
 fn afk_actions(cx: &mut Context<TmApp>) -> crate::ui::kiosk::afk::AfkActions {
@@ -912,15 +933,6 @@ impl Render for TmApp {
             });
         }
 
-        if let Some((raw, at)) = self.pending_reveal {
-            if at.elapsed() > std::time::Duration::from_secs(1) {
-                self.pending_reveal = None;
-                if !wm::minimized() {
-                    wm::cloak(wm::handle(raw), false);
-                    wm::reveal(wm::handle(raw));
-                }
-            }
-        }
         let handle = self.focus.get_or_insert_with(|| cx.focus_handle()).clone();
         let actions = kiosk_actions(cx);
         window.focus(&handle, cx);
@@ -980,7 +992,6 @@ impl Render for TmApp {
         div()
             .size_full()
             .relative()
-            .bg(TM.bg)
             .flex()
             .items_start()
             .justify_start()

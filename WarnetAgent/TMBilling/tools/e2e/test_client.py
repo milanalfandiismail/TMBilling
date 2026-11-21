@@ -30,6 +30,27 @@ def white_pixels(path):
     return n
 
 
+def settled_white_rows(client, tag, wait=1.5, frac=0.9):
+    """Jumlah baris terpanjang yang nyaris seluruh lebarnya putih, setelah
+    transisi mendarat. Area yang tidak pernah dilukis gpui tertinggal putih
+    sampai ada WM_PAINT dari luar; konten QRIS putih tidak memenuhi lebar."""
+    time.sleep(wait)
+    path = OUT / f"{tag}.png"
+    client.shot(str(path))
+    img = Image.open(path).convert("RGB")
+    w, h = img.size
+    px = img.load()
+    run_len = best = 0
+    for y in range(h):
+        white = sum(1 for x in range(0, w, 2) if all(c > 235 for c in px[x, y]))
+        if white >= frac * (w / 2):
+            run_len += 1
+            best = max(best, run_len)
+        else:
+            run_len = 0
+    return best
+
+
 def accent_pixels(path):
     img = Image.open(path).convert("RGB")
     w, h = img.size
@@ -434,6 +455,18 @@ class FlashTest(Base):
         run("e2e-login", relogin, 2500)
         self.assertEqual(total, 0, "ada frame putih saat transisi")
 
+    def test_fullscreen_modal_settles_fully_painted(self):
+        c = self.overlay()
+        c.click(282, 150)
+        self.assertLess(settled_white_rows(c, "settle-modal"), 4)
+
+    def test_tab_switch_settles_fully_painted(self):
+        c = self.overlay()
+        c.click(190, 200)
+        self.assertLess(settled_white_rows(c, "settle-alat"), 4)
+        c.click(285, 200)
+        self.assertLess(settled_white_rows(c, "settle-qris"), 4)
+
 
 def field_crop(path, box=(60, 430, 400, 470)):
     return Image.open(path).convert("RGB").crop(box).tobytes()
@@ -566,6 +599,7 @@ class FitTest(Base):
         c = self.overlay("paket_15m")
         w, h = c.size()
         self.assertLessEqual(abs(w - 380), 1, (w, h))
+        # Tinggi jendela = tinggi kartu: tidak ada area yang tidak dilukis.
         self.assertLessEqual(abs(h - 268), 1, (w, h))
         path = OUT / "fit-overlay.png"
         # Window bisa di-reveal sebelum frame baru dilukis: tunggu dinding kartu.

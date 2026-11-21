@@ -3,7 +3,6 @@ use std::sync::atomic::{AtomicIsize, Ordering};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HWND, RECT};
-use windows::Win32::Graphics::Dwm::{DwmSetWindowAttribute, DWMWA_CLOAK};
 use windows::Win32::Graphics::Gdi::{
     GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST,
 };
@@ -13,6 +12,10 @@ use windows::Win32::UI::WindowsAndMessaging::{
     FindWindowW, GetWindowRect, SetWindowPos, ShowWindow, HWND_TOPMOST, SW_HIDE,
     SW_SHOW, SWP_NOACTIVATE, SWP_NOOWNERZORDER,
 };
+
+
+/// Tinggi kartu overlay dalam koordinat klien. Area di bawahnya transparan dan
+/// harus meneruskan klik ke desktop, bukan menahannya.
 
 fn wide(s: &str) -> Vec<u16> {
     s.encode_utf16().chain(std::iter::once(0)).collect()
@@ -87,6 +90,14 @@ pub fn monitor_rect(h: HWND) -> Option<RECT> {
     }
 }
 
+/// Tunggu DWM menyelesaikan komposisi. Di VM/GPU virtual, surface hasil
+/// `ResizeBuffers` tidak langsung dipakai DWM; tanpa ini jendela menampilkan
+/// isi lama sampai ada aktivasi (Alt+Tab).
+pub fn flush() {
+    unsafe {
+        let _ = windows::Win32::Graphics::Dwm::DwmFlush();
+    }
+}
 pub fn focus(h: HWND) {
     unsafe {
         let _ = SetForegroundWindow(h);
@@ -136,32 +147,17 @@ pub fn reveal(h: HWND) {
     }
 }
 
-/// Bekukan surface lewat DWM selama resize: ShowWindow masih membiarkan DWM
-/// mengecat area baru dengan background kelas (putih) di mesin tanpa GPU.
-pub fn cloak(h: HWND, on: bool) {
-    let flag: i32 = if on { 1 } else { 0 };
-    unsafe {
-        let _ = DwmSetWindowAttribute(
-            h,
-            DWMWA_CLOAK,
-            &flag as *const i32 as *const core::ffi::c_void,
-            std::mem::size_of::<i32>() as u32,
-        );
-    }
-}
-
 /// Window yang sedang disembunyikan ke tray; 0 bila tidak ada.
 static MINIMIZED: AtomicIsize = AtomicIsize::new(0);
 
+/// Window sedang disembunyikan ke tray (jangan di-reveal oleh transisi).
+pub fn minimized() -> bool {
+    MINIMIZED.load(Ordering::Relaxed) != 0
+}
 /// Minimize overlay: sembunyikan dari taskbar, sisakan ikon tray.
 pub fn minimize_to_tray(h: HWND) {
     MINIMIZED.store(h.0 as isize, Ordering::Relaxed);
     hide(h);
-}
-
-/// True bila overlay sedang disembunyikan ke tray.
-pub fn minimized() -> bool {
-    MINIMIZED.load(Ordering::Relaxed) != 0
 }
 /// Kembalikan window yang disembunyikan ke tray. False bila tidak ada.
 pub fn restore_from_tray() -> bool {

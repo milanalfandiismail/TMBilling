@@ -102,7 +102,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 
 | Direktori / Biner | Tanggung Jawab & Cakupan |
 |---|---|
-| `TMBilling/` | Klien utama aktif GPUI Rust: `src/{state.rs,app.rs,polling.rs}`, `src/ui/kiosk/{login,info,afk}.rs` (layar AFK terkunci + input PIN/password), `src/ui/overlay/{card,modals}.rs`, `src/platform/*` (registry credentials, keyboard hook, `window_manager::{place,cloak}` — transisi memakai DWM cloak; tray: klik kanan menu, double-click restore). Arsitektur lama Tauri (arsip): `src/kiosk/`, `src/overlay/`, `src-tauri/`. Kredensial darurat dari registry/`config.ini`, fail-closed bila kosong. |
+| `TMBilling/` | Klien utama aktif GPUI Rust: `src/{state.rs,app.rs,polling.rs}`, `src/ui/kiosk/{login,info,afk}.rs` (layar AFK terkunci + input PIN/password), `src/ui/overlay/{card,modals}.rs`, `src/platform/*` (registry credentials, keyboard hook, `window_manager::place` — ukuran via gpui `window.resize` + SetWindowPos; tray: klik kanan menu, double-click restore). `vendor/gpui-pre-windows` = patch `[patch.crates-io]`: clear Opaque hitam (bawaan putih) supaya WARP/VM tidak menampilkan pita putih saat resize. Arsitektur lama Tauri (arsip): `src/kiosk/`, `src/overlay/`, `src-tauri/`. Kredensial darurat dari registry/`config.ini`, fail-closed bila kosong. |
 | `MGCTM/` | Watchdog C++ pengawas `TMBilling.exe`. |
 | `mtm/` | Auxiliary watchdog & resilience guard. |
 | `TMBilling_Monitor/` | Telemetri Rust + `HardwareHelper.exe` (LibreHardwareMonitor): CPU/GPU load & temp, RAM, active window, NIC speed. |
@@ -184,7 +184,7 @@ node --check app/static/js/kasir/modules/dashboard/dashboard_compact.js
 ### 7. Peta Suite Test
 - `app-rust/tests/contract/` (12): `auth`, `client_agent`, `device`, `http`, `master_data`, `member_shift_notes`, `mikrotik`, `ops`, `public_cms`, `report`, `sesi`, `settings`.
 - `app-rust/tests/unit/` (6): `cache`, `config`, `idempotency`, `logger`, `scheduler`, `schema_parity`.
-- `tests/e2e/` (Playwright): 15 suite Chromium + `tests/e2e/client/` kontrak agent; sandbox terisolasi dan tidak menyentuh DB produksi. Klien GPUI `WarnetAgent/TMBilling/tools/e2e/` (unittest + fixture): 35 tes: `FlashTest`/`flash_probe.py` (frame putih transien), `InputTest` (Tab/Shift+Tab, caret di depan placeholder), `SessionEndTest` (modal + input kiosk dibuang saat sesi berakhir), `FitTest` (ukuran window = kartu/1920x1080).
+- `tests/e2e/` (Playwright): 15 suite Chromium + `tests/e2e/client/` kontrak agent; sandbox terisolasi dan tidak menyentuh DB produksi. Klien GPUI `WarnetAgent/TMBilling/tools/e2e/` (unittest + fixture): 37 tes: `FlashTest`/`flash_probe.py` (frame putih transien), `cpu_probe.py` (CPU klien di mesin target), `InputTest` (Tab/Shift+Tab, caret di depan placeholder), `SessionEndTest` (modal + input kiosk dibuang saat sesi berakhir), `FitTest` (ukuran window = kartu/1920x1080), dua tes `settled paint` (tidak ada baris putih tersisa setelah transisi).
 
 ---
 

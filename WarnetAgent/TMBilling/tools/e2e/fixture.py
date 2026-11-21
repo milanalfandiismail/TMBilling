@@ -328,18 +328,30 @@ class Client:
 
     def visible(self):
         return bool(self.hwnd and user32.IsWindowVisible(self.hwnd))
-    def cloaked(self):
-        """True saat DWM membekukan surface (transisi); tidak terlihat user."""
-        if not self.hwnd:
-            return False
-        flag = ctypes.c_int(0)
-        hr = ctypes.windll.dwmapi.DwmGetWindowAttribute(
-            self.hwnd, 13, ctypes.byref(flag), ctypes.sizeof(flag))
-        return hr == 0 and flag.value != 0
     def close_window(self):
         """Jalur Alt+F4: WM_CLOSE ke window, bukan klik tombol."""
         user32.PostMessageW(self.hwnd, 0x0010, 0, 0)
         time.sleep(0.3)
+    def cpu_percent(self, seconds=5.0):
+        """CPU process (% dari satu core) selama jendela ukur; WARP = renderer di CPU."""
+        class FT(ctypes.Structure):
+            _fields_ = [("low", ctypes.c_uint32), ("high", ctypes.c_uint32)]
+        class Times(ctypes.Structure):
+            _fields_ = [("creation", FT), ("exit", FT), ("kernel", FT), ("user", FT)]
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(0x1000, False, self.proc.pid)
+        try:
+            def ticks():
+                t = Times()
+                kernel32.GetProcessTimes(handle, ctypes.byref(t.creation),
+                                         ctypes.byref(t.exit), ctypes.byref(t.kernel),
+                                         ctypes.byref(t.user))
+                return (t.kernel.high << 32 | t.kernel.low) + (t.user.high << 32 | t.user.low)
+            first = ticks()
+            time.sleep(seconds)
+            return round((ticks() - first) / (seconds * 1e7) * 100.0, 1)
+        finally:
+            kernel32.CloseHandle(handle)
     def working_set(self):
         class PMC(ctypes.Structure):
             _fields_ = [("cb", ctypes.c_uint32), ("PageFaultCount", ctypes.c_uint32),
