@@ -420,6 +420,18 @@ class FlashTest(Base):
         c.click(285, 200)
         time.sleep(0.5)
         run("e2e-qris-full", lambda: c.click(198, 395), 1600)
+        c.click(960, 540)
+        time.sleep(0.5)
+        run("e2e-session-end", self.close_session, 2500)
+
+        def relogin():
+            c.click(280, 442)
+            c.type_text("budi")
+            c.click(280, 532)
+            c.type_text("rahasia123")
+            c.click(280, 610)
+
+        run("e2e-login", relogin, 2500)
         self.assertEqual(total, 0, "ada frame putih saat transisi")
 
 

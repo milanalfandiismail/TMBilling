@@ -18,6 +18,7 @@ class Frame:
     visible: bool
     white_ratio: float
     tag: str
+    cloaked: bool = False
 
 
 def white_ratio(path):
@@ -54,7 +55,8 @@ def burst(client, action, tag="", ms=1200, interval=0.006, before=0.15):
         while not stop:
             f = TMP / "flash-live.png"
             client.shot(str(f))
-            frames.append(Frame(tuple(client.size()), bool(client.visible()), white_ratio(f), tag))
+            frames.append(Frame(tuple(client.size()), bool(client.visible()), white_ratio(f),
+                               tag, bool(client.cloaked())))
             time.sleep(interval)
 
     t = threading.Thread(target=sample)
@@ -67,8 +69,13 @@ def burst(client, action, tag="", ms=1200, interval=0.006, before=0.15):
     return frames
 
 
+# Konten sah (mis. QRIS putih) bisa 10-15%; flash transisi selalu >35%.
+FLASH_FLOOR = 0.35
+
+
 def flashes(frames, settled, margin=0.02):
-    return [f for f in frames if f.visible and f.white_ratio > settled + margin]
+    return [f for f in frames
+            if f.visible and not f.cloaked and f.white_ratio > max(FLASH_FLOOR, settled + margin)]
 
 
 def report(name, frames, settled_by_size, final_settled, margin=0.02):
@@ -78,7 +85,10 @@ def report(name, frames, settled_by_size, final_settled, margin=0.02):
             return final_settled
         return settled_by_size.get(f.size, 0.0)
 
-    bad = [f for f in frames if f.visible and f.white_ratio > baseline(f) + margin]
+    # frame cloaked tidak pernah terlihat user; PrintWindow tetap merendernya.
+    bad = [f for f in frames
+           if f.visible and not f.cloaked
+           and f.white_ratio > max(FLASH_FLOOR, baseline(f) + margin)]
     sizes = sorted({f.size for f in frames})
     print(f"{name}: frames={len(frames)} flash={len(bad)} sizes={sizes}")
     for f in bad[:5]:

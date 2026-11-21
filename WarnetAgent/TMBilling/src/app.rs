@@ -732,7 +732,7 @@ impl TmApp {
         }
         // gpui membersihkan window opaque dengan putih setiap frame; area baru hasil
         // resize tampil sebelum scene baru dilukis. Setiap perubahan rect (termasuk
-        // tinggi kartu antar tab) harus lewat hide -> resize -> reveal.
+        // tinggi kartu antar tab) lewat cloak -> resize -> reveal.
         let shape_changed = matches!(self.applied_mode, Some((o, f, _)) if o != overlay || f != fullscreen_modal);
         self.applied_mode = Some(mode);
         let Some(h) = wm::hwnd(window) else { return };
@@ -771,7 +771,7 @@ impl TmApp {
             let rect_changed = self.applied_rect != Some((l, t, r, b));
             let transition = shape_changed || rect_changed;
             if transition {
-                wm::hide(h);
+                wm::cloak(h, true);
             }
             // place satu-satunya penentu ukuran: resize menambah border_offset basi
             // yang membuat jendela 16x8 lebih besar dari kartu.
@@ -790,6 +790,7 @@ impl TmApp {
                     let _ = this.update(cx, |app, cx| {
                         let done = app.applied_rect == Some((l, t, r, b));
                         if done && app.pending_reveal.take().is_some() && !wm::minimized() {
+                            wm::cloak(wm::handle(raw), false);
                             wm::reveal(wm::handle(raw));
                             cx.notify();
                         }
@@ -804,7 +805,7 @@ impl TmApp {
     }
 }
 
-/// Tampilkan window setelah viewport gpui sama dengan ukuran barunya pada dua
+/// Tampilkan window setelah viewport gpui sama dengan ukuran barunya pada empat
 /// frame berurutan, agar frame lama tidak sempat terlihat.
 fn reveal_when_ready(
     window: &mut Window,
@@ -820,7 +821,8 @@ fn reveal_when_ready(
         if wm::minimized() {
             return;
         }
-        if (ok && stable >= 2) || tries >= 8 {
+        if (ok && stable >= 3) || tries >= 8 {
+            wm::cloak(wm::handle(raw), false);
             wm::reveal(wm::handle(raw));
         } else {
             reveal_when_ready(window, raw, target, if ok { stable + 1 } else { 0 }, tries + 1);
@@ -914,6 +916,7 @@ impl Render for TmApp {
             if at.elapsed() > std::time::Duration::from_secs(1) {
                 self.pending_reveal = None;
                 if !wm::minimized() {
+                    wm::cloak(wm::handle(raw), false);
                     wm::reveal(wm::handle(raw));
                 }
             }

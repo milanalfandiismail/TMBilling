@@ -3,6 +3,7 @@ use std::sync::atomic::{AtomicIsize, Ordering};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HWND, RECT};
+use windows::Win32::Graphics::Dwm::{DwmSetWindowAttribute, DWMWA_CLOAK};
 use windows::Win32::Graphics::Gdi::{
     GetMonitorInfoW, MonitorFromWindow, MONITORINFO, MONITOR_DEFAULTTONEAREST,
 };
@@ -132,6 +133,20 @@ pub fn reveal(h: HWND) {
         );
         let _ = SetForegroundWindow(h);
         let _ = BringWindowToTop(h);
+    }
+}
+
+/// Bekukan surface lewat DWM selama resize: ShowWindow masih membiarkan DWM
+/// mengecat area baru dengan background kelas (putih) di mesin tanpa GPU.
+pub fn cloak(h: HWND, on: bool) {
+    let flag: i32 = if on { 1 } else { 0 };
+    unsafe {
+        let _ = DwmSetWindowAttribute(
+            h,
+            DWMWA_CLOAK,
+            &flag as *const i32 as *const core::ffi::c_void,
+            std::mem::size_of::<i32>() as u32,
+        );
     }
 }
 

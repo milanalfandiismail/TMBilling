@@ -328,6 +328,14 @@ class Client:
 
     def visible(self):
         return bool(self.hwnd and user32.IsWindowVisible(self.hwnd))
+    def cloaked(self):
+        """True saat DWM membekukan surface (transisi); tidak terlihat user."""
+        if not self.hwnd:
+            return False
+        flag = ctypes.c_int(0)
+        hr = ctypes.windll.dwmapi.DwmGetWindowAttribute(
+            self.hwnd, 13, ctypes.byref(flag), ctypes.sizeof(flag))
+        return hr == 0 and flag.value != 0
     def close_window(self):
         """Jalur Alt+F4: WM_CLOSE ke window, bukan klik tombol."""
         user32.PostMessageW(self.hwnd, 0x0010, 0, 0)

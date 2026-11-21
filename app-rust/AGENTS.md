@@ -102,7 +102,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 
 | Direktori / Biner | Tanggung Jawab & Cakupan |
 |---|---|
-| `TMBilling/` | Klien utama aktif GPUI Rust: `src/{state.rs,app.rs,polling.rs}`, `src/ui/kiosk/{login,info,afk}.rs` (layar AFK terkunci + input PIN/password), `src/ui/overlay/{card,modals}.rs`, `src/platform/*` (registry credentials, keyboard hook, `window_manager::place`). Arsitektur lama Tauri (arsip): `src/kiosk/`, `src/overlay/`, `src-tauri/`. Kredensial darurat dari registry/`config.ini`, fail-closed bila kosong. |
+| `TMBilling/` | Klien utama aktif GPUI Rust: `src/{state.rs,app.rs,polling.rs}`, `src/ui/kiosk/{login,info,afk}.rs` (layar AFK terkunci + input PIN/password), `src/ui/overlay/{card,modals}.rs`, `src/platform/*` (registry credentials, keyboard hook, `window_manager::{place,cloak}` — transisi memakai DWM cloak; tray: klik kanan menu, double-click restore). Arsitektur lama Tauri (arsip): `src/kiosk/`, `src/overlay/`, `src-tauri/`. Kredensial darurat dari registry/`config.ini`, fail-closed bila kosong. |
 | `MGCTM/` | Watchdog C++ pengawas `TMBilling.exe`. |
 | `mtm/` | Auxiliary watchdog & resilience guard. |
 | `TMBilling_Monitor/` | Telemetri Rust + `HardwareHelper.exe` (LibreHardwareMonitor): CPU/GPU load & temp, RAM, active window, NIC speed. |
