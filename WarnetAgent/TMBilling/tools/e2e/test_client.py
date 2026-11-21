@@ -1,14 +1,16 @@
 """End-to-end checks against a throwaway server and the real client binary."""
 
 import ctypes
+import os
 import subprocess
+import threading
 import time
 import unittest
 from pathlib import Path
 
 from PIL import Image
 
-from tools.e2e.fixture import Client, Server, wait_until
+from tools.e2e.fixture import CLIENT_KEY, Client, Server, local_net, wait_until
 
 OUT = Path("X:/Temp/opencode/e2e-out")
 user32 = ctypes.windll.user32
@@ -81,6 +83,7 @@ class Base(unittest.TestCase):
         self.kiosk(env=env)
         self.server.open_member_session(self.ids[paket])
         wait_until(lambda: self.client.size()[0] < 800, 30)
+        wait_until(self.client.visible, 5)
         return self.client
 
 
@@ -199,6 +202,86 @@ class KioskUiTest(Base):
         self.assertIsNone(c.proc.poll(), "klien tidak boleh mati saat server mati")
 
 
+class AfkTest(Base):
+    def test_afk_locks_screen_and_credentials_unlock(self):
+        c = self.overlay()
+        status, body = self.server.request(
+            "POST", "/api/v1/public/client/afk-lock",
+            {"ip_address": local_net()[0], "mac_address": ""},
+            {"X-Client-Key": CLIENT_KEY},
+        )
+        self.assertIn(status, (200, 201), body)
+        wait_until(lambda: c.size()[0] > 1000, 15)
+        c.type_text("rahasia123")
+        c.press(0x0D)
+        wait_until(lambda: c.size()[0] < 800, 15)
+
+
+class ShutdownTest(Base):
+    def test_idle_pc_runs_shutdown_countdown(self):
+        c = self.kiosk(env={"TM_NO_POWER": "1"})
+        wait_until(lambda: "[power] /s" in c.log_text(), 60)
+        self.assertIn("[power] /s (dinonaktifkan)", c.log_text())
+
+
+class FlickerTest(Base):
+    def test_fullscreen_modal_never_shows_at_origin_while_small(self):
+        c = self.overlay()
+        samples = []
+        stop = threading.Event()
+
+        def sample():
+            while not stop.is_set():
+                l, t, r, b = c.rect()
+                samples.append((l, t, r - l, b - t))
+                time.sleep(0.01)
+
+        th = threading.Thread(target=sample, daemon=True)
+        th.start()
+        c.click(98, 150)
+        wait_until(lambda: c.size()[0] > 1000, 10)
+        time.sleep(0.4)
+        stop.set()
+        th.join()
+        bad = [s for s in samples if s[0] == 0 and s[2] < 900]
+        self.assertEqual(bad, [], f"frame di x=0 saat masih kecil: {bad[:5]}")
+
+
+class MemTest(Base):
+    def test_tabs_keep_overlay_memory_flat(self):
+        c = self.overlay()
+        time.sleep(1.5)
+        idle = c.working_set()
+        c.click(190, 200)  # tab Alat
+        time.sleep(1.5)
+        alat = c.working_set()
+        c.click(285, 200)  # tab QRIS
+        time.sleep(1.5)
+        qris = c.working_set()
+        print(f"[mem] idle={idle // 1024}K alat={alat // 1024}K qris={qris // 1024}K")
+        self.assertLess(qris - idle, 6 * 1024 * 1024, "tab QRIS menambah >6 MB")
+class TrayTest(Base):
+    def test_minimize_hides_from_taskbar_and_second_instance_restores(self):
+        from tools.e2e.fixture import CLIENT_DIR as CDIR, CLIENT_EXE
+        c = self.overlay()
+        before = c.size()
+        c.close_window()  # jalur Alt+F4
+        wait_until(lambda: not c.visible(), 10)
+        self.assertEqual(c.size(), before)
+        child_env = os.environ.copy()
+        child_env.update({
+            "TM_SERVER_URL": self.server.base_url,
+            "TM_CLIENT_KEY": "TM2026",
+            "TM_DEV_SAFE": "1",
+            "TM_NO_POWER": "1",
+        })
+        subprocess.Popen([str(CLIENT_EXE)], cwd=str(CDIR), env=child_env)
+        wait_until(c.visible, 10)
+    def test_kiosk_close_is_still_rejected(self):
+        c = self.kiosk()
+        c.close_window()
+        time.sleep(1)
+        self.assertTrue(c.visible(), "kiosk tidak boleh bisa ditutup")
 class SlowSessionTest(Base):
     """Butuh jam nyata (~70 detik)."""
 
@@ -212,6 +295,79 @@ class SlowSessionTest(Base):
         status, body = self.server.post(f"/api/v1/kasir/sesi/tutup/{sesi}", {})
         self.assertIn(status, (200, 201), body)
         wait_until(lambda: c.size()[0] > 800, 30)
+
+
+class AdminLoginTest(Base):
+    def admin_login(self, user, password, env=None):
+        c = self.kiosk(env=env)
+        c.press(0x7A)  # F11
+        time.sleep(0.8)
+        c.click(960, 510)
+        c.type_text(user)
+        c.click(960, 576)
+        c.type_text(password)
+        c.press(0x0D)  # Enter
+        return c
+    def test_wrong_password_keeps_kiosk_and_shows_error(self):
+        c = self.admin_login("admin", "salahbanget")
+        time.sleep(3)
+        shot = OUT / "admin-wrong.png"
+        c.shot(str(shot))
+        self.assertGreater(c.size()[0], 800, "password salah tidak boleh membuka overlay")
+        self.assertTrue(red_rows(str(shot), 300, 800), "error admin tidak tampil di modal")
+    def test_emergency_credentials_open_overlay(self):
+        c = self.admin_login(
+            "darurat", "kunci123",
+            env={"TM_EMERGENCY_USER": "darurat", "TM_EMERGENCY_TOKEN": "kunci123"},
+        )
+        wait_until(lambda: c.size()[0] < 800, 20)
+    def test_admin_survives_one_second_polling(self):
+        status, body = self.server.post(
+            "/api/v1/kasir/user",
+            {"username": "polladmin", "password": "rahasia123",
+             "nama_lengkap": "Poll Admin", "role": "kasir"},
+        )
+        self.assertEqual(status, 201, body)
+        self.server.set_setting("client_polling_interval", "1")
+        c = self.admin_login("polladmin", "rahasia123")
+        wait_until(lambda: c.size()[0] < 800, 20)
+        time.sleep(6)
+        self.assertLess(c.size()[0], 800, "polling role=client mematikan mode admin")
+    def test_kasir_account_from_server_opens_overlay(self):
+        status, body = self.server.post(
+            "/api/v1/kasir/user",
+            {
+                "username": "kasiradmin",
+                "password": "rahasia123",
+                "nama_lengkap": "Kasir E2E",
+                "role": "kasir",
+            },
+        )
+        self.assertEqual(status, 201, body)
+        c = self.kiosk()
+        c.press(0x7A)  # F11
+        time.sleep(0.8)
+        c.click(960, 510)
+        c.type_text("kasiradmin")
+        c.click(960, 576)
+        c.type_text("rahasia123")
+        c.press(0x0D)  # Enter
+        wait_until(lambda: c.size()[0] < 800, 20)
+
+
+class AfkGuestTest(Base):
+    def test_guest_pin_modal_locks_and_unlocks(self):
+        c = self.kiosk()
+        self.server.open_guest_session(self.ids["paket_15m"])
+        wait_until(lambda: c.size()[0] < 800, 30)
+        c.click(98, 150)  # Lock tile
+        time.sleep(0.3)
+        c.type_text("1234")
+        c.press(0x0D)
+        wait_until(lambda: c.size()[0] > 1000, 15)
+        c.type_text("1234")
+        c.press(0x0D)
+        wait_until(lambda: c.size()[0] < 800, 15)
 
 
 if __name__ == "__main__":

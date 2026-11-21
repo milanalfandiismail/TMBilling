@@ -125,7 +125,7 @@ fn main() {
                             is_emergency: false,
                         });
                         app.remaining_secs = 5078;
-                        app.started_at = Some((20, 12));
+                        app.started_at = Some("20:12".into());
                     }
                     app.start(cx);
                     app

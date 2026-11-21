@@ -469,6 +469,13 @@ fn afk_pin(app: &TmApp, actions: &OverlayActions) -> AnyElement {
                 .text_color(TM.danger)
                 .child(hint),
         )
+        .children(app.afk_error.clone().map(|err| {
+            div()
+                .pt(px(6.0))
+                .text_size(px(10.0))
+                .text_color(TM.danger)
+                .child(err)
+        }))
         .into_any_element();
 
     dialog(

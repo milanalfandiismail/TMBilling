@@ -13,9 +13,11 @@ use crate::services::sesi::sesi_service;
 use crate::services::settings::settings_service;
 use crate::state::AppState;
 use crate::utils::logger;
-use crate::utils::time::{db_str, now_db, parse_dt};
+use crate::utils::time::{db_str, format_clock, now_db, parse_dt};
 
 pub const HEARTBEAT_PERSIST_SECONDS: i64 = 30;
+/// Jendela toleransi untuk poll `role=client` yang terkirim sebelum login admin.
+pub const ADMIN_GRACE_SECONDS: i64 = 15;
 
 fn normal_mac(mac: &str) -> String {
     mac.replace([':', '-', ' '], "")
@@ -202,7 +204,14 @@ pub async fn status(
         );
         return Ok(json!({"status": "kosong", "pc_kode": pc.kode, "command": "lock"}));
     }
-    if !admin_role && pc.is_admin_mode.unwrap_or(false) {
+    // Grace: satu poll `role=client` yang sudah terkirim sebelum login admin tidak
+    // boleh mematikan mode admin yang baru dibuat.
+    let fresh_admin = sesi
+        .as_ref()
+        .and_then(|s| s.mulai_pada.as_deref().and_then(parse_dt))
+        .map(|d| (now - d).num_seconds() < ADMIN_GRACE_SECONDS)
+        .unwrap_or(false);
+    if !admin_role && pc.is_admin_mode.unwrap_or(false) && !fresh_admin {
         pc_repo::set_admin_mode(&st.pool, pc.id, false)
             .await
             .map_err(|e| e.to_string())?;
@@ -217,6 +226,17 @@ pub async fn status(
             .unwrap_or(false);
         json!({
             "status": if system { "system" } else { "admin" },
+            "nama": sesi
+                .as_ref()
+                .and_then(|s| s.nama_guest.clone())
+                .filter(|n| !n.trim().is_empty())
+                .unwrap_or_else(|| "Admin".into()),
+            "grup": if system { "SYSTEM" } else { "ADMIN" },
+            "mulai": sesi
+                .as_ref()
+                .and_then(|s| s.mulai_pada.as_deref())
+                .and_then(parse_dt)
+                .map(|d| format_clock(d, &st.cfg.timezone)),
             "pc_kode": pc.kode,
             "shutdown_timer": 0,
         })
@@ -248,6 +268,7 @@ pub async fn status(
         }
 
         let sisa = sesi_service::sync_waktu_member(st, &sesi).await;
+        let sisa_detik = sesi.sisa_detik(now);
         if sisa <= 0 {
             let _ = sesi_service::tutup(st, sesi.id, "system").await;
             json!({
@@ -260,11 +281,17 @@ pub async fn status(
             let mut body = json!({
                 "status": if role == Some("admin") { "admin" } else { "aktif" },
                 "sisa_waktu": sisa,
+                "sisa_detik": sisa_detik,
                 "nama": sesi.member_username.clone()
                     .or_else(|| sesi.nama_guest.clone())
                     .unwrap_or_else(|| "Guest".into()),
                 "grup": pc.grup_nama.clone().unwrap_or_else(|| "reguler".into()),
                 "pc_kode": pc.kode,
+                "mulai": sesi
+                    .mulai_pada
+                    .as_deref()
+                    .and_then(parse_dt)
+                    .map(|d| format_clock(d, &st.cfg.timezone)),
                 "is_afk": sesi.is_afk,
                 "shutdown_timer": 0,
             });
@@ -382,7 +409,8 @@ async fn admin_login_inner(
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Invalid admin credentials")?;
-    if user.role() != "admin" || !user.check_password(password).await {
+    let role = user.role();
+    if !matches!(role, "admin" | "kasir") || !user.check_password(password).await {
         return Err("Invalid admin credentials".into());
     }
     if let Some(lama) = sesi_repo::get_aktif_by_pc(&st.pool, pc.id)
@@ -415,7 +443,7 @@ async fn admin_login_inner(
             "id": user.id,
             "username": user.username,
             "nama_lengkap": display,
-            "role": "admin",
+            "role": role,
         }
     }))
 }

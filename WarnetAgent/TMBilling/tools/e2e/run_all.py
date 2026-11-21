@@ -20,8 +20,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     suite = unittest.defaultTestLoader.discover(str(HERE), pattern="test_*.py", top_level_dir=str(ROOT))
     result = unittest.TextTestRunner(verbosity=2 if "-v" in sys.argv else 1).run(suite)
-    print(f"
-screenshot: {OUT}")
+    print(f"\nscreenshot: {OUT}")
     return 0 if result.wasSuccessful() else 1
 
 

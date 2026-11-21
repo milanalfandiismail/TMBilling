@@ -2,9 +2,9 @@ use windows::Win32::Foundation::SYSTEMTIME;
 use windows::Win32::System::SystemInformation::GetLocalTime;
 
 /// Jam lokal mesin ini, dipakai baris "Mulai" di kartu overlay.
-pub fn local_hhmm() -> (u8, u8) {
+pub fn local_hhmm() -> String {
     let st: SYSTEMTIME = unsafe { GetLocalTime() };
-    (st.wHour as u8, st.wMinute as u8)
+    format!("{:02}:{:02}", st.wHour, st.wMinute)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]

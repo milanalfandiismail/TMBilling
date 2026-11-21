@@ -1,12 +1,12 @@
 use single_instance::SingleInstance;
 use windows::core::PWSTR;
 use windows::core::BOOL;
-use windows::Win32::Foundation::{HWND, LPARAM};
+use windows::Win32::Foundation::{HWND, LPARAM, RECT};
 use windows::Win32::System::Threading::{
     OpenProcess, QueryFullProcessImageNameW, PROCESS_NAME_WIN32, PROCESS_QUERY_LIMITED_INFORMATION,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    EnumWindows, GetWindowThreadProcessId, IsWindowVisible, SetForegroundWindow, ShowWindow,
+    EnumWindows, GetWindowRect, GetWindowThreadProcessId, SetForegroundWindow, ShowWindow,
     SW_RESTORE,
 };
 
@@ -38,7 +38,13 @@ struct Found(isize);
 extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
     let found = unsafe { &mut *(lparam.0 as *mut Found) };
     unsafe {
-        if !IsWindowVisible(hwnd).as_bool() {
+        // Window minimize-to-tray tetap ada tapi tidak visible, jadi saring lewat
+        // ukuran: window milik tray-icon berukuran 0 dan tidak boleh terpilih.
+        let mut rect = RECT::default();
+        if GetWindowRect(hwnd, &mut rect).is_err()
+            || rect.right - rect.left < 200
+            || rect.bottom - rect.top < 200
+        {
             return BOOL(1);
         }
         let mut pid = 0u32;
@@ -60,12 +66,16 @@ extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
 
 /// Brings the window of the already running instance to the front.
 pub fn focus_existing() {
+    if super::window_manager::restore_from_tray() {
+        return;
+    }
     let mut found = Found(0);
     unsafe {
         let _ = EnumWindows(Some(enum_proc), LPARAM(&mut found as *mut Found as isize));
         if found.0 != 0 {
             let hwnd = HWND(found.0 as *mut core::ffi::c_void);
             let _ = ShowWindow(hwnd, SW_RESTORE);
+            super::window_manager::reveal(hwnd);
             let _ = SetForegroundWindow(hwnd);
         }
     }

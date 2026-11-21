@@ -15,7 +15,7 @@ from pathlib import Path
 
 CLIENT_DIR = Path(__file__).resolve().parents[2]
 REPO = CLIENT_DIR.parents[1]
-SERVER_EXE = REPO / "app-rust" / "target" / "release" / "tmbilling-server.exe"
+SERVER_EXE = Path(os.environ.get("TM_SERVER_EXE") or REPO / "app-rust" / "target" / "release" / "tmbilling-server.exe")
 CLIENT_EXE = CLIENT_DIR / "target" / "debug" / "TMBilling.exe"
 CLIENT_KEY = "TM2026"
 
@@ -321,10 +321,38 @@ class Client:
             time.sleep(0.03)
 
     def press(self, vk):
-        user32.PostMessageW(self.hwnd, 0x0100, vk, 0)
-        user32.PostMessageW(self.hwnd, 0x0101, vk, 0)
+        scan = user32.MapVirtualKeyW(vk, 0) << 16
+        user32.PostMessageW(self.hwnd, 0x0100, vk, scan | 1)
+        user32.PostMessageW(self.hwnd, 0x0101, vk, 0xC0000001 | scan)
         time.sleep(0.2)
 
+    def visible(self):
+        return bool(self.hwnd and user32.IsWindowVisible(self.hwnd))
+    def close_window(self):
+        """Jalur Alt+F4: WM_CLOSE ke window, bukan klik tombol."""
+        user32.PostMessageW(self.hwnd, 0x0010, 0, 0)
+        time.sleep(0.3)
+    def working_set(self):
+        class PMC(ctypes.Structure):
+            _fields_ = [("cb", ctypes.c_uint32), ("PageFaultCount", ctypes.c_uint32),
+                        ("PeakWorkingSetSize", ctypes.c_size_t),
+                        ("WorkingSetSize", ctypes.c_size_t),
+                        ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                        ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                        ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                        ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                        ("PagefileUsage", ctypes.c_size_t),
+                        ("PeakPagefileUsage", ctypes.c_size_t)]
+        info = PMC()
+        info.cb = ctypes.sizeof(PMC)
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(0x1000, False, self.proc.pid)
+        try:
+            ok = ctypes.windll.psapi.GetProcessMemoryInfo(
+                handle, ctypes.byref(info), ctypes.sizeof(PMC))
+        finally:
+            kernel32.CloseHandle(handle)
+        return info.WorkingSetSize if ok else 0
     def shot(self, path):
         from PIL import Image
         w, h = self.size()

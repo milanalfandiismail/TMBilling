@@ -68,12 +68,19 @@ fn badge_chip(app: &TmApp, compact: bool, scale: f32) -> AnyElement {
     let Some(session) = app.session.as_ref() else {
         return div().into_any_element();
     };
-    let tone = if session.is_member {
+    let admin = app.is_admin_session || session.is_emergency;
+    let tone = if admin || session.is_member {
         BadgeTone::Accent
     } else {
         BadgeTone::Muted
     };
-    let label = if session.is_member { "Member" } else { "Guest" };
+    let label = if admin {
+        "Admin"
+    } else if session.is_member {
+        "Member"
+    } else {
+        "Guest"
+    };
     if !compact {
         return TmBadge::new(label, tone).render().into_any_element();
     }
@@ -122,7 +129,7 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
     let tab_w = inner / 3.0;
     let mul = app
         .started_at
-        .map(|(h, m)| format!("{h:02}:{m:02}"))
+        .clone()
         .unwrap_or_else(|| "--:--".to_string());
     let min_click = actions.minimize.clone();
     let afk_click = actions.afk.clone();
@@ -194,7 +201,10 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                 .text_align(gpui_kit::TextAlign::Center)
                 .font_weight(FontWeight::BOLD)
                 .text_color(timer_color)
-                .child(crate::state::human_time(remaining)),
+                .child(crate::state::timer_text(
+                    app.is_admin_session || app.session.as_ref().is_some_and(|s| s.is_emergency),
+                    remaining,
+                )),
         )
         .child(
             div()

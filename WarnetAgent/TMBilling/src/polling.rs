@@ -75,7 +75,8 @@ pub async fn run(client: ApiClient, tx: UnboundedSender<AppEvent>) {
 
     loop {
         if let Some((ip, mac)) = local_net() {
-            match client.status(&ip, &mac, false).await {
+            let admin = crate::state::ADMIN_MODE.load(std::sync::atomic::Ordering::Relaxed);
+            match client.status(&ip, &mac, admin).await {
                 Ok(status) => {
                     println!(
                     "[poll] ok status={} sisa={:?} shutdown={:?}",
@@ -119,8 +120,8 @@ pub async fn run(client: ApiClient, tx: UnboundedSender<AppEvent>) {
                             } else {
                                 ImageFormat::Png
                             };
-                            let image = Image::from_bytes(format, bytes);
-                            let _ = tx.send(AppEvent::Qris(Some(std::sync::Arc::new(image))));
+                            let image = crate::qris_cache::decoded(&src, format, &bytes);
+                            let _ = tx.send(AppEvent::Qris(Some(image)));
                         }
                     }
                     let _ = tx.send(AppEvent::Config(cfg));

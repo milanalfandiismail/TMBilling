@@ -1,8 +1,11 @@
 use tray_icon::menu::{Menu, MenuEvent, MenuItem};
 use tray_icon::{Icon, TrayIconBuilder};
 
-/// 16x16 accent square; shortcut: no rasteriser in the build, swap for the packaged .ico icon later.
+/// Ikon aplikasi yang ditanam winresource (ordinal 1), fallback kotak accent.
 fn icon() -> Option<Icon> {
+    if let Ok(icon) = Icon::from_resource(1, Some((16, 16))) {
+        return Some(icon);
+    }
     let mut rgba = Vec::with_capacity(16 * 16 * 4);
     for _ in 0..16 * 16 {
         rgba.extend_from_slice(&[0x34, 0xD3, 0x99, 0xFF]);
@@ -28,7 +31,7 @@ pub fn install() {
 
     let show_id = show.id().clone();
     MenuEvent::set_event_handler(Some(move |event: MenuEvent| {
-        if event.id == show_id {
+        if event.id == show_id && !super::window_manager::restore_from_tray() {
             super::single_instance::focus_existing();
         }
     }));

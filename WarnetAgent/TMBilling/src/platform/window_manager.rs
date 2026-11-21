@@ -1,4 +1,5 @@
 use gpui_kit::Window;
+use std::sync::atomic::{AtomicIsize, Ordering};
 use raw_window_handle::{HasWindowHandle, RawWindowHandle};
 use windows::core::PCWSTR;
 use windows::Win32::Foundation::{HWND, RECT};
@@ -27,6 +28,10 @@ pub fn set_taskbar_visibility(visible: bool) {
             }
         }
     }
+}
+
+pub fn handle(raw: isize) -> HWND {
+    HWND(raw as *mut core::ffi::c_void)
 }
 
 pub fn hwnd(window: &Window) -> Option<HWND> {
@@ -88,19 +93,69 @@ pub fn focus(h: HWND) {
     }
 }
 
-/// Pindahkan tanpa mengubah ukuran (ukuran diurus gpui lewat Window::resize).
-pub fn move_to(h: HWND, x: i32, y: i32) {
+/// Pindahkan dan ubah ukuran dalam satu SetWindowPos supaya tidak ada frame
+/// di mana jendela sudah pindah tapi masih kecil (resize gpui berjalan async).
+pub fn place(h: HWND, left: i32, top: i32, width: i32, height: i32) {
     unsafe {
         let _ = SetWindowPos(
             h,
             Some(HWND_TOPMOST),
-            x,
-            y,
-            0,
-            0,
-            SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER,
+            left,
+            top,
+            width,
+            height,
+            SWP_NOACTIVATE | SWP_NOOWNERZORDER,
         );
     }
+}
+
+/// Sembunyikan window selama transisi geometri; gpui masih melukis viewport lama
+/// beberapa frame setelah SetWindowPos, jadi frame itu tidak boleh terlihat.
+pub fn hide(h: HWND) {
+    unsafe {
+        let _ = ShowWindow(h, SW_HIDE);
+    }
+}
+
+/// Tampilkan lagi setelah viewport gpui sudah sama dengan ukuran window baru.
+pub fn reveal(h: HWND) {
+    unsafe {
+        let _ = ShowWindow(h, SW_SHOW);
+        let _ = SetWindowPos(
+            h,
+            Some(HWND_TOPMOST),
+            0,
+            0,
+            0,
+            0,
+            SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER,
+        );
+        let _ = SetForegroundWindow(h);
+        let _ = BringWindowToTop(h);
+    }
+}
+
+/// Window yang sedang disembunyikan ke tray; 0 bila tidak ada.
+static MINIMIZED: AtomicIsize = AtomicIsize::new(0);
+
+/// Minimize overlay: sembunyikan dari taskbar, sisakan ikon tray.
+pub fn minimize_to_tray(h: HWND) {
+    MINIMIZED.store(h.0 as isize, Ordering::Relaxed);
+    hide(h);
+}
+
+/// True bila overlay sedang disembunyikan ke tray.
+pub fn minimized() -> bool {
+    MINIMIZED.load(Ordering::Relaxed) != 0
+}
+/// Kembalikan window yang disembunyikan ke tray. False bila tidak ada.
+pub fn restore_from_tray() -> bool {
+    let raw = MINIMIZED.swap(0, Ordering::Relaxed);
+    if raw == 0 {
+        return false;
+    }
+    reveal(handle(raw));
+    true
 }
 
 /// Release the desktop from kiosk mode even if the process is killed by a panic.

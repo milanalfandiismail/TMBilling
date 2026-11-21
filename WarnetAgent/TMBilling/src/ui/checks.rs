@@ -48,6 +48,8 @@ fn remote_commands_map_to_actions() {
     use crate::state::{remote_action, RemoteAction};
     assert_eq!(remote_action("lock"), Some(RemoteAction::Lock));
     assert_eq!(remote_action("logout"), Some(RemoteAction::Lock));
+    assert_eq!(remote_action("afk_lock"), Some(RemoteAction::AfkLock));
+    assert_eq!(remote_action("afk_unlock"), Some(RemoteAction::AfkUnlock));
     assert_eq!(remote_action("shutdown"), Some(RemoteAction::Shutdown));
     assert_eq!(remote_action("restart"), Some(RemoteAction::Restart));
     assert_eq!(remote_action("screenshot"), None);
@@ -148,7 +150,7 @@ fn human_time_matches_tauri_format() {
     assert_eq!(crate::state::human_time(5400), "1 jam 30 menit");
     assert_eq!(crate::state::human_time(1800), "30 menit");
     assert_eq!(crate::state::human_time(3600), "1 jam");
-    assert_eq!(crate::state::human_time(59), "0 menit");
+    assert_eq!(crate::state::human_time(59), "1 menit");
     assert_eq!(crate::state::human_time(0), "Sesi Berakhir");
     assert_eq!(crate::state::human_time(-5), "Sesi Berakhir");
 }
@@ -190,13 +192,19 @@ fn close_behaviour_follows_mode() {
     use crate::state::{close_action, hook_should_be_enabled, CloseAction, Modal, View};
     assert_eq!(close_action(true), CloseAction::Minimize);
     assert_eq!(close_action(false), CloseAction::Block);
-    assert!(hook_should_be_enabled(View::Kiosk, None));
-    assert!(!hook_should_be_enabled(View::Overlay, None));
-    assert!(hook_should_be_enabled(View::Overlay, Some(Modal::AfkPin)));
+    assert!(hook_should_be_enabled(View::Kiosk, None, false));
+    assert!(!hook_should_be_enabled(View::Overlay, None, false));
+    assert!(hook_should_be_enabled(View::Overlay, Some(Modal::AfkPin), false));
+    assert!(hook_should_be_enabled(View::Overlay, None, true));
 }
 
 #[test]
 fn html_block_colour_is_applied() {
     let blocks = crate::ui::html::parse("<p style=\"color:#34D399\">x</p>");
     assert_eq!(blocks[0].1[0].style.color, crate::ui::html::parse_color("#34D399"));
+}
+#[test]
+fn admin_and_emergency_show_system_instead_of_countdown() {
+    assert_eq!(crate::state::timer_text(true, 5078), "System");
+    assert_eq!(crate::state::timer_text(false, 5078), crate::state::human_time(5078));
 }

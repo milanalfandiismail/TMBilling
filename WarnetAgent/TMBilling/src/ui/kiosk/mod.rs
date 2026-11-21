@@ -1,3 +1,4 @@
+pub mod afk;
 pub mod header;
 pub mod info;
 pub mod login;

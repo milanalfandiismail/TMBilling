@@ -230,6 +230,20 @@ async fn status_sesi_aktif_dan_heartbeat_ditahan() {
     assert_eq!(body["status"], json!("aktif"));
     assert_eq!(body["pc_kode"], json!("PC-01"));
     assert!(body["sisa_waktu"].as_i64().unwrap() >= 59);
+    let detik = body["sisa_detik"].as_i64().unwrap();
+    assert!(detik > 59 * 60 && detik <= 60 * 60, "sisa_detik={detik}");
+    let mulai = body["mulai"].as_str().expect("mulai");
+    assert_eq!(mulai.len(), 5, "mulai={mulai}");
+    let db_mulai: String = sqlx::query_scalar("SELECT mulai_pada FROM sesi WHERE pc_id = ?")
+        .bind(pc_id)
+        .fetch_one(&st.pool)
+        .await
+        .unwrap();
+    let harap = tmbilling_server::utils::time::format_clock(
+        tmbilling_server::utils::time::parse_dt(&db_mulai).unwrap(),
+        &st.cfg.timezone,
+    );
+    assert_eq!(mulai, harap);
     let pertama: String = sqlx::query_scalar("SELECT last_sync FROM sesi WHERE pc_id = ?")
         .bind(pc_id)
         .fetch_one(&st.pool)
@@ -276,4 +290,56 @@ async fn perintah_cepat_fifo() {
     )
     .await;
     assert_eq!(dua.json()["command"], json!("vnc_stop"));
+}
+
+#[tokio::test]
+async fn kasir_boleh_login_admin_dan_role_asli_dibalas() {
+    let (_dir, st) = state("adminlogin").await;
+    seed_pc(&st).await;
+    let hash = tmbilling_server::models::user::hash_password("rahasia123");
+    for (username, role) in [("kasir1", "kasir"), ("admin1", "admin")] {
+        sqlx::query(
+            "INSERT INTO user (username, password_hash, nama_lengkap, role, aktif) \
+             VALUES (?, ?, ?, ?, 1)",
+        )
+        .bind(username)
+        .bind(&hash)
+        .bind(format!("Nama {username}"))
+        .bind(role)
+        .execute(&st.pool)
+        .await
+        .unwrap();
+    }
+    let body = json!({
+        "ip_address": "127.0.0.1",
+        "mac_address": "aa:bb:cc:dd:ee:ff",
+        "username": "kasir1",
+        "password": "rahasia123",
+        "role": "admin",
+    });
+    let reply = kirim(
+        st.clone(),
+        "POST",
+        "/api/v1/public/client/admin-login",
+        Some(KUNCI),
+        Some(body.clone()),
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK);
+    assert_eq!(reply.json()["user"]["role"], json!("kasir"));
+
+    let salah = kirim(
+        st.clone(),
+        "POST",
+        "/api/v1/public/client/admin-login",
+        Some(KUNCI),
+        Some(json!({
+            "ip_address": "127.0.0.1",
+            "mac_address": "aa:bb:cc:dd:ee:ff",
+            "username": "admin1",
+            "password": "salah",
+        })),
+    )
+    .await;
+    assert_eq!(salah.status, StatusCode::BAD_REQUEST);
 }

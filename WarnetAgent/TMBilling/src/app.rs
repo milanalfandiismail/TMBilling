@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::api::client::ApiClient;
+use crate::api::client::{to_sha256_hash, ApiClient};
 use crate::polling::{self, AppEvent};
 use crate::state::{self, Alert, LoginField, PowerAction, TmApp, Modal};
 use crate::theme::TM;
@@ -23,11 +23,32 @@ impl TmApp {
             match action {
                 crate::state::RemoteAction::Lock => {
                     self.session = None;
-                    self.locked = true;
+                    self.is_afk = false;
+                    self.afk_pending = false;
                     self.modal = None;
                 }
-                crate::state::RemoteAction::Shutdown => self.run_power(PowerAction::Shutdown, cx),
-                crate::state::RemoteAction::Restart => self.run_power(PowerAction::Restart, cx),
+                crate::state::RemoteAction::AfkLock => {
+                    self.is_afk = true;
+                    self.afk_pending = true;
+                    self.modal = None;
+                }
+                crate::state::RemoteAction::AfkUnlock => {
+                    self.is_afk = false;
+                    self.afk_pending = false;
+                    self.afk_input.clear();
+                    self.afk_error = None;
+                }
+                crate::state::RemoteAction::Shutdown => {
+                    // status kosong yang menyertai perintah ini tidak boleh mengarm timer lagi
+                    self.shutdown_secs = None;
+                    self.run_power(PowerAction::Shutdown, cx);
+                    return;
+                }
+                crate::state::RemoteAction::Restart => {
+                    self.shutdown_secs = None;
+                    self.run_power(PowerAction::Restart, cx);
+                    return;
+                }
             }
         }
         let changed = self.reduce(event);
@@ -70,7 +91,7 @@ impl TmApp {
                 }
                 if crate::state::should_autolock(
                     app.remaining_secs,
-                    app.locked,
+                    app.is_afk,
                     app.session.is_some(),
                 ) {
                     // sama seperti Tauri: waktu habis = logout, bukan AFK
@@ -117,6 +138,14 @@ impl TmApp {
         // shortcut: kredensial & base URL dibaca dari config.ini/registry di Task 12
         // Env wins so a dev machine can point at a sandbox server.
         let cfg = crate::platform::credentials::load();
+        self.emergency_user = cfg.emergency_user;
+        self.emergency_token = cfg.emergency_token;
+        if let Ok(v) = std::env::var("TM_EMERGENCY_USER") {
+            self.emergency_user = to_sha256_hash(&v);
+        }
+        if let Ok(v) = std::env::var("TM_EMERGENCY_TOKEN") {
+            self.emergency_token = to_sha256_hash(&v);
+        }
         let base_url = std::env::var("TM_SERVER_URL").unwrap_or(cfg.url);
         let api_key = std::env::var("TM_CLIENT_KEY").unwrap_or(cfg.api_key);
         let client = ApiClient::new(base_url, api_key);
@@ -193,6 +222,24 @@ impl TmApp {
 
     fn on_key(&mut self, ev: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
         let key = ev.keystroke.key.as_str();
+        // Layar AFK hanya menerima kredensial: F10/F11/Escape sengaja tidak dilayani.
+        if self.is_afk {
+            match key {
+                "backspace" => {
+                    self.afk_backspace();
+                }
+                "enter" => self.submit_afk(cx),
+                _ => {
+                    if let Some(text) = typed_text(ev) {
+                        for ch in text.chars() {
+                            self.afk_type_char(ch);
+                        }
+                    }
+                }
+            }
+            cx.notify();
+            return;
+        }
         match key {
             // F11 is the admin hotkey of the Tauri client; F10 opens the read-only menu.
             "f10" => {
@@ -284,23 +331,71 @@ impl TmApp {
         }
         let pin = self.pin.clone();
         if let Some(client) = self.client.clone() {
-            let ip = self.pc_kode.clone();
             cx.spawn(async move |this, cx| {
-                let _ = polling::http(async move { client.afk_lock(&ip, "", Some(&pin)).await }).await;
+                let (ip, mac) = polling::local_net().unwrap_or_default();
+                let res = polling::http(async move {
+                    client.afk_lock(&ip, &mac, Some(&pin)).await
+                })
+                .await;
                 let _ = this.update(cx, |app, cx| {
-                    app.locked = true;
-                    app.modal = None;
-                    app.pin.clear();
+                    match res {
+                        Ok(()) => {
+                            app.begin_afk_lock();
+                            app.modal = None;
+                            app.pin.clear();
+                        }
+                        Err(e) => app.afk_error = Some(action_error_text(&e)),
+                    }
                     cx.notify();
                 });
             })
             .detach();
         } else {
-            self.locked = true;
+            self.is_afk = true;
+            self.afk_pending = true;
             self.modal = None;
             self.pin.clear();
             cx.notify();
         }
+    }
+
+    /// Buka kunci AFK dengan password akun member atau PIN guest.
+    fn submit_afk(&mut self, cx: &mut Context<Self>) {
+        if self.afk_busy {
+            return;
+        }
+        let credential = self.afk_input.trim().to_string();
+        if credential.is_empty() {
+            self.afk_error = Some("Masukkan password akun atau PIN.".into());
+            cx.notify();
+            return;
+        }
+        let Some(client) = self.client.clone() else {
+            return;
+        };
+        self.afk_busy = true;
+        cx.spawn(async move |this, cx| {
+            let (ip, mac) = polling::local_net().unwrap_or_default();
+            let res = polling::http(async move {
+                client.afk_unlock(&ip, &mac, &credential).await
+            })
+            .await;
+            let _ = this.update(cx, |app, cx| {
+                app.afk_busy = false;
+                match res {
+                    Ok(()) => {
+                        app.is_afk = false;
+                        app.afk_pending = false;
+                        app.afk_input.clear();
+                        app.afk_error = None;
+                        app.refresh_status(cx);
+                    }
+                    Err(e) => app.afk_error = Some(action_error_text(&e)),
+                }
+                cx.notify();
+            });
+        })
+        .detach();
     }
 
     /// Mode ditentukan status server; login tidak boleh memindahkan layar sendiri.
@@ -321,7 +416,7 @@ impl TmApp {
         if self.auth_busy {
             return;
         }
-        let (app_ip, app_mac) = crate::polling::local_net().unwrap_or_default();
+        let (ip, mac) = crate::polling::local_net().unwrap_or_default();
         let (user, pass) = self.login.admin_credentials();
         let (user, pass) = (user.to_string(), pass.to_string());
         if user.is_empty() || pass.is_empty() {
@@ -330,22 +425,55 @@ impl TmApp {
             return;
         }
         self.login.error = None;
+        // 1:1 Tauri: kredensial darurat dicocokkan offline dulu, server boleh mati.
+        if crate::state::emergency_credentials_match(
+            &to_sha256_hash(&user),
+            &to_sha256_hash(&pass),
+            &self.emergency_user,
+            &self.emergency_token,
+        ) {
+            self.enter_admin_session("SYSTEM", "SYSTEM", true);
+            self.login.admin_pass.clear();
+            self.login.busy = false;
+            if let Some(client) = self.client.clone() {
+                let name = user.clone();
+                let (ip, mac) = (ip.clone(), mac.clone());
+                cx.spawn(async move |_, _| {
+                    let _ = polling::http(async move {
+                        client.emergency_login(&ip, &mac, &name).await
+                    })
+                    .await;
+                })
+                .detach();
+            }
+            cx.notify();
+            return;
+        }
         self.auth_busy = true;
         let Some(client) = self.client.clone() else {
             self.auth_busy = false;
+            self.login.error = Some("Belum terhubung ke server.".into());
+            cx.notify();
             return;
         };
         cx.spawn(async move |this, cx| {
-            let ip = app_ip.clone();
-            let mac = app_mac.clone();
-            let result = polling::http(async move { client.admin_login(&ip, &mac, &user, &pass).await }).await;
+            let (ip, mac) = (ip.clone(), mac.clone());
+            let result = polling::http(async move {
+                client.admin_login(&ip, &mac, &user, &pass).await
+            })
+            .await;
             this.update(cx, |app, cx| {
                 match result {
                     Ok(res) if res.success => {
-                        app.apply_login_result(true, None);
-                        app.auth_busy = false;
-                        app.modal = None;
+                        let data = res.user.unwrap_or_default();
+                        let nama = data
+                            .nama_lengkap
+                            .filter(|n| !n.is_empty())
+                            .or(data.username)
+                            .unwrap_or_else(|| "Admin".to_string());
+                        app.enter_admin_session(&nama, "ADMIN", false);
                         app.login.admin_pass.clear();
+                        app.login.busy = false;
                     }
                     Ok(res) => {
                         let msg = res
@@ -374,6 +502,8 @@ impl TmApp {
             let _ = polling::http(async move { client.logout(&ip, &mac).await }).await;
             let _ = this.update(cx, |app, cx| {
                 app.session = None;
+                app.is_admin_session = false;
+                crate::state::ADMIN_MODE.store(false, std::sync::atomic::Ordering::Relaxed);
                 cx.notify();
             });
         })
@@ -393,9 +523,18 @@ impl TmApp {
             PowerAction::Restart => "/r",
             PowerAction::Shutdown => "/s",
         };
-        let _ = std::process::Command::new("shutdown")
+        // TM_NO_POWER membuat harness/E2E tidak benar-benar mematikan mesin
+        if std::env::var("TM_NO_POWER").ok().as_deref() == Some("1") {
+            println!("[power] {flag} (dinonaktifkan)");
+            cx.notify();
+            return;
+        }
+        if let Err(e) = std::process::Command::new("shutdown")
             .args([flag, "/f", "/t", "0"])
-            .spawn();
+            .spawn()
+        {
+            println!("[power] gagal menjalankan shutdown: {e}");
+        }
         cx.notify();
     }
 }
@@ -470,7 +609,9 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
         }) as ActFn,
         // shortcut: minimize & AFK hanya mengubah state lokal sampai Task 8/10 memasang aksinya
         minimize: Rc::new(move |w: &mut Window, _cx: &mut App| {
-            w.minimize_window();
+            if let Some(h) = crate::platform::window_manager::hwnd(w) {
+                crate::platform::window_manager::minimize_to_tray(h);
+            }
         }) as ActFn,
         afk: Rc::new(move |_w: &mut Window, cx: &mut App| {
             afk_me.update(cx, |app, cx| {
@@ -499,14 +640,7 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
 impl TmApp {
     fn run_tool(&mut self, tool: ToolId, cx: &mut Context<Self>) {
         if tool == ToolId::Lock {
-            self.locked = true;
-            if let Some(client) = self.client.clone() {
-                cx.spawn(async move |_this, _cx| {
-                    let _ = polling::http(async move { client.afk_lock("", "", None).await }).await;
-                })
-                .detach();
-            }
-            cx.notify();
+            self.lock_afk(cx);
             return;
         }
         if let Some((exe, args)) = crate::ui::overlay::tool_command(tool) {
@@ -514,23 +648,56 @@ impl TmApp {
         }
     }
 
-    fn sync_window(&mut self, window: &mut Window) {
+    /// Sama seperti Tauri: member langsung terkunci, guest memilih PIN dulu.
+    fn lock_afk(&mut self, cx: &mut Context<Self>) {
+        let member = self.session.as_ref().map(|s| s.is_member).unwrap_or(false);
+        if !member {
+            self.pin.clear();
+            self.afk_error = None;
+            self.modal = Some(Modal::AfkPin);
+            cx.notify();
+            return;
+        }
+        self.begin_afk_lock();
+        let Some(client) = self.client.clone() else {
+            cx.notify();
+            return;
+        };
+        cx.spawn(async move |this, cx| {
+            let (ip, mac) = polling::local_net().unwrap_or_default();
+            let res = polling::http(async move { client.afk_lock(&ip, &mac, None).await }).await;
+            let _ = this.update(cx, |app, cx| {
+                if let Err(e) = res {
+                    app.is_afk = false;
+                    app.afk_pending = false;
+                    app.afk_error = Some(action_error_text(&e));
+                }
+                cx.notify();
+            });
+        })
+        .detach();
+    }
+
+    fn sync_window(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         use std::sync::atomic::Ordering;
-        let overlay = self.session.is_some() && !self.locked;
-        let fullscreen_modal = crate::state::modal_fullscreen(self.view, self.modal);
+        let overlay = self.session.is_some() && !self.is_afk;
+        let fullscreen_modal =
+            self.is_afk || crate::state::modal_fullscreen(self.view, self.modal);
         state::OVERLAY_MODE.store(overlay, Ordering::Relaxed);
-        crate::platform::keyboard::set_enabled(state::hook_should_be_enabled(self.view, self.modal));
+        state::ADMIN_MODE.store(self.is_admin_session, Ordering::Relaxed);
+        crate::platform::keyboard::set_enabled(state::hook_should_be_enabled(
+            self.view,
+            self.modal,
+            self.is_afk,
+        ));
 
         let mode = (overlay, fullscreen_modal, self.overlay_tab);
         if self.applied_mode == Some(mode) {
             return;
         }
-        // hide/show hanya saat jenis jendela berubah; perubahan tinggi kartu cukup SetWindowPos
-        // hide/show hanya saat pindah kiosk<->overlay; modal penuh cukup resize di tempat
-        let mode_switch = match self.applied_mode {
-            Some((o, _, _)) => o != overlay,
-            None => true,
-        };
+        // Bentuk jendela berubah (kiosk <-> kartu <-> fullscreen): sembunyikan dulu,
+        // karena gpui masih melukis viewport lama setelah SetWindowPos.
+        let shape_changed = matches!(self.applied_mode, Some((o, f, _)) if o != overlay || f != fullscreen_modal);
         self.applied_mode = Some(mode);
         let Some(h) = wm::hwnd(window) else { return };
         wm::strip_frame(h);
@@ -565,14 +732,76 @@ impl TmApp {
         };
 
         if let Some((l, t, r, b)) = rect {
-            // ukuran lewat gpui supaya layout ikut tahu; SetWindowPos langsung membuat area baru putih
+            if shape_changed {
+                wm::hide(h);
+            }
             window.resize(gpui_kit::Size::new(px((r - l) as f32), px((b - t) as f32)));
-            wm::move_to(h, l, t);
-            if mode_switch {
+            wm::place(h, l, t, r - l, b - t);
+            if shape_changed {
+                let raw = h.0 as isize;
+                self.pending_reveal = Some((raw, std::time::Instant::now()));
+                reveal_when_ready(window, raw, ((r - l) as f32, (b - t) as f32), 0, 0);
+                // Jaring pengaman: kalau gpui tidak menghasilkan frame saat hidden,
+                // window tetap tampil setelah 150 ms.
+                cx.spawn(async move |this, cx| {
+                    cx.background_executor()
+                        .timer(std::time::Duration::from_millis(150))
+                        .await;
+                    let _ = this.update(cx, |app, cx| {
+                        if app.pending_reveal.take().is_some() && !wm::minimized() {
+                            wm::reveal(wm::handle(raw));
+                            cx.notify();
+                        }
+                    });
+                })
+                .detach();
+            } else {
                 wm::focus(h);
             }
             window.refresh();
         }
+    }
+}
+
+/// Tampilkan window setelah viewport gpui sama dengan ukuran barunya pada dua
+/// frame berurutan, agar frame lama tidak sempat terlihat.
+fn reveal_when_ready(
+    window: &mut Window,
+    raw: isize,
+    target: (f32, f32),
+    stable: u8,
+    tries: u8,
+) {
+    window.on_next_frame(move |window, _| {
+        let vp = window.viewport_size();
+        let ok = (f32::from(vp.width) - target.0).abs() <= 2.0
+            && (f32::from(vp.height) - target.1).abs() <= 2.0;
+        if wm::minimized() {
+            return;
+        }
+        if (ok && stable >= 1) || tries >= 8 {
+            wm::reveal(wm::handle(raw));
+        } else {
+            reveal_when_ready(window, raw, target, if ok { stable + 1 } else { 0 }, tries + 1);
+        }
+    });
+}
+
+fn afk_actions(cx: &mut Context<TmApp>) -> crate::ui::kiosk::afk::AfkActions {
+    let submit_me = cx.entity();
+    crate::ui::kiosk::afk::AfkActions {
+        submit: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            submit_me.update(cx, |app, cx| app.submit_afk(cx));
+        }),
+    }
+}
+
+fn action_error_text(err: &crate::api::client::ApiError) -> String {
+    use crate::api::client::ApiError;
+    match err {
+        ApiError::Http { message, .. } if !message.is_empty() => message.clone(),
+        ApiError::Network(_) => "Tidak bisa menghubungi server. Cek koneksi LAN.".into(),
+        _ => "Gagal memproses permintaan. Coba lagi.".into(),
     }
 }
 
@@ -631,17 +860,27 @@ impl Render for TmApp {
                 if state::close_action(state::OVERLAY_MODE.load(Ordering::Relaxed))
                     == state::CloseAction::Minimize
                 {
-                    window.minimize_window();
+                    if let Some(h) = crate::platform::window_manager::hwnd(window) {
+                        crate::platform::window_manager::minimize_to_tray(h);
+                    }
                 }
                 // kiosk tidak boleh bisa ditutup: permintaan close selalu ditolak
                 false
             });
         }
 
+        if let Some((raw, at)) = self.pending_reveal {
+            if at.elapsed() > std::time::Duration::from_secs(1) {
+                self.pending_reveal = None;
+                if !wm::minimized() {
+                    wm::reveal(wm::handle(raw));
+                }
+            }
+        }
         let handle = self.focus.get_or_insert_with(|| cx.focus_handle()).clone();
         let actions = kiosk_actions(cx);
         window.focus(&handle, cx);
-        self.sync_window(window);
+        self.sync_window(window, cx);
         let compact = window.viewport_size().width < px(1400.0);
         let title = self
             .cfg
@@ -676,6 +915,15 @@ impl Render for TmApp {
                 })
                 .children(self.modal_frames(cx));
         }
+        if self.is_afk {
+            return div()
+                .size_full()
+                .relative()
+                .bg(TM.bg)
+                .track_focus(&handle)
+                .capture_key_down(cx.listener(Self::on_key))
+                .child(crate::ui::kiosk::afk::screen(self, &afk_actions(cx)));
+        }
         let vp = window.viewport_size();
         let viewport = (f32::from(vp.width), f32::from(vp.height));
         // The window itself is the card here, so the monitor is what decides the size tier.
@@ -692,6 +940,8 @@ impl Render for TmApp {
             .flex()
             .items_start()
             .justify_start()
+            .track_focus(&handle)
+            .capture_key_down(cx.listener(Self::on_key))
             .child(overlay_card_mod::card(self, geom, &actions_ov))
             .children(modal)
     }

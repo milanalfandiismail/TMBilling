@@ -69,6 +69,13 @@ pub fn format_display_opt(raw: Option<&str>, tz_name: &str) -> Option<String> {
     raw.and_then(parse_dt).map(|d| format_display(d, tz_name))
 }
 
+/// Jam UTC naive → jam dinding zona aplikasi, mis. `17:10`.
+pub fn format_clock(dt: NaiveDateTime, tz_name: &str) -> String {
+    DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc)
+        .with_timezone(&tz(tz_name))
+        .format("%H:%M")
+        .to_string()
+}
 pub fn format_local(dt: NaiveDateTime, tz_name: &str, fmt: &str) -> String {
     dt.and_local_timezone(tz(tz_name))
         .single()

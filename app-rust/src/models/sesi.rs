@@ -113,6 +113,27 @@ impl Sesi {
         }
     }
 
+    /// Sisa detik eksak. Klien memakai ini supaya tampilan menit tidak
+    /// kehilangan satu menit karena pembulatan ke bawah.
+    pub fn sisa_detik(&self, now: NaiveDateTime) -> i64 {
+        let pause = self.menit_pause_total * 60;
+        let Some(awal) = self.awal() else {
+            return self.member_waktu_tersimpan.unwrap_or(0) * 60;
+        };
+        let akhir = self
+            .selesai_pada
+            .as_deref()
+            .and_then(parse_dt)
+            .unwrap_or(now);
+        let terpakai = ((akhir - awal).num_seconds() - pause).max(0);
+        let dasar = match self.tipe.as_str() {
+            "guest" => self.durasi_beli_menit * 60,
+            _ if self.waktu_tersimpan_awal > 0 => self.waktu_tersimpan_awal * 60,
+            _ => self.member_waktu_tersimpan.unwrap_or(0) * 60,
+        };
+        (dasar - terpakai).max(0)
+    }
+
     /// Nama pemakai untuk tampilan dashboard.
     pub fn nama_pemakai(&self) -> Option<String> {
         if let Some(nama) = &self.member_nama {

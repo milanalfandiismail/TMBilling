@@ -5,6 +5,10 @@ use serde::{Deserialize, Serialize};
 pub struct StatusResponse {
     pub status: String, // "aktif" | "admin" | "system" | "kosong" | "error"
     pub sisa_waktu: Option<u32>,
+    #[serde(default)]
+    pub sisa_detik: Option<i64>,
+    #[serde(default)]
+    pub mulai: Option<String>,
     pub nama: Option<String>,
     pub grup: Option<String>,
     pub pc_kode: Option<String>,
@@ -47,7 +51,7 @@ pub struct MemberLoginResponse {
     pub member: Option<serde_json::Value>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct AdminUserData {
     pub id: Option<i64>,
     pub username: Option<String>,

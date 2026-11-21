@@ -1,7 +1,10 @@
-use std::sync::Mutex;
+use gpui_kit::{Image, ImageFormat};
+use std::sync::{Arc, Mutex};
 
 // QRIS terakhir per URL sumber. Hanya di RAM: restart = kosong (tanpa cache disk).
 static LAST_GOOD: Mutex<Option<(String, Vec<u8>)>> = Mutex::new(None);
+/// Gambar hasil decode terakhir; decode ulang hanya saat byte berubah.
+static DECODED: Mutex<Option<(String, Vec<u8>, Arc<Image>)>> = Mutex::new(None);
 
 pub fn remember(url: &str, bytes: &[u8]) {
     if let Ok(mut slot) = LAST_GOOD.lock() {
@@ -18,6 +21,22 @@ pub fn last_for(url: &str) -> Option<Vec<u8>> {
         .map(|(_, bytes)| bytes.clone())
 }
 
+/// Arc yang sama dipakai ulang selama sumber dan byte identik, jadi state tidak
+/// mengganti gambar (dan tidak memicu render ulang) tiap refresh config.
+pub fn decoded(url: &str, format: ImageFormat, bytes: &[u8]) -> Arc<Image> {
+    if let Ok(slot) = DECODED.lock() {
+        if let Some((saved_url, saved, image)) = slot.as_ref() {
+            if saved_url == url && saved.as_slice() == bytes {
+                return image.clone();
+            }
+        }
+    }
+    let image = Arc::new(Image::from_bytes(format, bytes.to_vec()));
+    if let Ok(mut slot) = DECODED.lock() {
+        *slot = Some((url.to_string(), bytes.to_vec(), image.clone()));
+    }
+    image
+}
 #[cfg(test)]
 mod tests {
     use super::*;

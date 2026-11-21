@@ -140,7 +140,7 @@ pub fn tools(app: &TmApp, scale: f32, actions: &OverlayActions) -> impl IntoElem
                         .flex()
                         .flex_row()
                         .gap(px(9.0 * scale))
-                        .child(tool_tile(ToolId::Lock, "Lock", scale, app.locked, actions))
+                        .child(tool_tile(ToolId::Lock, "Lock", scale, app.is_afk, actions))
                         .child(tool_tile(ToolId::Volume, "Volume", scale, false, actions)),
                 )
                 .child(
