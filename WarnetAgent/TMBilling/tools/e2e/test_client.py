@@ -401,6 +401,7 @@ class AfkGuestTest(Base):
         c.type_text("1234")
         c.press(0x0D)
         wait_until(lambda: c.size()[0] > 1000, 15)
+        time.sleep(0.8)  # layar lock memegang hitam 500 ms sebelum menerima input
         c.type_text("1234")
         c.press(0x0D)
         wait_until(lambda: c.size()[0] < 800, 15)

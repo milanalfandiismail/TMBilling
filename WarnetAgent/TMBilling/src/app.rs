@@ -387,6 +387,8 @@ impl TmApp {
                             app.begin_afk_lock();
                             app.modal = None;
                             app.pin.clear();
+                            // layar hitam 500 ms lagi sebelum layar lock tampil
+                            app.hold_screen(cx);
                         }
                         Err(e) => app.afk_error = Some(action_error_text(&e)),
                     }
@@ -653,10 +655,9 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
                 crate::platform::window_manager::minimize_to_tray(h);
             }
         }) as ActFn,
+        // Member terkunci langsung; hanya guest yang memilih PIN dulu.
         afk: Rc::new(move |_w: &mut Window, cx: &mut App| {
-            afk_me.update(cx, |app, cx| {
-                app.show_modal(Modal::AfkPin, cx);
-            });
+            afk_me.update(cx, |app, cx| app.lock_afk(cx));
         }) as ActFn,
         logout: Rc::new(move |_w: &mut Window, cx: &mut App| {
             out_me.update(cx, |app, cx| {
@@ -676,27 +677,32 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
 }
 
 impl TmApp {
+    /// Tahan layar hitam 500 ms sebelum isi layar penuh dilukis.
+    fn hold_screen(&mut self, cx: &mut Context<Self>) {
+        self.modal_hold = true;
+        self.hold_resized = false;
+        cx.spawn(async move |this, cx| {
+            cx.background_executor()
+                .timer(std::time::Duration::from_millis(500))
+                .await;
+            this.update(cx, |app, cx| {
+                app.modal_hold = false;
+                cx.notify();
+            })
+            .ok();
+        })
+        .detach();
+        cx.notify();
+    }
+
     /// Buka modal lewat satu pintu: modal fullscreen memegang layar hitam 500 ms.
     fn show_modal(&mut self, modal: Modal, cx: &mut Context<Self>) {
         self.modal = Some(modal);
-        self.modal_hold = crate::state::hold_fullscreen_modal(self.view, modal);
-        self.hold_resized = !self.modal_hold;
-        if self.modal_hold {
-            cx.spawn(async move |this, cx| {
-                cx.background_executor()
-                    .timer(std::time::Duration::from_millis(500))
-                    .await;
-                this.update(cx, |app, cx| {
-                    if app.modal.is_some() {
-                        app.modal_hold = false;
-                        cx.notify();
-                    }
-                })
-                .ok();
-            })
-            .detach();
+        let hold = crate::state::hold_fullscreen_modal(self.view, modal);
+        self.hold_resized = !hold;
+        if hold {
+            self.hold_screen(cx);
         }
-        cx.notify();
     }
 
     fn run_tool(&mut self, tool: ToolId, cx: &mut Context<Self>) {
@@ -719,6 +725,8 @@ impl TmApp {
             return;
         }
         self.begin_afk_lock();
+        // Sama seperti modal fullscreen: layar hitam 500 ms dulu, baru isinya.
+        self.hold_screen(cx);
         let Some(client) = self.client.clone() else {
             cx.notify();
             return;
@@ -835,6 +843,7 @@ impl TmApp {
             ));
             wm::place(h, l, t, w, height);
             self.applied_rect = Some((l, t, r, b));
+            self.viewport_wait = 30;
             // gpui menerapkan resize secara async; place ulang di frame berikutnya
             // supaya jendela tidak sempat tampil dengan ukuran lama.
             let raw = h.0 as isize;
@@ -962,6 +971,20 @@ impl Render for TmApp {
         let actions = kiosk_actions(cx);
         window.focus(&handle, cx);
         self.sync_window(window, cx);
+        // gpui memakai viewport lama beberapa frame setelah jendela diubah;
+        // selagi itu jangan lukis isi supaya tidak muncul di pojok kiri.
+        if let Some((l, t, r, b)) = self.applied_rect {
+            let vp = window.viewport_size();
+            let stale = (vp.width.as_f32() - (r - l) as f32).abs() > 2.0
+                || (vp.height.as_f32() - (b - t) as f32).abs() > 2.0;
+            if stale && self.viewport_wait > 0 {
+                self.viewport_wait -= 1;
+                window.refresh();
+                cx.notify();
+                return div().size_full().relative().bg(TM.bg);
+            }
+            self.viewport_wait = 0;
+        }
         let compact = window.viewport_size().width < px(1400.0);
         let title = self
             .cfg
@@ -996,7 +1019,7 @@ impl Render for TmApp {
                 })
                 .children(self.modal_frames(cx));
         }
-        if self.is_afk {
+        if self.is_afk && !self.modal_hold {
             return div()
                 .size_full()
                 .relative()
