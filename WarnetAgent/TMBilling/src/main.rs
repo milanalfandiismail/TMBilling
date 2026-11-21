@@ -57,6 +57,11 @@ pub fn dev_safe() -> bool {
 }
 
 fn main() {
+    // Swapchain composition di VM/WARP tidak dipaksa DWM setelah resize (isi lama
+    // bertahan sampai Alt+Tab), jadi pakai swapchain HWND klasik di semua mesin.
+    if std::env::var_os("GPUI_DISABLE_DIRECT_COMPOSITION").is_none() {
+        std::env::set_var("GPUI_DISABLE_DIRECT_COMPOSITION", "1");
+    }
     #[cfg(not(debug_assertions))]
     {
         use platform::security;
