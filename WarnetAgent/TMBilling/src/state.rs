@@ -111,23 +111,22 @@ pub struct TmApp {
     #[allow(dead_code)]
     /// (window is the small overlay card, modal needs the whole screen)
     pub applied_mode: Option<(bool, bool, usize)>,
-    /// Rect terakhir yang benar-benar dipasang; perubahan ukuran sekecil apa pun
-    /// harus lewat hide -> resize -> reveal agar tidak ada frame putih.
+    /// Rect terakhir yang benar-benar dipasang ke window.
     pub applied_rect: Option<(i32, i32, i32, i32)>,
     pub saved_rect: Option<(i32, i32, i32, i32)>,
-    /// Handle + waktu mulai transisi yang sedang menunggu reveal.
     /// Sesi admin/emergency aktif: polling mengirim role admin.
     pub is_admin_session: bool,
     /// SHA-256 kredensial darurat dari registry/config.ini; kosong = fitur mati.
     pub emergency_user: String,
     pub emergency_token: String,
-    /// Window disembunyikan selama transisi geometri; HWND disimpan sebagai isize.
     pub taskbar_guard: Option<crate::platform::window_manager::TaskbarGuard>,
     pub pin: String,
     pub menu_page: usize,
     pub member_json: Option<serde_json::Value>,
     /// QRIS asli dari server; tile mock hanya dipakai bila None.
     pub qris_image: Option<std::sync::Arc<gpui_kit::Image>>,
+    /// Modal QRIS fullscreen menahan gambar sampai geometri selesai.
+    pub qris_hidden: bool,
     /// Fase kedip caret; di-toggle timer 530 ms hanya saat ada field aktif.
     pub caret_on: bool,
 }

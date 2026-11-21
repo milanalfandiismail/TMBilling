@@ -619,12 +619,29 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
         open: Rc::new(move |modal: Modal, _w: &mut Window, cx: &mut App| {
             open_me.update(cx, |app, cx| {
                 app.modal = Some(modal);
+                if modal == Modal::QrisFull {
+                    app.qris_hidden = true;
+                    // Geometri jendela baru selesai beberapa frame setelah modal
+                    // dibuka; gambar ditahan 500 ms agar tidak tampil di kiri atas.
+                    cx.spawn(async move |this, cx| {
+                        cx.background_executor()
+                            .timer(std::time::Duration::from_millis(500))
+                            .await;
+                        this.update(cx, |app, cx| {
+                            app.qris_hidden = false;
+                            cx.notify();
+                        })
+                        .ok();
+                    })
+                    .detach();
+                }
                 cx.notify();
             });
         }) as ModalFn,
         close: Rc::new(move |_w: &mut Window, cx: &mut App| {
             close_me.update(cx, |app, cx| {
                 app.modal = None;
+                app.qris_hidden = false;
                 cx.notify();
             });
         }) as ActFn,

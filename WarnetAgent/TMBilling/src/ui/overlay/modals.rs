@@ -397,22 +397,24 @@ fn qris_full(app: &TmApp, actions: &OverlayActions) -> AnyElement {
             let close = actions.close.clone();
             move |_: &ClickEvent, window, cx| close(window, cx)
         })
-        .child(
-            div()
-                .flex()
-                .items_center()
-                .justify_center()
-                .w(px(420.0))
-                .h(px(420.0))
-                .child(qr_tile_block(app, 400.0)),
-        )
-        .child(
-            div()
-                .mt(px(12.0))
-                .text_size(px(11.0))
-                .text_color(TM.dim)
-                .child("Ketuk di mana saja untuk menutup"),
-        )
+        .when(!app.qris_hidden, |el| {
+            el.child(
+                div()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .w(px(420.0))
+                    .h(px(420.0))
+                    .child(qr_tile_block(app, 400.0)),
+            )
+            .child(
+                div()
+                    .mt(px(12.0))
+                    .text_size(px(11.0))
+                    .text_color(TM.dim)
+                    .child("Ketuk di mana saja untuk menutup"),
+            )
+        })
         .into_any_element()
 }
 
