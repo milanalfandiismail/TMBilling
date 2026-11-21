@@ -716,38 +716,6 @@ impl TmApp {
         })
         .detach();
     }
-
-    /// Reveal hanya setelah gpui melukis dengan ukuran target: 3 frame berturut
-    /// atau 8 percobaan. Sebelum itu jendela tetap tersembunyi.
-    fn reveal_when_ready(window: &mut Window, raw: isize, target: (i32, i32), stable: u8, tries: u8) {
-        let size = window.viewport_size();
-        let ok = (size.width.as_f32() - target.0 as f32).abs() <= 2.0
-            && (size.height.as_f32() - target.1 as f32).abs() <= 2.0;
-        if (ok && stable >= 1) || tries >= 8 {
-            Self::reveal(wm::handle(raw), target);
-            return;
-        }
-        window.on_next_frame(move |window, _| {
-            Self::reveal_when_ready(window, raw, target, if ok { stable + 1 } else { 0 }, tries + 1);
-        });
-    }
-
-    /// Aktivasi + flush memaksa DWM memakai surface baru; tanpa ini VM
-    /// menampilkan frame lama sampai ada Alt+Tab.
-    fn reveal(h: windows::Win32::Foundation::HWND, expected: (i32, i32)) {
-        if wm::minimized() {
-            return;
-        }
-        if let Some(rect) = wm::window_rect(h) {
-            if rect.right - rect.left != expected.0 || rect.bottom - rect.top != expected.1 {
-                return;
-            }
-        }
-        wm::reveal(h);
-        wm::focus(h);
-        wm::flush();
-    }
-
     fn sync_window(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         use std::sync::atomic::Ordering;
         let overlay = self.session.is_some() && !self.is_afk;
@@ -765,10 +733,6 @@ impl TmApp {
         if self.applied_mode == Some(mode) {
             return;
         }
-        // gpui membersihkan window opaque dengan putih setiap frame; area baru hasil
-        // resize tampil sebelum scene baru dilukis. Setiap perubahan rect (termasuk
-        // tinggi kartu antar tab) lewat cloak -> resize -> reveal.
-        let shape_changed = matches!(self.applied_mode, Some((o, f, _)) if o != overlay || f != fullscreen_modal);
         self.applied_mode = Some(mode);
         let Some(h) = wm::hwnd(window) else { return };
         wm::strip_frame(h);
@@ -805,16 +769,6 @@ impl TmApp {
         if let Some((l, t, r, b)) = rect {
             let w = r - l;
             let height = b - t;
-            let rect_changed = self.applied_rect != Some((l, t, r, b));
-            let transition = shape_changed || rect_changed;
-            // Sembunyikan dulu: selama resize async gpui melukis scene baru ke
-            // surface lama, sehingga isi kartu sempat tampil kecil di kiri atas.
-            if transition {
-                wm::hide(h);
-            }
-            // gpui menambah border_offset basi 16x8 pada permintaan resize (frame
-            // sudah dicopot lewat strip_frame), jadi minta ukuran yang sudah
-            // dikurangi offset itu; place di bawah tetap penentu final.
             const GPUI_BORDER_OFFSET: (f32, f32) = (16.0, 8.0);
             window.resize(gpui_kit::Size::new(
                 px(w as f32 - GPUI_BORDER_OFFSET.0),
@@ -822,29 +776,11 @@ impl TmApp {
             ));
             wm::place(h, l, t, w, height);
             self.applied_rect = Some((l, t, r, b));
-            if transition {
-                let raw = h.0 as isize;
-                let started = std::time::Instant::now();
-                self.pending_reveal = Some((raw, started));
-                Self::reveal_when_ready(window, raw, (w, height), 0, 0);
-                // jaring pengaman: frame bisa berhenti (mis. window tak terlihat).
-                cx.spawn(async move |this, cx| {
-                    cx.background_executor()
-                        .timer(std::time::Duration::from_millis(200))
-                        .await;
-                    this.update(cx, |app, cx| {
-                        if app.pending_reveal.map(|(_, at)| at) == Some(started) {
-                            app.pending_reveal = None;
-                            Self::reveal(wm::handle(raw), (w, height));
-                            cx.notify();
-                        }
-                    })
-                    .ok();
-                })
-                .detach();
-            } else {
-                wm::focus(h);
-            }
+            // gpui menerapkan resize secara async; place ulang di frame berikutnya
+            // supaya jendela tidak sempat tampil dengan ukuran lama.
+            let raw = h.0 as isize;
+            window.on_next_frame(move |_, _| wm::place(wm::handle(raw), l, t, w, height));
+            wm::focus(h);
             cx.notify();
             window.refresh();
         }

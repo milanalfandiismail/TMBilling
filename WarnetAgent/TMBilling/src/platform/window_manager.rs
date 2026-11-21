@@ -90,14 +90,6 @@ pub fn monitor_rect(h: HWND) -> Option<RECT> {
     }
 }
 
-/// Tunggu DWM menyelesaikan komposisi. Di VM/GPU virtual, surface hasil
-/// `ResizeBuffers` tidak langsung dipakai DWM; tanpa ini jendela menampilkan
-/// isi lama sampai ada aktivasi (Alt+Tab).
-pub fn flush() {
-    unsafe {
-        let _ = windows::Win32::Graphics::Dwm::DwmFlush();
-    }
-}
 pub fn focus(h: HWND) {
     unsafe {
         let _ = SetForegroundWindow(h);
@@ -150,10 +142,6 @@ pub fn reveal(h: HWND) {
 /// Window yang sedang disembunyikan ke tray; 0 bila tidak ada.
 static MINIMIZED: AtomicIsize = AtomicIsize::new(0);
 
-/// Window sedang disembunyikan ke tray (jangan di-reveal oleh transisi).
-pub fn minimized() -> bool {
-    MINIMIZED.load(Ordering::Relaxed) != 0
-}
 /// Minimize overlay: sembunyikan dari taskbar, sisakan ikon tray.
 pub fn minimize_to_tray(h: HWND) {
     MINIMIZED.store(h.0 as isize, Ordering::Relaxed);

@@ -116,7 +116,6 @@ pub struct TmApp {
     pub applied_rect: Option<(i32, i32, i32, i32)>,
     pub saved_rect: Option<(i32, i32, i32, i32)>,
     /// Handle + waktu mulai transisi yang sedang menunggu reveal.
-    pub pending_reveal: Option<(isize, std::time::Instant)>,
     /// Sesi admin/emergency aktif: polling mengirim role admin.
     pub is_admin_session: bool,
     /// SHA-256 kredensial darurat dari registry/config.ini; kosong = fitur mati.
