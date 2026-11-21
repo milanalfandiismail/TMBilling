@@ -733,6 +733,19 @@ impl TmApp {
         })
         .detach();
     }
+    /// Satu langkah nudge: tempatkan 1 px lebih tinggi, lalu kembalikan di frame
+    /// berikutnya. Tanpa ini jendela di VM menampilkan isi lama sampai Alt+Tab.
+    fn nudge(window: &mut Window, raw: isize, rect: (i32, i32, i32, i32), step: u8) {
+        let (l, t, w, h) = rect;
+        if step == 0 {
+            wm::place(wm::handle(raw), l, t, w, h);
+            return;
+        }
+        wm::place(wm::handle(raw), l, t, w, h + 1);
+        window.on_next_frame(move |window, _| Self::nudge(window, raw, rect, step - 1));
+        window.refresh();
+    }
+
     fn sync_window(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         use std::sync::atomic::Ordering;
         let overlay = self.session.is_some() && !self.is_afk;
@@ -799,8 +812,10 @@ impl TmApp {
             window.on_next_frame(move |_, _| {
                 wm::place(wm::handle(raw), l, t, w, height);
                 wm::flush();
-                wm::trace(format!("frame-after-resize rect={:?}", wm::window_rect(wm::handle(raw))));
             });
+            // DWM di mesin tanpa GPU mengabaikan perubahan yang tidak terlihat
+            // "berubah"; geser tinggi 1 px lalu kembalikan agar surface baru dipakai.
+            Self::nudge(window, h.0 as isize, (l, t, w, height), 1);
             wm::focus(h);
             wm::flush();
             wm::trace(format!(
@@ -882,7 +897,7 @@ impl Render for TmApp {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.frames += 1;
         if self.frames % 10 == 0 {
-            wm::trace(format!("render #{} viewport={:?}", self.frames, window.viewport_size()));
+            wm::trace(format!("render #{} viewport={:?} target={:?}", self.frames, window.viewport_size(), self.repaint_target));
         }
         if !self.close_hooked {
             self.close_hooked = true;

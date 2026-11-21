@@ -259,6 +259,16 @@ impl WindowsWindowInner {
     ) {
         let new_logical_size = device_size.to_pixels(scale_factor);
 
+        if std::env::var_os("TM_UI_LOG").is_some() {
+            use std::io::Write;
+            if let Ok(mut f) = std::fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(std::env::temp_dir().join("tmbilling-ui.log"))
+            {
+                let _ = writeln!(f, "[gpui] size_change {:?}", new_logical_size);
+            }
+        }
         self.state.logical_size.set(new_logical_size);
         if should_resize_renderer
             && let Err(e) = self.state.renderer.borrow_mut().resize(device_size)

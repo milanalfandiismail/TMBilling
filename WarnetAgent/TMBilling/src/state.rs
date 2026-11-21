@@ -131,6 +131,8 @@ pub struct TmApp {
     pub caret_on: bool,
     /// Penghitung frame untuk jejak diagnostik TM_UI_LOG.
     pub frames: u64,
+    /// Ukuran transisi terakhir; hanya dipakai jejak diagnostik.
+    pub repaint_target: Option<(i32, i32)>,
 }
 
 /// Perintah server yang harus dieksekusi klien (sama dengan polling.rs Tauri).
