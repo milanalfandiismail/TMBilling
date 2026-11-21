@@ -397,7 +397,7 @@ class AfkGuestTest(Base):
         self.server.open_guest_session(self.ids["paket_15m"])
         wait_until(lambda: c.size()[0] < 800, 30)
         c.click(98, 150)  # Lock tile
-        time.sleep(0.3)
+        time.sleep(0.8)  # modal fullscreen memegang layar hitam 500 ms dulu
         c.type_text("1234")
         c.press(0x0D)
         wait_until(lambda: c.size()[0] > 1000, 15)
@@ -616,3 +616,45 @@ class FitTest(Base):
         w, h = c.size()
         self.assertLessEqual(abs(w - 1920), 1, (w, h))
         self.assertLessEqual(abs(h - 1080), 1, (w, h))
+
+
+class HoldTest(Base):
+    # Kartu overlay hilang dulu; layar hitam 500 ms; baru isi modal dilukis.
+
+    def assert_black_then_content(self, early, late, minimum, card):
+        # Kartu disembunyikan, jendela membesar, lalu hitam sampai isi dilukis.
+        wait_until(lambda: tuple(self.client.size()) == (1920, 1080), 2)
+        self.client.shot(str(early))
+        self.assertLess(white_pixels(str(early)), 500, "isi modal muncul sebelum 500 ms")
+        for _ in range(12):
+            time.sleep(0.1)
+            self.client.shot(str(late))
+            if white_pixels(str(late)) >= minimum:
+                break
+        self.assertEqual(tuple(self.client.size()), (1920, 1080))
+        self.assertGreaterEqual(white_pixels(str(late)), minimum, "isi modal tidak muncul setelah hold")
+
+    def test_qris_fullscreen_paints_black_before_image(self):
+        self.client = self.overlay("paket_15m")
+        self.client.click(285, 200)
+        time.sleep(0.4)
+        self.client.click(198, 395)
+        early = OUT / "hold-qris-early.png"
+        self.client.shot(str(early))
+        self.assert_black_then_content(early, OUT / "hold-qris-late.png", 6000, (380, 486))
+
+    def test_logout_modal_paints_black_first(self):
+        self.client = self.overlay("paket_15m")
+        self.client.click(282, 150)
+        early = OUT / "hold-logout-early.png"
+        wait_until(lambda: tuple(self.client.size()) == (1920, 1080), 2)
+        self.client.shot(str(early))
+        self.assertLess(white_pixels(str(early)), 500, "dialog Logout muncul sebelum 500 ms")
+        late = OUT / "hold-logout-late.png"
+        for _ in range(12):
+            time.sleep(0.1)
+            self.client.shot(str(late))
+            if len(red_rows(str(late))) > 0:
+                break
+        self.assertEqual(tuple(self.client.size()), (1920, 1080))
+        self.assertGreater(len(red_rows(str(late))), 0, "dialog Logout tidak muncul setelah hold")

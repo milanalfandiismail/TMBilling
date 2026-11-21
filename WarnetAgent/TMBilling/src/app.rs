@@ -264,6 +264,9 @@ impl TmApp {
 
     fn on_key(&mut self, ev: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
         self.caret_on = true;
+        if self.modal_hold {
+            return;
+        }
         let key = ev.keystroke.key.as_str();
         // Layar AFK hanya menerima kredensial: F10/F11/Escape sengaja tidak dilayani.
         if self.is_afk {
@@ -617,31 +620,12 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
             });
         }) as ActFn,
         open: Rc::new(move |modal: Modal, _w: &mut Window, cx: &mut App| {
-            open_me.update(cx, |app, cx| {
-                app.modal = Some(modal);
-                if modal == Modal::QrisFull {
-                    app.qris_hidden = true;
-                    // Geometri jendela baru selesai beberapa frame setelah modal
-                    // dibuka; gambar ditahan 500 ms agar tidak tampil di kiri atas.
-                    cx.spawn(async move |this, cx| {
-                        cx.background_executor()
-                            .timer(std::time::Duration::from_millis(500))
-                            .await;
-                        this.update(cx, |app, cx| {
-                            app.qris_hidden = false;
-                            cx.notify();
-                        })
-                        .ok();
-                    })
-                    .detach();
-                }
-                cx.notify();
-            });
+            open_me.update(cx, |app, cx| app.show_modal(modal, cx));
         }) as ModalFn,
         close: Rc::new(move |_w: &mut Window, cx: &mut App| {
             close_me.update(cx, |app, cx| {
                 app.modal = None;
-                app.qris_hidden = false;
+                app.modal_hold = false;
                 cx.notify();
             });
         }) as ActFn,
@@ -671,14 +655,12 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
         }) as ActFn,
         afk: Rc::new(move |_w: &mut Window, cx: &mut App| {
             afk_me.update(cx, |app, cx| {
-                app.modal = Some(Modal::AfkPin);
-                cx.notify();
+                app.show_modal(Modal::AfkPin, cx);
             });
         }) as ActFn,
         logout: Rc::new(move |_w: &mut Window, cx: &mut App| {
             out_me.update(cx, |app, cx| {
-                app.modal = Some(Modal::Logout);
-                cx.notify();
+                app.show_modal(Modal::Logout, cx);
             });
         }) as ActFn,
         tab: Rc::new(move |tab: usize, _w: &mut Window, cx: &mut App| {
@@ -694,6 +676,29 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
 }
 
 impl TmApp {
+    /// Buka modal lewat satu pintu: modal fullscreen memegang layar hitam 500 ms.
+    fn show_modal(&mut self, modal: Modal, cx: &mut Context<Self>) {
+        self.modal = Some(modal);
+        self.modal_hold = crate::state::hold_fullscreen_modal(self.view, modal);
+        self.hold_resized = !self.modal_hold;
+        if self.modal_hold {
+            cx.spawn(async move |this, cx| {
+                cx.background_executor()
+                    .timer(std::time::Duration::from_millis(500))
+                    .await;
+                this.update(cx, |app, cx| {
+                    if app.modal.is_some() {
+                        app.modal_hold = false;
+                        cx.notify();
+                    }
+                })
+                .ok();
+            })
+            .detach();
+        }
+        cx.notify();
+    }
+
     fn run_tool(&mut self, tool: ToolId, cx: &mut Context<Self>) {
         if tool == ToolId::Lock {
             self.lock_afk(cx);
@@ -710,8 +715,7 @@ impl TmApp {
         if !member {
             self.pin.clear();
             self.afk_error = None;
-            self.modal = Some(Modal::AfkPin);
-            cx.notify();
+            self.show_modal(Modal::AfkPin, cx);
             return;
         }
         self.begin_afk_lock();
@@ -744,6 +748,24 @@ impl TmApp {
         wm::place(wm::handle(raw), l, t, w, h + 1);
         window.on_next_frame(move |window, _| Self::nudge(window, raw, rect, step - 1));
         window.refresh();
+    }
+
+    /// Tampilkan jendela hanya ketika viewport gpui sudah sama dengan ukuran
+    /// baru, supaya frame kartu lama tidak sempat tampil di pojok kiri.
+    fn reveal_after_layout(window: &mut Window, raw: isize, target: (f32, f32), tries: u8) {
+        let vp = window.viewport_size();
+        let fits = (vp.width.as_f32() - target.0).abs() <= 2.0
+            && (vp.height.as_f32() - target.1).abs() <= 2.0;
+        if fits || tries == 0 {
+            let h = wm::handle(raw);
+            wm::reveal(h);
+            wm::focus(h);
+            wm::flush();
+            return;
+        }
+        window.on_next_frame(move |window, _| {
+            Self::reveal_after_layout(window, raw, target, tries - 1);
+        });
     }
 
     fn sync_window(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -796,9 +818,16 @@ impl TmApp {
             wm::monitor_rect(h).map(|r| (r.left, r.top, r.right, r.bottom))
         };
 
+        let hide_first = self.modal_hold && !self.hold_resized;
+        self.hold_resized = true;
         if let Some((l, t, r, b)) = rect {
             let w = r - l;
             let height = b - t;
+            if hide_first {
+                // Kartu disembunyikan dulu, resize terjadi tanpa jendela terlihat,
+                // lalu tampil lagi sebagai layar hitam penuh.
+                wm::hide(h);
+            }
             const GPUI_BORDER_OFFSET: (f32, f32) = (16.0, 8.0);
             window.resize(gpui_kit::Size::new(
                 px(w as f32 - GPUI_BORDER_OFFSET.0),
@@ -818,6 +847,20 @@ impl TmApp {
             Self::nudge(window, h.0 as isize, (l, t, w, height), 1);
             wm::focus(h);
             wm::flush();
+            if hide_first {
+                // Jendela baru ditampilkan setelah gpui melukis viewport baru;
+                // kalau tidak, frame kartu lama sempat terlihat di pojok kiri.
+                Self::reveal_after_layout(window, raw, (w as f32, height as f32), 4);
+                cx.spawn(async move |_this, cx| {
+                    cx.background_executor()
+                        .timer(std::time::Duration::from_millis(200))
+                        .await;
+                    if wm::reveal_hidden() {
+                        wm::flush();
+                    }
+                })
+                .detach();
+            }
             wm::trace(format!(
                 "transition mode={overlay}/{fullscreen_modal} asked={w}x{height} at=({l},{t}) real={:?} viewport={:?}",
                 wm::window_rect(h),
@@ -961,6 +1004,14 @@ impl Render for TmApp {
                 .track_focus(&handle)
                 .capture_key_down(cx.listener(Self::on_key))
                 .child(crate::ui::kiosk::afk::screen(self, &afk_actions(cx)));
+        }
+        if self.modal_hold {
+            return div()
+                .size_full()
+                .relative()
+                .bg(TM.bg)
+                .track_focus(&handle)
+                .capture_key_down(cx.listener(Self::on_key));
         }
         let vp = window.viewport_size();
         let viewport = (f32::from(vp.width), f32::from(vp.height));

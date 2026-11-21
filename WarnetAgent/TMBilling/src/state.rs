@@ -52,6 +52,12 @@ pub fn modal_fullscreen(view: View, modal: Option<Modal>) -> bool {
     view == View::Overlay && modal.is_some()
 }
 
+/// Modal overlay selalu fullscreen: kartu harus hilang dulu supaya layar hitam
+/// sempat dilukis sebelum isi modal.
+pub fn hold_fullscreen_modal(view: View, modal: Modal) -> bool {
+    modal_fullscreen(view, Some(modal))
+}
+
 fn is_admin_response(status: &str, nama: Option<&str>) -> bool {
     matches!(status, "admin" | "system") || is_emergency_response(status, nama)
 }
@@ -125,8 +131,11 @@ pub struct TmApp {
     pub member_json: Option<serde_json::Value>,
     /// QRIS asli dari server; tile mock hanya dipakai bila None.
     pub qris_image: Option<std::sync::Arc<gpui_kit::Image>>,
-    /// Modal QRIS fullscreen menahan gambar sampai geometri selesai.
-    pub qris_hidden: bool,
+    /// Layar hitam dulu selama transisi modal fullscreen: kartu overlay hilang
+    /// sebelum isi modal dilukis.
+    pub modal_hold: bool,
+    /// Resize jendela sudah dijalankan setelah layar hitam tampil.
+    pub hold_resized: bool,
     /// Fase kedip caret; di-toggle timer 530 ms hanya saat ada field aktif.
     pub caret_on: bool,
     /// Penghitung frame untuk jejak diagnostik TM_UI_LOG.
@@ -448,7 +457,7 @@ pub fn login_error(status: u16, message: Option<&str>) -> String {
 }
 
 impl TmApp {
-    #[cfg(test)]
+#[cfg(test)]
     pub(crate) fn apply_status_for_test(&mut self, status: crate::api::models::StatusResponse) {
         self.apply_status(status);
     }
@@ -576,6 +585,8 @@ impl TmApp {
         self.login.error = None;
         self.login.busy = false;
         self.caret_on = true;
+        self.modal_hold = false;
+        self.hold_resized = true;
     }
     /// Login admin/emergency langsung membuka overlay, tidak menunggu polling.
     pub fn enter_admin_session(&mut self, nama: &str, grup: &str, is_emergency: bool) {
@@ -667,6 +678,24 @@ impl TmApp {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+fn overlay_modals_are_held_before_paint() {
+    assert!(hold_fullscreen_modal(View::Overlay, Modal::QrisFull));
+    assert!(hold_fullscreen_modal(View::Overlay, Modal::Logout));
+    assert!(hold_fullscreen_modal(View::Overlay, Modal::AfkPin));
+    assert!(!hold_fullscreen_modal(View::Kiosk, Modal::QrisFull));
+}
+
+#[test]
+fn session_end_clears_the_hold() {
+    let mut app = TmApp {
+        modal_hold: true,
+        ..TmApp::default()
+    };
+    app.end_session();
+    assert!(!app.modal_hold, "layar tidak boleh tetap hitam setelah sesi habis");
+}
+
     use super::*;
 
     fn status(kind: &str, sisa: Option<u32>) -> StatusResponse {

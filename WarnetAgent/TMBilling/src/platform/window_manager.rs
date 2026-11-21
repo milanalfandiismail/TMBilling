@@ -143,13 +143,26 @@ pub fn place(h: HWND, left: i32, top: i32, width: i32, height: i32) {
 /// Sembunyikan window selama transisi geometri; gpui masih melukis viewport lama
 /// beberapa frame setelah SetWindowPos, jadi frame itu tidak boleh terlihat.
 pub fn hide(h: HWND) {
+    HIDDEN.store(h.0 as isize, Ordering::Relaxed);
     unsafe {
         let _ = ShowWindow(h, SW_HIDE);
     }
 }
+/// Window yang disembunyikan untuk transisi; 0 bila sedang tampil.
+static HIDDEN: AtomicIsize = AtomicIsize::new(0);
+/// Tampilkan lagi bila masih disembunyikan (jaring pengaman).
+pub fn reveal_hidden() -> bool {
+    let h = HIDDEN.swap(0, Ordering::Relaxed);
+    if h == 0 {
+        return false;
+    }
+    reveal(HWND(h as *mut core::ffi::c_void));
+    true
+}
 
 /// Tampilkan lagi setelah viewport gpui sudah sama dengan ukuran window baru.
 pub fn reveal(h: HWND) {
+    HIDDEN.store(0, Ordering::Relaxed);
     unsafe {
         let _ = ShowWindow(h, SW_SHOW);
         let _ = SetWindowPos(
