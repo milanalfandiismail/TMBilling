@@ -74,6 +74,18 @@ impl TmApp {
 
     pub fn start(&mut self, cx: &mut Context<Self>) {
         self.login.info_page = 1;
+        self.caret_on = true;
+        // Tab is bound by gpui-kit's own focus traversal, so the key listener never sees it:
+        // intercept it here and walk our own fields.
+        let tab_target = cx.entity().downgrade();
+        std::mem::forget(cx.intercept_keystrokes(move |ev, _w, cx| {
+            if ev.keystroke.key == "tab" {
+                let shift = ev.keystroke.modifiers.shift;
+                tab_target
+                    .update(cx, |app, cx| app.walk_focus(shift, cx))
+                    .ok();
+            }
+        }));
         // Satu detik per tick: hitung mundur shutdown harus jalan tanpa menunggu polling.
         cx.spawn(async move |this, cx| loop {
             cx.background_executor()
@@ -89,14 +101,9 @@ impl TmApp {
                         dirty = true;
                     }
                 }
-                if crate::state::should_autolock(
-                    app.remaining_secs,
-                    app.is_afk,
-                    app.session.is_some(),
-                ) {
+                if crate::state::should_autolock(app.remaining_secs, app.session.is_some()) {
                     // sama seperti Tauri: waktu habis = logout, bukan AFK
-                    app.session = None;
-                    app.modal = None;
+                    app.end_session();
                     if let Some(client) = app.client.clone() {
                         let (ip, mac) = crate::polling::local_net().unwrap_or_default();
                         cx.spawn(async move |_, _| {
@@ -160,6 +167,22 @@ impl TmApp {
             }
         })
         .detach();
+        // Kedip caret 530 ms, hanya saat ada field aktif supaya overlay idle tidak render.
+        cx.spawn(async move |this, cx| loop {
+            cx.background_executor()
+                .timer(std::time::Duration::from_millis(530))
+                .await;
+            let alive = this.update(cx, |app, cx| {
+                if app.caret_active() {
+                    app.caret_on = !app.caret_on;
+                    cx.notify();
+                }
+            });
+            if alive.is_err() {
+                break;
+            }
+        })
+        .detach();
     }
 
     fn submit_login(&mut self, cx: &mut Context<Self>) {
@@ -220,7 +243,23 @@ impl TmApp {
         .detach();
     }
 
+    fn walk_focus(&mut self, shift: bool, cx: &mut Context<Self>) {
+        if self.is_afk {
+            return;
+        }
+        match (self.modal, shift) {
+            (Some(crate::state::Modal::Admin), true) => self.login.admin_focus_prev(),
+            (Some(crate::state::Modal::Admin), false) => self.login.admin_focus_next(),
+            (Some(_), _) => return,
+            (None, true) => self.login.focus_prev(),
+            (None, false) => self.login.focus_next(),
+        }
+        self.caret_on = true;
+        cx.notify();
+    }
+
     fn on_key(&mut self, ev: &KeyDownEvent, _window: &mut Window, cx: &mut Context<Self>) {
+        self.caret_on = true;
         let key = ev.keystroke.key.as_str();
         // Layar AFK hanya menerima kredensial: F10/F11/Escape sengaja tidak dilayani.
         if self.is_afk {
@@ -291,7 +330,6 @@ impl TmApp {
                     "backspace" => {
                         self.login.admin_backspace();
                     }
-                    "tab" => self.login.admin_focus_next(),
                     "enter" => self.submit_admin(cx),
                     _ => {
                         if let Some(text) = typed_text(ev) {
@@ -311,7 +349,6 @@ impl TmApp {
             "backspace" => {
                 self.login.backspace();
             }
-            "tab" => self.login.focus_next(),
             "enter" => self.submit_login(cx),
             _ => {
                 if let Some(text) = typed_text(ev) {
@@ -501,9 +538,7 @@ impl TmApp {
         cx.spawn(async move |this, cx| {
             let _ = polling::http(async move { client.logout(&ip, &mac).await }).await;
             let _ = this.update(cx, |app, cx| {
-                app.session = None;
-                app.is_admin_session = false;
-                crate::state::ADMIN_MODE.store(false, std::sync::atomic::Ordering::Relaxed);
+                app.end_session();
                 cx.notify();
             });
         })
@@ -738,7 +773,8 @@ impl TmApp {
             if transition {
                 wm::hide(h);
             }
-            window.resize(gpui_kit::Size::new(px((r - l) as f32), px((b - t) as f32)));
+            // place satu-satunya penentu ukuran: resize menambah border_offset basi
+            // yang membuat jendela 16x8 lebih besar dari kartu.
             wm::place(h, l, t, r - l, b - t);
             self.applied_rect = Some((l, t, r, b));
             if transition {

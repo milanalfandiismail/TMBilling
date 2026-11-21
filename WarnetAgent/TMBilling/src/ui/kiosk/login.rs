@@ -47,10 +47,26 @@ fn field(
         .border_color(if focused { TM.accent } else { TM.border })
         .cursor_pointer()
         .on_click(move |_, window, cx| on_click(kind, window, cx))
-        .child(div().text_size(px(13.0)).text_color(if value.is_empty() { TM.dim } else { TM.text }).child(value.clone()))
-        .when(value.is_empty(), |d| {
-            d.child(div().text_size(px(13.0)).text_color(TM.dim).child(placeholder))
-        })
+        .child(
+            div()
+                .flex()
+                .items_center()
+                .when(focused && value.is_empty(), |d| {
+                    d.child(crate::ui::input::caret(app.caret_on))
+                })
+                .child(
+                    div()
+                        .text_size(px(13.0))
+                        .text_color(if value.is_empty() { TM.dim } else { TM.text })
+                        .child(value.clone()),
+                )
+                .when(value.is_empty(), |d| {
+                    d.child(div().text_size(px(13.0)).text_color(TM.dim).child(placeholder))
+                })
+                .when(focused && !value.is_empty(), |d| {
+                    d.child(crate::ui::input::caret(app.caret_on))
+                }),
+        )
 }
 
 /// Tile QR tiruan: matriks 21x21 tetap, diganti QR asli di Task 12.

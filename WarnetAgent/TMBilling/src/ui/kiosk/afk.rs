@@ -21,8 +21,7 @@ fn masked(app: &TmApp) -> String {
     if app.afk_input.is_empty() {
         "Password / PIN".to_string()
     } else {
-        let caret = if app.afk_busy { "" } else { "|" };
-        format!("{}{caret}", "•".repeat(app.afk_input.chars().count()))
+        TmApp::mask_secret(&app.afk_input)
     }
 }
 
@@ -92,12 +91,14 @@ pub fn screen(app: &TmApp, actions: &AfkActions) -> impl IntoElement {
                         .bg(TM.hover)
                         .border_1()
                         .border_color(field_color)
+                        .when(empty, |d| d.child(crate::ui::input::caret(app.caret_on)))
                         .child(
                             div()
                                 .text_size(px(13.0))
                                 .text_color(if empty { TM.dim } else { TM.text })
                                 .child(masked(app)),
-                        ),
+                        )
+                        .when(!empty, |d| d.child(crate::ui::input::caret(app.caret_on))),
                 )
                 .children(app.afk_error.clone().map(|err| {
                     div()

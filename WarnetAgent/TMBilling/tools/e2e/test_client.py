@@ -8,7 +8,7 @@ import time
 import unittest
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageChops
 
 from tools.e2e.fixture import CLIENT_KEY, Client, Server, local_net, wait_until
 from tools.e2e.flash_probe import burst, report, settled_white
@@ -58,6 +58,7 @@ def red_rows(path, y0=0, y1=None):
 
 class Base(unittest.TestCase):
     def setUp(self):
+        OUT.mkdir(parents=True, exist_ok=True)
         self.server = Server().start()
         self.ids = self.server.seed_warnet()
         self.client = None
@@ -87,6 +88,19 @@ class Base(unittest.TestCase):
         wait_until(self.client.visible, 5)
         return self.client
 
+    def guest(self, paket="paket_15m", env=None):
+        OUT.mkdir(parents=True, exist_ok=True)
+        self.kiosk(env=env)
+        self.server.open_guest_session(self.ids[paket])
+        wait_until(lambda: self.client.size()[0] < 800, 30)
+        wait_until(self.client.visible, 5)
+        return self.client
+
+    def close_session(self):
+        sesi = self.server.active_session()
+        self.assertIsNotNone(sesi, "tidak ada sesi aktif")
+        self.server.post(f"/api/v1/kasir/sesi/tutup/{sesi}")
+
 
 class AuthTest(Base):
     def test_identify_registers_pc(self):
@@ -98,7 +112,7 @@ class AuthTest(Base):
         self.login()
         wait_until(lambda: self.client.size()[0] < 800, 25)
         w, h = self.client.size()
-        self.assertEqual((w, h), (396, 276))
+        self.assertEqual((w, h), (380, 268))
         wait_until(lambda: self.server.active_session() is not None, 10)
 
     def test_wrong_password_shows_banner(self):
@@ -125,7 +139,7 @@ class AuthTest(Base):
         shot = OUT / "f11.png"
         self.client.shot(str(shot))
         img = Image.open(shot).convert("RGB")
-        self.assertEqual(img.size, (1936, 1088))
+        self.assertEqual(img.size, (1920, 1080))
         # dialog admin punya border accent di sekitar input password
         self.assertGreater(accent_pixels(str(shot)), 100, "modal admin tidak terlihat")
 
@@ -407,3 +421,152 @@ class FlashTest(Base):
         time.sleep(0.5)
         run("e2e-qris-full", lambda: c.click(198, 395), 1600)
         self.assertEqual(total, 0, "ada frame putih saat transisi")
+
+
+def field_crop(path, box=(60, 430, 400, 470)):
+    return Image.open(path).convert("RGB").crop(box).tobytes()
+
+
+def diff_box(before, after):
+    a, b = Image.open(before).convert("RGB"), Image.open(after).convert("RGB")
+    if a.size != b.size:
+        return None
+    return ImageChops.difference(a, b).getbbox()
+
+
+def blink_x(before, after, box):
+    a = Image.open(before).convert("RGB").crop(box)
+    b = Image.open(after).convert("RGB").crop(box)
+    d = ImageChops.difference(a, b).getbbox()
+    return None if d is None else d[0]
+
+
+class InputTest(Base):
+    def test_tab_moves_from_username_to_password(self):
+        c = self.kiosk()
+        c.click(280, 442)
+        c.type_text("budi")
+        c.press(0x09)
+        c.type_text("rahasia123")
+        c.press(0x0D)
+        wait_until(lambda: c.size()[0] < 800, 20)
+        self.assertLess(c.size()[0], 800)
+
+    def test_caret_blinks_in_focused_field(self):
+        c = self.kiosk()
+        c.click(280, 442)
+        time.sleep(0.3)
+        shapes = set()
+        for i in range(8):
+            path = OUT / f"caret-{i}.png"
+            c.shot(str(path))
+            shapes.add(field_crop(str(path)))
+            time.sleep(0.15)
+        self.assertGreaterEqual(len(shapes), 2, "caret tidak berkedip")
+
+    def test_caret_leads_placeholder(self):
+        c = self.kiosk()
+        box = (60, 430, 400, 470)
+        shots = []
+        for i in range(8):
+            path = OUT / f"caret-lead-{i}.png"
+            c.shot(str(path))
+            shots.append(path)
+            time.sleep(0.15)
+        offsets = [blink_x(a, b, box) for a, b in zip(shots, shots[1:])]
+        visible = [x for x in offsets if x is not None]
+        self.assertTrue(visible, "caret tidak terlihat berkedip")
+        self.assertLessEqual(min(visible), 30, offsets)
+
+
+class SessionEndTest(Base):
+    def assert_kiosk(self, tag):
+        c = self.client
+        wait_until(lambda: c.size()[0] > 1800, 20)
+        shot = OUT / f"reset-{tag}.png"
+        white = 0
+        # Window is hidden briefly while it changes size, so poll until the kiosk paints.
+        for _ in range(24):
+            c.shot(str(shot))
+            white = white_pixels(str(shot))
+            if white > 1000:
+                break
+            time.sleep(0.25)
+        self.assertGreater(white, 1000, "kiosk tidak kembali")
+
+    def test_logout_modal_is_dropped(self):
+        c = self.overlay()
+        c.click(282, 150)
+        time.sleep(0.5)
+        self.close_session()
+        self.assert_kiosk("logout")
+
+    def test_afk_pin_modal_is_dropped(self):
+        c = self.guest()
+        c.click(98, 150)
+        wait_until(lambda: c.size()[0] > 1800, 10)
+        self.close_session()
+        self.assert_kiosk("pin")
+
+    def test_typing_after_session_end_hits_username(self):
+        self.kiosk()
+        self.login("budi", "rahasia123")
+        wait_until(lambda: self.client.size()[0] < 800, 10)
+        self.close_session()
+        self.assert_kiosk("typename")
+        before = self.client.shot(OUT / "typename-before.png")
+        self.client.type_text("budi")
+        after = self.client.shot(OUT / "typename-after.png")
+        box = diff_box(before, after)
+        self.assertTrue(box is not None and box[1] < 500 and box[3] < 500, box)
+        self.client.press(0x09)
+        self.client.type_text("rahasia123")
+        self.client.press(0x0D)
+        wait_until(lambda: self.client.size()[0] < 800, 10)
+
+    def test_admin_fields_are_empty_after_session_end(self):
+        self.kiosk()
+        self.login("budi", "rahasia123")
+        wait_until(lambda: self.client.size()[0] < 800, 10)
+        self.close_session()
+        self.assert_kiosk("adminfields")
+        self.client.press(0x7A)
+        time.sleep(0.4)
+        before = self.client.shot(OUT / "adminuser-a.png")
+        self.client.type_text("kasir")
+        after = self.client.shot(OUT / "adminuser-b.png")
+        box = diff_box(before, after)
+        self.assertTrue(box is not None, "ketikan tidak tampil di modal admin")
+        self.assertLess(box[1], 540, f"ketikan tidak masuk kolom username admin: {box}")
+
+    def test_fullscreen_qris_is_dropped(self):
+        c = self.overlay()
+        c.click(285, 200)
+        time.sleep(0.4)
+        c.click(198, 395)
+        wait_until(lambda: c.size()[0] > 1800, 10)
+        self.close_session()
+        self.assert_kiosk("qris")
+
+
+class FitTest(Base):
+    def test_overlay_window_is_card_sized(self):
+        c = self.overlay("paket_15m")
+        w, h = c.size()
+        self.assertLessEqual(abs(w - 380), 1, (w, h))
+        self.assertLessEqual(abs(h - 268), 1, (w, h))
+        path = OUT / "fit-overlay.png"
+        # Window bisa di-reveal sebelum frame baru dilukis: tunggu dinding kartu.
+        for _ in range(20):
+            c.shot(str(path))
+            img = Image.open(path).convert("RGB")
+            if img.getpixel((img.width - 2, img.height // 2)) != (5, 5, 5):
+                break
+            time.sleep(0.1)
+        self.assertNotEqual(img.getpixel((img.width - 2, img.height // 2)), (5, 5, 5))
+
+    def test_kiosk_matches_monitor(self):
+        c = self.kiosk()
+        w, h = c.size()
+        self.assertLessEqual(abs(w - 1920), 1, (w, h))
+        self.assertLessEqual(abs(h - 1080), 1, (w, h))

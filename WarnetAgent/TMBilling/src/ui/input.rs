@@ -3,6 +3,14 @@ use gpui_kit::*;
 
 use crate::theme::TM;
 
+/// Caret 1,5 px; tetap menempati ruang saat tersembunyi agar teks tidak bergeser.
+pub fn caret(visible: bool) -> impl IntoElement {
+    div()
+        .flex_shrink_0()
+        .w(px(1.5))
+        .h(px(16.0))
+        .bg(if visible { TM.accent } else { gpui_kit::Rgba { a: 0.0, ..TM.card } })
+}
 /// Kotak input. Ketikan/keyboard ditangani Task 5 lewat EntityInputHandler.
 pub struct TmInput {
     placeholder: SharedString,
@@ -10,6 +18,7 @@ pub struct TmInput {
     height: f32,
     width: Option<f32>,
     focused: bool,
+    caret: bool,
 }
 
 impl TmInput {
@@ -20,6 +29,7 @@ impl TmInput {
             height: 40.0,
             width: None,
             focused: false,
+            caret: false,
         }
     }
 
@@ -44,6 +54,11 @@ impl TmInput {
         self.focused = focused;
         self
     }
+    /// Tampilkan caret berkedip saat field ini yang aktif.
+    pub fn caret(mut self, on: bool) -> Self {
+        self.caret = on;
+        self
+    }
 
     pub fn render(self) -> impl IntoElement {
         let filled = self.value.is_some();
@@ -59,7 +74,20 @@ impl TmInput {
             .border_color(if self.focused { TM.accent } else { TM.border })
             .text_size(px(13.0))
             .text_color(if filled { TM.text } else { TM.dim })
-            .child(text);
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    // caret mengikuti titik sisip: sebelum placeholder saat kosong,
+                    // setelah teks saat terisi.
+                    .when(self.focused && self.caret && !filled, |el| {
+                        el.child(caret(self.caret))
+                    })
+                    .child(text)
+                    .when(self.focused && self.caret && filled, |el| {
+                        el.child(caret(self.caret))
+                    }),
+            );
         if let Some(width) = self.width {
             el = el.w(px(width));
         }

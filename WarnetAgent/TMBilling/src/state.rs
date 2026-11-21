@@ -125,6 +125,8 @@ pub struct TmApp {
     pub member_json: Option<serde_json::Value>,
     /// QRIS asli dari server; tile mock hanya dipakai bila None.
     pub qris_image: Option<std::sync::Arc<gpui_kit::Image>>,
+    /// Fase kedip caret; di-toggle timer 530 ms hanya saat ada field aktif.
+    pub caret_on: bool,
 }
 
 /// Perintah server yang harus dieksekusi klien (sama dengan polling.rs Tauri).
@@ -211,9 +213,9 @@ pub fn sync_remaining(current: i64, server_secs: i64) -> i64 {
     }
 }
 
-/// Kunci meja sekali saat waktu habis, bukan berulang tiap detik.
-pub fn should_autolock(remaining: i64, is_afk: bool, has_session: bool) -> bool {
-    remaining <= 0 && !is_afk && has_session
+/// Logout sekali saat waktu habis, termasuk saat layar sedang terkunci.
+pub fn should_autolock(remaining: i64, has_session: bool) -> bool {
+    remaining <= 0 && has_session
 }
 
 /// Timer shutdown hanya berjalan saat tidak ada sesi, dan hanya diarm sekali
@@ -350,6 +352,9 @@ impl LoginState {
             LoginField::Password => LoginField::Username,
         };
     }
+    pub fn focus_prev(&mut self) {
+        self.focus_next();
+    }
 
     pub fn can_submit(&self) -> bool {
         !self.busy && !self.username.trim().is_empty() && !self.password.is_empty()
@@ -388,6 +393,9 @@ impl LoginState {
             LoginField::Username => LoginField::Password,
             LoginField::Password => LoginField::Username,
         };
+    }
+    pub fn admin_focus_prev(&mut self) {
+        self.admin_focus_next();
     }
 
     pub fn admin_masked(&self) -> String {
@@ -528,6 +536,41 @@ impl TmApp {
         true
     }
 
+    /// Caret hanya relevan saat ada field yang bisa diketik; overlay idle tidak render.
+    pub fn caret_active(&self) -> bool {
+        self.is_afk
+            || self.session.is_none()
+            || matches!(self.modal, Some(Modal::AfkPin) | Some(Modal::Admin))
+    }
+    pub fn mask_secret(value: &str) -> String {
+        "*".repeat(value.chars().count())
+    }
+    pub fn pin_masked(&self) -> String {
+        Self::mask_secret(&self.pin)
+    }
+    /// Satu jalur keluar sesi: status server maupun autolock memakai ini.
+    pub fn end_session(&mut self) {
+        self.session = None;
+        self.is_admin_session = false;
+        ADMIN_MODE.store(false, std::sync::atomic::Ordering::Relaxed);
+        self.remaining_secs = 0;
+        self.modal = None;
+        self.pin.clear();
+        self.is_afk = false;
+        self.afk_pending = false;
+        self.afk_input.clear();
+        self.afk_error = None;
+        self.afk_busy = false;
+        self.login.username.clear();
+        self.login.password.clear();
+        self.login.field = LoginField::Username;
+        self.login.admin_user.clear();
+        self.login.admin_pass.clear();
+        self.login.admin_field = LoginField::Username;
+        self.login.error = None;
+        self.login.busy = false;
+        self.caret_on = true;
+    }
     /// Login admin/emergency langsung membuka overlay, tidak menunggu polling.
     pub fn enter_admin_session(&mut self, nama: &str, grup: &str, is_emergency: bool) {
         self.session = Some(Session {
@@ -562,13 +605,17 @@ impl TmApp {
         self.view = view_for_status(&status.status);
         match status.status.as_str() {
             "kosong" | "error" => {
-                self.session = None;
-                self.is_admin_session = false;
-                self.remaining_secs = 0;
-                self.is_afk = false;
-                self.afk_pending = false;
-                self.afk_input.clear();
-                self.afk_error = None;
+                // Poll kosong saat kiosk idle tidak boleh menghapus ketikan yang
+                // sedang berjalan; bersihkan hanya jika memang ada sesi.
+                if self.session.is_some() || self.is_admin_session {
+                    self.end_session();
+                } else {
+                    self.remaining_secs = 0;
+                    self.is_afk = false;
+                    self.afk_pending = false;
+                    self.afk_input.clear();
+                    self.afk_error = None;
+                }
                 self.shutdown_secs =
                     arm_shutdown(self.shutdown_secs, status.shutdown_timer, false);
             }
@@ -757,10 +804,10 @@ mod tests {
 
     #[test]
     fn autolock_fires_once_when_time_runs_out() {
-        assert!(should_autolock(0, false, true));
-        assert!(!should_autolock(0, true, true));
-        assert!(!should_autolock(0, false, false));
-        assert!(!should_autolock(5, false, true));
+        assert!(should_autolock(0, true));
+        assert!(should_autolock(0, true), "layar AFK pun tetap logout");
+        assert!(!should_autolock(0, false));
+        assert!(!should_autolock(5, true));
     }
 
     #[test]
@@ -874,7 +921,7 @@ mod tests {
         app.reduce(AppEvent::Status(status("admin", None)));
         assert!(app.session.is_some());
         assert_eq!(app.remaining_secs, 999_999);
-        assert!(!should_autolock(app.remaining_secs, app.is_afk, true));
+        assert!(!should_autolock(app.remaining_secs, true));
     }
     #[test]
     fn admin_session_opens_overlay_immediately() {
@@ -884,5 +931,87 @@ mod tests {
         assert_eq!(app.view, View::Overlay);
         assert_eq!(app.session.unwrap().nama, "Kasir Satu");
         assert_eq!(app.remaining_secs, 999_999);
+    }
+
+    #[test]
+    fn caret_is_active_only_where_typing_is_possible() {
+        let mut app = TmApp::default();
+        assert!(app.caret_active(), "kiosk tanpa sesi selalu punya field");
+        app.modal = Some(Modal::Menu);
+        assert!(app.caret_active(), "menu di atas kiosk masih punya field login");
+        app.reduce(AppEvent::Status(status("aktif", Some(60))));
+        assert!(!app.caret_active(), "overlay tanpa modal tidak punya field");
+        app.modal = Some(Modal::AfkPin);
+        assert!(app.caret_active());
+        app.modal = Some(Modal::Admin);
+        assert!(app.caret_active());
+        app.modal = None;
+        app.is_afk = true;
+        assert!(app.caret_active());
+    }
+    #[test]
+    fn secrets_render_as_stars_only() {
+        let mut app = TmApp::default();
+        app.pin = "1234".into();
+        app.afk_input = "rahasia".into();
+        assert_eq!(app.pin_masked(), "****");
+        assert_eq!(TmApp::mask_secret(&app.afk_input), "*******");
+        assert_eq!(TmApp::mask_secret(""), "");
+    }
+    #[test]
+    fn shift_tab_walks_fields_backwards() {
+        let mut login = LoginState::default();
+        login.focus_prev();
+        assert_eq!(login.field, LoginField::Password);
+        login.focus_next();
+        assert_eq!(login.field, LoginField::Username);
+        login.admin_field = LoginField::Username;
+        login.admin_focus_prev();
+        assert_eq!(login.admin_field, LoginField::Password);
+    }
+    #[test]
+    fn every_modal_is_dropped_when_the_session_ends() {
+        for modal in [
+            Modal::Member,
+            Modal::Menu,
+            Modal::Detail(0),
+            Modal::QrisFull,
+            Modal::AfkPin,
+            Modal::Logout,
+            Modal::Admin,
+        ] {
+            let mut app = TmApp::default();
+            app.reduce(AppEvent::Status(status("aktif", Some(60))));
+            app.modal = Some(modal);
+            app.pin = "1234".into();
+            app.is_afk = true;
+            app.reduce(AppEvent::Status(status("kosong", Some(0))));
+            assert!(app.session.is_none());
+            assert!(app.modal.is_none(), "modal {modal:?} tertinggal");
+            assert!(app.pin.is_empty());
+            assert!(!app.is_afk);
+        }
+    }
+    #[test]
+    fn session_end_clears_every_input() {
+        let mut app = TmApp::default();
+        app.reduce(AppEvent::Status(status("aktif", Some(60))));
+        app.login.username = "budi".into();
+        app.login.password = "rahasia123".into();
+        app.login.field = LoginField::Password;
+        app.login.admin_user = "kasir".into();
+        app.login.admin_pass = "rahasia123".into();
+        app.login.admin_field = LoginField::Password;
+        app.login.error = Some("gagal".into());
+        app.login.busy = true;
+        app.reduce(AppEvent::Status(status("kosong", Some(0))));
+        assert_eq!(app.login.field, LoginField::Username);
+        assert_eq!(app.login.admin_field, LoginField::Username);
+        assert!(app.login.username.is_empty());
+        assert!(app.login.password.is_empty());
+        assert!(app.login.admin_user.is_empty());
+        assert!(app.login.admin_pass.is_empty());
+        assert!(app.login.error.is_none());
+        assert!(!app.login.busy);
     }
 }

@@ -452,12 +452,14 @@ fn afk_pin(app: &TmApp, actions: &OverlayActions) -> AnyElement {
                     true => TmInput::new("Buat PIN / Password")
                         .height(40.0)
                         .focused(true)
+                        .caret(app.caret_on)
                         .render()
                         .into_any_element(),
                     false => TmInput::new("Buat PIN / Password")
-                        .value(app.pin.clone())
+                        .value(app.pin_masked())
                         .height(40.0)
                         .focused(true)
+                        .caret(app.caret_on)
                         .render()
                         .into_any_element(),
                 }),
@@ -528,6 +530,7 @@ fn admin(app: &TmApp, actions: &OverlayActions) -> AnyElement {
                 .value(app.login.admin_user.clone())
                 .height(44.0)
                 .focused(app.login.admin_field == crate::state::LoginField::Username)
+                .caret(app.caret_on)
                 .render()
                 .into_any_element(),
         )))
@@ -537,6 +540,7 @@ fn admin(app: &TmApp, actions: &OverlayActions) -> AnyElement {
                 .value(app.login.admin_masked())
                 .height(44.0)
                 .focused(app.login.admin_field == crate::state::LoginField::Password)
+                .caret(app.caret_on)
                 .render()
                 .into_any_element(),
         )));
