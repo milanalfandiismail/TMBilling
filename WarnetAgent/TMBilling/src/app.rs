@@ -796,8 +796,12 @@ impl TmApp {
             // gpui menerapkan resize secara async; place ulang di frame berikutnya
             // supaya jendela tidak sempat tampil dengan ukuran lama.
             let raw = h.0 as isize;
-            window.on_next_frame(move |_, _| wm::place(wm::handle(raw), l, t, w, height));
+            window.on_next_frame(move |_, _| {
+                wm::place(wm::handle(raw), l, t, w, height);
+                wm::flush();
+            });
             wm::focus(h);
+            wm::flush();
             cx.notify();
             window.refresh();
         }

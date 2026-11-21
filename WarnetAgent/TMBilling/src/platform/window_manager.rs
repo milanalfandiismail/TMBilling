@@ -90,6 +90,14 @@ pub fn monitor_rect(h: HWND) -> Option<RECT> {
     }
 }
 
+/// `ResizeBuffers` tidak langsung dipakai DWM; tanpa ini jendela menampilkan
+/// isi lama sampai ada aktivasi (Alt+Tab), terutama di VM/WARP.
+pub fn flush() {
+    unsafe {
+        let _ = windows::Win32::Graphics::Dwm::DwmFlush();
+    }
+}
+
 pub fn focus(h: HWND) {
     unsafe {
         let _ = SetForegroundWindow(h);
