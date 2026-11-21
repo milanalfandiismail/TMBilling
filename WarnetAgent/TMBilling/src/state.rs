@@ -108,6 +108,9 @@ pub struct TmApp {
     #[allow(dead_code)]
     /// (window is the small overlay card, modal needs the whole screen)
     pub applied_mode: Option<(bool, bool, usize)>,
+    /// Rect terakhir yang benar-benar dipasang; perubahan ukuran sekecil apa pun
+    /// harus lewat hide -> resize -> reveal agar tidak ada frame putih.
+    pub applied_rect: Option<(i32, i32, i32, i32)>,
     pub saved_rect: Option<(i32, i32, i32, i32)>,
     /// Sesi admin/emergency aktif: polling mengirim role admin.
     pub is_admin_session: bool,

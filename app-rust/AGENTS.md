@@ -184,7 +184,7 @@ node --check app/static/js/kasir/modules/dashboard/dashboard_compact.js
 ### 7. Peta Suite Test
 - `app-rust/tests/contract/` (12): `auth`, `client_agent`, `device`, `http`, `master_data`, `member_shift_notes`, `mikrotik`, `ops`, `public_cms`, `report`, `sesi`, `settings`.
 - `app-rust/tests/unit/` (6): `cache`, `config`, `idempotency`, `logger`, `scheduler`, `schema_parity`.
-- `tests/e2e/` (Playwright): 15 suite Chromium + `tests/e2e/client/` kontrak agent; sandbox terisolasi dan tidak menyentuh DB produksi.
+- `tests/e2e/` (Playwright): 15 suite Chromium + `tests/e2e/client/` kontrak agent; sandbox terisolasi dan tidak menyentuh DB produksi. Klien GPUI `WarnetAgent/TMBilling/tools/e2e/` (unittest + fixture): 25 tes, termasuk `FlashTest`/`flash_probe.py` yang mendeteksi frame putih transien saat bentuk jendela berubah.
 
 ---
 

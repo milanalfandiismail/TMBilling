@@ -695,8 +695,9 @@ impl TmApp {
         if self.applied_mode == Some(mode) {
             return;
         }
-        // Bentuk jendela berubah (kiosk <-> kartu <-> fullscreen): sembunyikan dulu,
-        // karena gpui masih melukis viewport lama setelah SetWindowPos.
+        // gpui membersihkan window opaque dengan putih setiap frame; area baru hasil
+        // resize tampil sebelum scene baru dilukis. Setiap perubahan rect (termasuk
+        // tinggi kartu antar tab) harus lewat hide -> resize -> reveal.
         let shape_changed = matches!(self.applied_mode, Some((o, f, _)) if o != overlay || f != fullscreen_modal);
         self.applied_mode = Some(mode);
         let Some(h) = wm::hwnd(window) else { return };
@@ -732,12 +733,15 @@ impl TmApp {
         };
 
         if let Some((l, t, r, b)) = rect {
-            if shape_changed {
+            let rect_changed = self.applied_rect != Some((l, t, r, b));
+            let transition = shape_changed || rect_changed;
+            if transition {
                 wm::hide(h);
             }
             window.resize(gpui_kit::Size::new(px((r - l) as f32), px((b - t) as f32)));
             wm::place(h, l, t, r - l, b - t);
-            if shape_changed {
+            self.applied_rect = Some((l, t, r, b));
+            if transition {
                 let raw = h.0 as isize;
                 self.pending_reveal = Some((raw, std::time::Instant::now()));
                 reveal_when_ready(window, raw, ((r - l) as f32, (b - t) as f32), 0, 0);
@@ -748,7 +752,8 @@ impl TmApp {
                         .timer(std::time::Duration::from_millis(150))
                         .await;
                     let _ = this.update(cx, |app, cx| {
-                        if app.pending_reveal.take().is_some() && !wm::minimized() {
+                        let done = app.applied_rect == Some((l, t, r, b));
+                        if done && app.pending_reveal.take().is_some() && !wm::minimized() {
                             wm::reveal(wm::handle(raw));
                             cx.notify();
                         }
@@ -779,7 +784,7 @@ fn reveal_when_ready(
         if wm::minimized() {
             return;
         }
-        if (ok && stable >= 1) || tries >= 8 {
+        if (ok && stable >= 2) || tries >= 8 {
             wm::reveal(wm::handle(raw));
         } else {
             reveal_when_ready(window, raw, target, if ok { stable + 1 } else { 0 }, tries + 1);

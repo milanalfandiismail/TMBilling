@@ -11,6 +11,7 @@ from pathlib import Path
 from PIL import Image
 
 from tools.e2e.fixture import CLIENT_KEY, Client, Server, local_net, wait_until
+from tools.e2e.flash_probe import burst, report, settled_white
 
 OUT = Path("X:/Temp/opencode/e2e-out")
 user32 = ctypes.windll.user32
@@ -373,3 +374,36 @@ class AfkGuestTest(Base):
 if __name__ == "__main__":
     OUT.mkdir(parents=True, exist_ok=True)
     unittest.main(verbosity=2)
+
+class FlashTest(Base):
+    """Tidak boleh ada frame putih transien saat bentuk jendela berubah."""
+
+    def test_transitions_show_no_white_flash(self):
+        c = self.overlay()
+        settled = {}
+
+        def settle(tag):
+            time.sleep(0.5)
+            settled[tuple(c.size())] = settled_white(c, tag)
+
+        settle("card")
+        total = 0
+
+        def run(name, action, ms=1200):
+            nonlocal total
+            frames = burst(c, action, name, ms)
+            time.sleep(0.6)
+            final = settled_white(c, name)
+            settled[tuple(c.size())] = final
+            total += report(name, frames, settled, final)
+            time.sleep(0.5)
+
+        run("e2e-tab-alat", lambda: c.click(190, 200))
+        run("e2e-tab-qris", lambda: c.click(285, 200))
+        run("e2e-tab-sesi", lambda: c.click(95, 200))
+        run("e2e-modal-logout", lambda: c.click(282, 150))
+        run("e2e-modal-close", lambda: c.click(1019, 607))
+        c.click(285, 200)
+        time.sleep(0.5)
+        run("e2e-qris-full", lambda: c.click(198, 395), 1600)
+        self.assertEqual(total, 0, "ada frame putih saat transisi")
