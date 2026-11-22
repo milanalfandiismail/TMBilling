@@ -183,6 +183,10 @@ pub fn reveal(h: HWND) {
 static MINIMIZED: AtomicIsize = AtomicIsize::new(0);
 
 /// Minimize overlay: sembunyikan dari taskbar, sisakan ikon tray.
+pub fn is_minimized() -> bool {
+    MINIMIZED.load(std::sync::atomic::Ordering::Relaxed) != 0
+}
+
 pub fn minimize_to_tray(h: HWND) {
     MINIMIZED.store(h.0 as isize, Ordering::Relaxed);
     hide(h);

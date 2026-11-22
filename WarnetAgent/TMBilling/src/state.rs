@@ -58,6 +58,15 @@ pub fn hold_fullscreen_modal(view: View, modal: Modal) -> bool {
     modal_fullscreen(view, Some(modal))
 }
 
+/// Kiosk dan overlay beda bentuk: jendela harus disembunyikan selama resize.
+pub fn shape_changed(previous: Option<(bool, bool, usize)>, overlay: bool) -> bool {
+    previous.map(|p| p.0) != Some(overlay)
+}
+
+pub fn hides_for_transition(shape_changed: bool, modal_hold: bool, hold_resized: bool) -> bool {
+    shape_changed || (modal_hold && !hold_resized)
+}
+
 fn is_admin_response(status: &str, nama: Option<&str>) -> bool {
     matches!(status, "admin" | "system") || is_emergency_response(status, nama)
 }
@@ -1005,6 +1014,18 @@ fn session_end_clears_the_hold() {
         login.admin_field = LoginField::Username;
         login.admin_focus_prev();
         assert_eq!(login.admin_field, LoginField::Password);
+    }
+    #[test]
+    fn shape_change_hides_but_tab_change_does_not() {
+        assert!(hides_for_transition(true, false, false));
+        assert!(hides_for_transition(false, true, false));
+        assert!(!hides_for_transition(false, true, true));
+        assert!(!hides_for_transition(false, false, false));
+        assert!(shape_changed(None, true));
+        assert!(shape_changed(Some((false, false, 0)), true));
+        assert!(shape_changed(Some((true, false, 5)), false));
+        assert!(!shape_changed(Some((true, false, 1)), true));
+        assert!(!shape_changed(Some((true, true, 2)), true));
     }
     #[test]
     fn every_modal_is_dropped_when_the_session_ends() {

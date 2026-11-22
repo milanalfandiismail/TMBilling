@@ -12,6 +12,7 @@ from PIL import Image, ImageChops
 
 from tools.e2e.fixture import CLIENT_KEY, Client, Server, local_net, wait_until
 from tools.e2e.flash_probe import burst, report, settled_white
+from tools.e2e import transition_probe as shapes
 
 OUT = Path("X:/Temp/opencode/e2e-out")
 user32 = ctypes.windll.user32
@@ -391,11 +392,43 @@ class AdminLoginTest(Base):
         wait_until(lambda: c.size()[0] < 800, 20)
 
 
+class ShapeTest(Base):
+    """Transisi kiosk<->overlay tidak boleh menampilkan frame setengah jadi."""
+
+    def test_login_to_overlay_has_no_bad_frame(self):
+        c = self.kiosk()
+        refs = shapes.reference(c, (1920, 1080), "kiosk")
+        frames = shapes.sample(
+            c,
+            lambda: self.login("budi", "rahasia123"),
+            "kiosk-overlay",
+            start_size=(1920, 1080),
+        )
+        wait_until(lambda: c.size()[0] < 800, 30)
+        refs.update(shapes.reference(c, (380, 268), "card"))
+        assert shapes.report(frames, refs) == []
+
+    def test_session_end_to_kiosk_has_no_bad_frame(self):
+        c = self.overlay()
+        refs = shapes.reference(c, (380, 268), "card")
+        frames = shapes.sample(
+            c,
+            self.close_session,
+            "overlay-kiosk",
+            start_size=(380, 268),
+            ms=8000,
+        )
+        wait_until(lambda: c.size()[0] > 1000, 30)
+        refs.update(shapes.reference(c, (1920, 1080), "kiosk"))
+        assert shapes.report(frames, refs) == []
+
+
 class AfkGuestTest(Base):
     def test_guest_pin_modal_locks_and_unlocks(self):
         c = self.kiosk()
         self.server.open_guest_session(self.ids["paket_15m"])
         wait_until(lambda: c.size()[0] < 800, 30)
+        wait_until(c.visible, 5)  # transisi menyembunyikan jendela sesaat
         c.click(98, 150)  # Lock tile
         time.sleep(0.8)  # modal fullscreen memegang layar hitam 500 ms dulu
         c.type_text("1234")

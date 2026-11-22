@@ -184,7 +184,7 @@ node --check app/static/js/kasir/modules/dashboard/dashboard_compact.js
 ### 7. Peta Suite Test
 - `app-rust/tests/contract/` (12): `auth`, `client_agent`, `device`, `http`, `master_data`, `member_shift_notes`, `mikrotik`, `ops`, `public_cms`, `report`, `sesi`, `settings`.
 - `app-rust/tests/unit/` (6): `cache`, `config`, `idempotency`, `logger`, `scheduler`, `schema_parity`.
-- `tests/e2e/` (Playwright): 15 suite Chromium + `tests/e2e/client/` kontrak agent; sandbox terisolasi dan tidak menyentuh DB produksi. Klien GPUI `WarnetAgent/TMBilling/tools/e2e/` (unittest + fixture): 39 tes: `FlashTest`/`flash_probe.py` (frame putih transien), `cpu_probe.py` (CPU klien di mesin target), `InputTest` (Tab/Shift+Tab, caret di depan placeholder), `SessionEndTest` (modal + input kiosk dibuang saat sesi berakhir), `HoldTest` (kartu hilang + layar hitam 500 ms sebelum modal fullscreen), `FitTest` (ukuran window = kartu/1920x1080), dua tes `settled paint` (tidak ada baris putih tersisa setelah transisi).
+- `tests/e2e/` (Playwright): 15 suite Chromium + `tests/e2e/client/` kontrak agent; sandbox terisolasi dan tidak menyentuh DB produksi. Klien GPUI `WarnetAgent/TMBilling/tools/e2e/` (unittest + fixture): 41 tes: `FlashTest`/`flash_probe.py` (frame putih transien), `cpu_probe.py` (CPU klien di mesin target), `InputTest` (Tab/Shift+Tab, caret di depan placeholder), `SessionEndTest` (modal + input kiosk dibuang saat sesi berakhir), `HoldTest` (kartu hilang + layar hitam 500 ms sebelum modal fullscreen), `FitTest` (ukuran window = kartu/1920x1080), `ShapeTest`/`transition_probe.py` (kiosk<->overlay: tidak ada frame isi salah, hitam, atau putih; jendela disembunyikan selama reshape), dua tes `settled paint` (tidak ada baris putih tersisa setelah transisi).
 
 ---
 

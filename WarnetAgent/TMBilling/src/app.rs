@@ -764,6 +764,9 @@ impl TmApp {
         let vp = window.viewport_size();
         let fits = (vp.width.as_f32() - target.0).abs() <= 2.0
             && (vp.height.as_f32() - target.1).abs() <= 2.0;
+        if wm::is_minimized() {
+            return;
+        }
         if fits || tries == 0 {
             let h = wm::handle(raw);
             wm::reveal(h);
@@ -793,6 +796,7 @@ impl TmApp {
         if self.applied_mode == Some(mode) {
             return;
         }
+        let shape = crate::state::shape_changed(self.applied_mode, overlay);
         self.applied_mode = Some(mode);
         let Some(h) = wm::hwnd(window) else { return };
         wm::strip_frame(h);
@@ -826,7 +830,8 @@ impl TmApp {
             wm::monitor_rect(h).map(|r| (r.left, r.top, r.right, r.bottom))
         };
 
-        let hide_first = self.modal_hold && !self.hold_resized;
+        let hide_first =
+            crate::state::hides_for_transition(shape, self.modal_hold, self.hold_resized);
         self.hold_resized = true;
         if let Some((l, t, r, b)) = rect {
             let w = r - l;
