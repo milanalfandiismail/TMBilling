@@ -1,0 +1,41 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+    content: [
+        './app/templates/**/*.html',
+        './app/static/js/**/*.js',
+    ],
+    theme: {
+        extend: {
+            fontFamily: {
+                sans: ['Segoe UI', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                'space-grotesk': ['Segoe UI', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                'inter': ['Segoe UI', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+                mono: ['Consolas', 'JetBrains Mono', 'monospace'],
+            },
+            colors: {
+                surface: '#0a0a0a',
+                card: '#0c0c0c',
+                border: '#1c1c1c',
+            },
+            gridTemplateColumns: {
+                '7': 'repeat(7, minmax(0, 1fr))',
+                '8': 'repeat(8, minmax(0, 1fr))',
+                '9': 'repeat(9, minmax(0, 1fr))',
+                '10': 'repeat(10, minmax(0, 1fr))',
+                '11': 'repeat(11, minmax(0, 1fr))',
+                '12': 'repeat(12, minmax(0, 1fr))',
+                '13': 'repeat(13, minmax(0, 1fr))',
+                '14': 'repeat(14, minmax(0, 1fr))',
+                '15': 'repeat(15, minmax(0, 1fr))',
+                '16': 'repeat(16, minmax(0, 1fr))',
+                '18': 'repeat(18, minmax(0, 1fr))',
+                '20': 'repeat(20, minmax(0, 1fr))',
+                '24': 'repeat(24, minmax(0, 1fr))',
+                '30': 'repeat(30, minmax(0, 1fr))',
+            },
+            keyframes: {},
+            animation: {},
+        },
+    },
+    plugins: [],
+};

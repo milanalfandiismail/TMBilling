@@ -1,0 +1,14 @@
+{
+  "name": "tmbilling-app",
+  "private": true,
+  "version": "2.0.3",
+  "description": "Build aset CSS dashboard kasir dan client kiosk (TailwindCSS 4)",
+  "scripts": {
+    "dev:css": "tailwindcss -i ./app/static/css/input.css -o ./app/static/css/tailwind.css --watch",
+    "build:css": "tailwindcss -i ./app/static/css/input.css -o ./app/static/css/tailwind.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.3.4",
+    "tailwindcss": "^4.3.4"
+  }
+}
