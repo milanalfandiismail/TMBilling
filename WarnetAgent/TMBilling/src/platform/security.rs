@@ -71,12 +71,14 @@ pub fn hash_bytes(bytes: &[u8]) -> String {
     format!("{:X}", hasher.finalize())
 }
 
-/// Menulis `Hash_TMBilling` ke hive yang lebih dulu dibaca `verify_file_integrity`.
-/// Tidak boleh menurun ke HKCU saat HKLM sudah ada tapi tidak bisa ditulis: boot akan
-/// membaca hash lama dan klien keluar sendiri. Lebih baik update gagal.
+/// Menulis `Hash_TMBilling` (+ opsional `Hash_TMBilling_prev`) ke hive yang lebih dulu dibaca
+/// `verify_file_integrity`. Tidak boleh menurun ke HKCU saat HKLM sudah ada tapi tidak bisa
+/// ditulis: boot akan membaca hash lama dan klien keluar sendiri. Lebih baik update gagal.
+///
+/// `prev` ditulis lebih dulu supaya mati listrik di antara dua penulisan tetap menyisakan
+/// satu hash yang cocok dengan exe di disk.
 #[cfg_attr(debug_assertions, allow(dead_code))]
-pub fn write_expected_hash(hash: &str) -> Result<(), String> {
-    let nilai = hash.to_string();
+pub fn set_hashes(current: &str, prev: Option<&str>) -> Result<(), String> {
     let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
     let kunci = if hklm.open_subkey("Software\\TMBilling").is_ok() {
@@ -96,15 +98,16 @@ pub fn write_expected_hash(hash: &str) -> Result<(), String> {
             }
         }
     };
-    // Hash lama disimpan sebelum ditimpa: exe lama masih di disk sampai rename selesai,
-    // jadi boot yang terjadi di tengah swap harus tetap lolos pemeriksaan.
-    if let Ok(lama) = kunci.get_value::<String, _>("Hash_TMBilling") {
-        kunci
-            .set_value("Hash_TMBilling_prev", &lama)
-            .map_err(|e| format!("Cannot write registry: {}", e))?;
+    match prev {
+        Some(h) => kunci
+            .set_value("Hash_TMBilling_prev", &h.to_string())
+            .map_err(|e| format!("Cannot write registry: {}", e))?,
+        None => {
+            let _ = kunci.delete_value("Hash_TMBilling_prev");
+        }
     }
     kunci
-        .set_value("Hash_TMBilling", &nilai)
+        .set_value("Hash_TMBilling", &current.to_string())
         .map_err(|e| format!("Cannot write registry: {}", e))
 }
 
@@ -125,6 +128,11 @@ pub fn verify_file_integrity() -> Result<(), String> {
     let exe_path = std::env::current_exe().map_err(|e| format!("Cannot get exe path: {}", e))?;
     let current_hash = hash_file(&exe_path)?;
     if hash_diterima(&current_hash, Some(&current), prev.as_deref()) {
+        // Exe sudah versi final: hash lama tidak diperlukan lagi (dan tidak boleh terus
+        // diterima, supaya update yang gagal tidak jadi celah downgrade permanen).
+        if hashes_match(&current, &current_hash) {
+            let _ = subkey.delete_value("Hash_TMBilling_prev");
+        }
         Ok(())
     } else {
         Err("File integrity check failed - executable may have been modified".to_string())

@@ -59,6 +59,17 @@ pub fn dev_safe() -> bool {
 }
 
 fn main() {
+    // Helper swap exe: jalan sebelum cek keamanan karena berkasnya bernama TMBilling.update.exe.
+    if let Some((new, exe)) = update::apply_args() {
+        match update::apply(&new, &exe) {
+            Ok(()) => std::process::exit(0),
+            Err(e) => {
+                update::catat(&format!("[update] {e}"));
+                std::process::exit(2);
+            }
+        }
+    }
+
     #[cfg(not(debug_assertions))]
     {
         use platform::security;
