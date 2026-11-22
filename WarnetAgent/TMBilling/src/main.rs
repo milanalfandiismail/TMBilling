@@ -126,6 +126,14 @@ fn main() {
                         });
                         app.remaining_secs = 5078;
                         app.started_at = Some("20:12".into());
+                        app.member_json = Some(serde_json::json!({
+                            "username": "budi",
+                            "nama_lengkap": "Budi Santoso",
+                            "email": "budi@warnet.id",
+                            "no_hp": "0812-3456-7890",
+                            "kadaluarsa_pada_display": "22/12/2026 20:12 WITA",
+                            "dibuat_pada_display": "22/11/2026 20:12 WITA",
+                        }));
                     }
                     app.start(cx);
                     app

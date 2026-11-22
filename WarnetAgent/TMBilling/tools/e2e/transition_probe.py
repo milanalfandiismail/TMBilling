@@ -132,14 +132,14 @@ def main() -> None:
         wait_until(lambda: client.size()[0] < 800, 30)
         card_path = OUT / "ref-card.png"
         client.shot(card_path)
-        refs[(380, 268)] = thumb(card_path)
-        refs[(380, 269)] = refs[(380, 268)]
+        refs[(380, 367)] = thumb(card_path)
+        refs[(380, 368)] = refs[(380, 367)]
         sesi = server.active_session()
         down = sample(
             client,
             lambda: server.post(f"/api/v1/kasir/sesi/tutup/{sesi}"),
             "overlay-kiosk",
-            start_size=(380, 268),
+            start_size=(380, 367),
             ms=8000,
         )
         wait_until(lambda: client.size()[0] > 1000, 30)

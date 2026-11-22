@@ -20,7 +20,6 @@ struct Metrics {
     tab_mt: f32,
     tab_font: f32,
     row_mt: f32,
-    row_font: f32,
     min_w: f32,
     min_h: f32,
     radius: f32,
@@ -40,7 +39,6 @@ fn metrics(scale: f32, compact: bool) -> Metrics {
             tab_mt: 17.0,
             tab_font: 11.0,
             row_mt: 13.0,
-            row_font: 11.0,
             min_w: 26.0,
             min_h: 20.0,
             radius: 7.0,
@@ -57,7 +55,6 @@ fn metrics(scale: f32, compact: bool) -> Metrics {
         tab_mt: 18.0 * scale,
         tab_font: 13.0 * scale,
         row_mt: 9.0 * scale,
-        row_font: 11.0 * scale,
         min_w: 30.0 * scale,
         min_h: 24.0 * scale,
         radius: 8.0 * scale,
@@ -99,13 +96,15 @@ fn badge_chip(app: &TmApp, compact: bool, scale: f32) -> AnyElement {
 }
 
 /// Extra height the tab panel adds below the card body; the window is resized to match.
-pub fn extra_height(tab: usize, geom: OverlayGeometry) -> f32 {
+pub fn extra_height(tab: usize, geom: OverlayGeometry, member: bool) -> f32 {
     let scale = geom.width / 380.0;
-    match tab {
-        1 => (panels::TOOLS_H - 30.0) * scale,
-        2 => (panels::QRIS_H - 30.0) * scale,
-        _ => 0.0,
-    }
+    let sesi = if tab == 0 { panels::sesi_extra(member) } else { 0.0 };
+    sesi * scale
+        + match tab {
+            1 => (panels::TOOLS_H - 30.0) * scale,
+            2 => (panels::QRIS_H - 30.0) * scale,
+            _ => 0.0,
+        }
 }
 
 pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> impl IntoElement {
@@ -127,16 +126,16 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
     let gap = if compact { 6.0 } else { 8.0 * scale };
     let col_w = (inner - gap) / 2.0;
     let tab_w = inner / 3.0;
-    let mul = app
-        .started_at
-        .clone()
-        .unwrap_or_else(|| "--:--".to_string());
     let min_click = actions.minimize.clone();
     let afk_click = actions.afk.clone();
     let logout_click = actions.logout.clone();
     let name = app.session.as_ref().map(|s| s.nama.clone()).unwrap_or_default();
     let badge = badge_chip(app, compact, scale);
-    let extra_h = extra_height(app.overlay_tab, geom);
+    let extra_h = extra_height(
+        app.overlay_tab,
+        geom,
+        app.session.as_ref().is_some_and(|s| s.is_member),
+    );
 
     div()
         .flex()
@@ -173,6 +172,29 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                                 .text_color(TM.text)
                                 .child(name),
                         )
+                .child({
+                    let pc = app
+                        .session
+                        .as_ref()
+                        .map(|s| s.pc_kode.clone())
+                        .unwrap_or_default();
+                    if pc.is_empty() {
+                        div().into_any_element()
+                    } else {
+                        div()
+                            .ml(px(if compact { 6.0 } else { 8.0 * scale }))
+                            .px(px(if compact { 4.0 } else { 6.0 * scale }))
+                            .h(px(if compact { 15.0 } else { 18.0 * scale }))
+                            .flex()
+                            .items_center()
+                            .rounded(px(3.0))
+                            .bg(TM.hover)
+                            .text_size(px((m.name_font - 2.0).max(9.0)))
+                            .text_color(TM.dim)
+                            .child(pc)
+                            .into_any_element()
+                    }
+                })
                 })
                 .child(div().flex_1())
                 .child(
@@ -253,12 +275,7 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                 .into_any_element(),
             _ => div()
                 .mt(px(m.row_mt))
-                .flex()
-                .flex_row()
-                .items_center()
-                .justify_between()
-                .child(div().text_size(px(m.row_font)).text_color(TM.dim).child("Mulai"))
-                .child(div().text_size(px(m.row_font)).text_color(TM.text).child(mul))
+                .child(panels::sesi(app, scale))
                 .into_any_element(),
         })
         .into_any_element()

@@ -792,7 +792,8 @@ impl TmApp {
             self.is_afk,
         ));
 
-        let mode = (overlay, fullscreen_modal, self.overlay_tab);
+        let member = self.session.as_ref().is_some_and(|s| s.is_member);
+        let mode = (overlay, fullscreen_modal, self.overlay_tab, member);
         if self.applied_mode == Some(mode) {
             return;
         }
@@ -807,7 +808,7 @@ impl TmApp {
                 let m = wm::monitor_rect(h)?;
                 let g = overlay_geometry(((m.right - m.left) as f32, (m.bottom - m.top) as f32));
                 let m8 = g.margin as i32;
-                let hh = g.height + overlay_card_mod::extra_height(self.overlay_tab, g);
+                let hh = g.height + overlay_card_mod::extra_height(self.overlay_tab, g, member);
                 Some((
                     m.right - g.width as i32 - m8,
                     m.top + m8,

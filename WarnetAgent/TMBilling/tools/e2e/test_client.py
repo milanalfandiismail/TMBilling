@@ -134,7 +134,7 @@ class AuthTest(Base):
         self.login()
         wait_until(lambda: self.client.size()[0] < 800, 25)
         w, h = self.client.size()
-        self.assertEqual((w, h), (380, 268))
+        self.assertEqual((w, h), (380, 367))
         wait_until(lambda: self.server.active_session() is not None, 10)
 
     def test_wrong_password_shows_banner(self):
@@ -405,17 +405,17 @@ class ShapeTest(Base):
             start_size=(1920, 1080),
         )
         wait_until(lambda: c.size()[0] < 800, 30)
-        refs.update(shapes.reference(c, (380, 268), "card"))
+        refs.update(shapes.reference(c, (380, 367), "card"))
         assert shapes.report(frames, refs) == []
 
     def test_session_end_to_kiosk_has_no_bad_frame(self):
         c = self.overlay()
-        refs = shapes.reference(c, (380, 268), "card")
+        refs = shapes.reference(c, (380, 367), "card")
         frames = shapes.sample(
             c,
             self.close_session,
             "overlay-kiosk",
-            start_size=(380, 268),
+            start_size=(380, 367),
             ms=8000,
         )
         wait_until(lambda: c.size()[0] > 1000, 30)
@@ -634,7 +634,7 @@ class FitTest(Base):
         w, h = c.size()
         self.assertLessEqual(abs(w - 380), 1, (w, h))
         # Tinggi jendela = tinggi kartu: tidak ada area yang tidak dilukis.
-        self.assertLessEqual(abs(h - 268), 1, (w, h))
+        self.assertLessEqual(abs(h - 367), 1, (w, h))
         path = OUT / "fit-overlay.png"
         # Window bisa di-reveal sebelum frame baru dilukis: tunggu dinding kartu.
         for _ in range(20):

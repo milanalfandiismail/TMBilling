@@ -190,7 +190,8 @@ class Server:
         out["pc"] = body["pc"]["id"]
 
         status, body = self.post("/api/v1/kasir/member", {
-            "username": "budi", "password": "rahasia123", "nama": "Budi",
+            "username": "budi", "password": "rahasia123", "nama_lengkap": "Budi",
+            "email": "budi@warnet.id", "no_hp": "081234567890",
             "grup_id": out["grup"],
         })
         assert status == 201, ("member", status, body)

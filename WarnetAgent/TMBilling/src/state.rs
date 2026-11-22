@@ -59,7 +59,7 @@ pub fn hold_fullscreen_modal(view: View, modal: Modal) -> bool {
 }
 
 /// Kiosk dan overlay beda bentuk: jendela harus disembunyikan selama resize.
-pub fn shape_changed(previous: Option<(bool, bool, usize)>, overlay: bool) -> bool {
+pub fn shape_changed(previous: Option<(bool, bool, usize, bool)>, overlay: bool) -> bool {
     previous.map(|p| p.0) != Some(overlay)
 }
 
@@ -125,7 +125,7 @@ pub struct TmApp {
     // dipakai modal konfirmasi power di Task 4
     #[allow(dead_code)]
     /// (window is the small overlay card, modal needs the whole screen)
-    pub applied_mode: Option<(bool, bool, usize)>,
+    pub applied_mode: Option<(bool, bool, usize, bool)>,
     /// Rect terakhir yang benar-benar dipasang ke window.
     pub applied_rect: Option<(i32, i32, i32, i32)>,
     pub saved_rect: Option<(i32, i32, i32, i32)>,
@@ -495,9 +495,7 @@ impl TmApp {
             }
             AppEvent::Identified(res) => self.apply_identify(res),
             AppEvent::Status(status) => {
-                if status.member.is_some() {
-                    self.member_json = status.member.clone();
-                }
+                self.member_json = status.member.clone();
                 self.apply_status(status)
             }
             AppEvent::Command(_) => false,
@@ -579,6 +577,7 @@ impl TmApp {
     /// Satu jalur keluar sesi: status server maupun autolock memakai ini.
     pub fn end_session(&mut self) {
         self.session = None;
+        self.member_json = None;
         self.is_admin_session = false;
         ADMIN_MODE.store(false, std::sync::atomic::Ordering::Relaxed);
         self.remaining_secs = 0;
@@ -600,6 +599,19 @@ impl TmApp {
         self.caret_on = true;
         self.modal_hold = false;
         self.hold_resized = true;
+    }
+    /// Field member; kunci *_display (sudah diformat zona waktu server) menang atas nilai mentah.
+    pub fn member_field(&self, key: &str) -> Option<String> {
+        let m = self.member_json.as_ref()?;
+        let display = String::from(key) + "_display";
+        [display.as_str(), key]
+            .iter()
+            .find_map(|k| {
+                m.get(*k)
+                    ?.as_str()
+                    .filter(|s| !s.trim().is_empty())
+                    .map(str::to_string)
+            })
     }
     /// Login admin/emergency langsung membuka overlay, tidak menunggu polling.
     pub fn enter_admin_session(&mut self, nama: &str, grup: &str, is_emergency: bool) {
@@ -1024,10 +1036,10 @@ fn session_end_clears_the_hold() {
         assert!(!hides_for_transition(false, true, true));
         assert!(!hides_for_transition(false, false, false));
         assert!(shape_changed(None, true));
-        assert!(shape_changed(Some((false, false, 0)), true));
-        assert!(shape_changed(Some((true, false, 5)), false));
-        assert!(!shape_changed(Some((true, false, 1)), true));
-        assert!(!shape_changed(Some((true, true, 2)), true));
+        assert!(shape_changed(Some((false, false, 0, false)), true));
+        assert!(shape_changed(Some((true, false, 5, false)), false));
+        assert!(!shape_changed(Some((true, false, 1, false)), true));
+        assert!(!shape_changed(Some((true, true, 2, true)), true));
     }
     #[test]
     fn every_modal_is_dropped_when_the_session_ends() {
@@ -1073,5 +1085,36 @@ fn session_end_clears_the_hold() {
         assert!(app.login.admin_pass.is_empty());
         assert!(app.login.error.is_none());
         assert!(!app.login.busy);
+    }
+    #[test]
+    fn guest_status_clears_previous_member() {
+        let mut app = TmApp::default();
+        app.member_json = Some(serde_json::json!({ "username": "budi" }));
+        app.reduce(AppEvent::Status(StatusResponse {
+            status: "aktif".into(),
+            is_member: Some(false),
+            ..Default::default()
+        }));
+        assert!(app.member_json.is_none());
+    }
+    #[test]
+    fn end_session_clears_member() {
+        let mut app = TmApp::default();
+        app.member_json = Some(serde_json::json!({ "username": "budi" }));
+        app.end_session();
+        assert!(app.member_json.is_none());
+    }
+    #[test]
+    fn member_field_prefers_display_key() {
+        let mut app = TmApp::default();
+        app.member_json = Some(serde_json::json!({
+            "kadaluarsa_pada_display": "01 Des 2026",
+            "kadaluarsa_pada": "2026-12-01 10:00:00"
+        }));
+        assert_eq!(
+            app.member_field("kadaluarsa_pada").as_deref(),
+            Some("01 Des 2026")
+        );
+        assert_eq!(app.member_field("no_hp"), None);
     }
 }

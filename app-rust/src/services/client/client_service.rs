@@ -13,7 +13,7 @@ use crate::services::sesi::sesi_service;
 use crate::services::settings::settings_service;
 use crate::state::AppState;
 use crate::utils::logger;
-use crate::utils::time::{db_str, format_clock, now_db, parse_dt};
+use crate::utils::time::{db_str, format_clock, format_display, now_db, parse_dt};
 
 pub const HEARTBEAT_PERSIST_SECONDS: i64 = 30;
 /// Jendela toleransi untuk poll `role=client` yang terkirim sebelum login admin.
@@ -60,17 +60,30 @@ async fn cari_pc(st: &AppState, ip: &str, mac: &str) -> Option<Pc> {
     pc_repo::find_by_mac(&st.pool, &m).await.ok().flatten()
 }
 
-fn sesi_json(sesi: &Sesi, sisa: i64) -> Value {
+fn sesi_json(sesi: &Sesi, sisa: i64, tz: &str) -> Value {
+    let display = |raw: &Option<String>| {
+        raw.as_deref()
+            .and_then(parse_dt)
+            .map(|d| format_display(d, tz))
+    };
+    let member = sesi.tipe == "member" && sesi.member_id.is_some();
+    let dibuat = display(&sesi.member_dibuat);
+    let kadaluarsa = display(&sesi.member_kadaluarsa);
     json!({
-        "is_member": sesi.tipe == "member" && sesi.member_id.is_some(),
-        "member": if sesi.tipe == "member" && sesi.member_id.is_some() {
+        "is_member": member,
+        "member": if member {
             json!({
                 "id": sesi.member_id,
                 "username": sesi.member_username,
                 "nama_lengkap": sesi.member_nama,
+                "email": sesi.member_email,
+                "no_hp": sesi.member_no_hp,
                 "waktu_tersimpan": sisa,
-                "kadaluarsa_pada": sesi.member_kadaluarsa,
                 "grup": sesi.pc_grup_nama.clone().unwrap_or_else(|| "reguler".into()),
+                "dibuat_pada": sesi.member_dibuat,
+                "dibuat_pada_display": dibuat,
+                "kadaluarsa_pada": sesi.member_kadaluarsa,
+                "kadaluarsa_pada_display": kadaluarsa,
             })
         } else { Value::Null }
     })
@@ -295,7 +308,7 @@ pub async fn status(
                 "is_afk": sesi.is_afk,
                 "shutdown_timer": 0,
             });
-            if let Value::Object(map) = sesi_json(&sesi, sisa) {
+            if let Value::Object(map) = sesi_json(&sesi, sisa, &st.cfg.timezone) {
                 for (k, v) in map {
                     map_insert(&mut body, k, v);
                 }

@@ -343,3 +343,39 @@ async fn kasir_boleh_login_admin_dan_role_asli_dibalas() {
     .await;
     assert_eq!(salah.status, StatusCode::BAD_REQUEST);
 }
+
+#[tokio::test]
+async fn status_member_membawa_data_profil() {
+    let (_dir, st) = state("profil").await;
+    let pc_id = seed_pc(&st).await;
+    sqlx::query(
+        "INSERT INTO member (username, password_hash, nama_lengkap, email, no_hp, grup_id, aktif, \
+         dibuat_pada, waktu_tersimpan, kadaluarsa_pada) \
+         VALUES ('budi', 'x', 'Budi', 'budi@warnet.id', '081234567890', \
+         (SELECT grup_id FROM pc WHERE id = ?), 1, '2026-11-01 10:00:00', 600, \
+         '2026-12-22 11:15:55')",
+    )
+    .bind(pc_id)
+    .execute(&st.pool)
+    .await
+    .unwrap();
+    tmbilling_server::services::sesi::sesi_service::buka_member(&st, Some("PC-01"), Some("budi"), "kasir1")
+        .await
+        .unwrap();
+    let reply = kirim(
+        st.clone(),
+        "POST",
+        "/api/v1/public/client/status",
+        Some(KUNCI),
+        Some(json!({"ip_address": "127.0.0.1"})),
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK);
+    let body = reply.json();
+    let m = &body["member"];
+    assert_eq!(m["nama_lengkap"], json!("Budi"));
+    assert_eq!(m["email"], json!("budi@warnet.id"));
+    assert_eq!(m["no_hp"], json!("081234567890"));
+    assert!(m["kadaluarsa_pada_display"].is_string(), "member={m}");
+    assert!(m["dibuat_pada_display"].is_string(), "member={m}");
+}

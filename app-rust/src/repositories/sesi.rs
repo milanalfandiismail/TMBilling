@@ -12,6 +12,7 @@ const SELECT: &str = "SELECT s.id, s.tipe, s.member_id, s.user_id, s.pc_id, s.pa
     s.afk_sejak, pc.kode AS pc_kode, pc.grup_id AS pc_grup_id, g.nama AS pc_grup_nama, \
     m.username AS member_username, COALESCE(m.nama_lengkap, m.username) AS member_nama, \
     m.waktu_tersimpan AS member_waktu_tersimpan, m.kadaluarsa_pada AS member_kadaluarsa, \
+    m.email AS member_email, m.no_hp AS member_no_hp, m.dibuat_pada AS member_dibuat, \
     p.nama AS paket_nama, p.durasi_menit AS paket_durasi_menit, p.harga AS paket_harga, \
     p.kadaluarsa_hari AS paket_kadaluarsa_hari \
     FROM sesi s LEFT JOIN pc ON pc.id = s.pc_id LEFT JOIN grup g ON g.id = pc.grup_id \

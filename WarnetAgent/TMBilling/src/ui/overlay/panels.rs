@@ -190,3 +190,91 @@ pub fn qris(app: &TmApp, scale: f32, actions: &OverlayActions) -> impl IntoEleme
                 .child("Tunjukkan bukti pembayaran"),
         )
 }
+
+pub const SESI_CELL_H: f32 = 27.0;
+pub const SESI_ROW_GAP: f32 = 6.0;
+
+/// Tinggi tambahan grid member (3 baris) di tab Sesi, di luar baris Mulai yang sudah dihitung di tinggi dasar kartu.
+pub fn sesi_extra(is_member: bool) -> f32 {
+    if is_member {
+        3.0 * SESI_CELL_H + 3.0 * SESI_ROW_GAP
+    } else {
+        0.0
+    }
+}
+
+fn cell(label: &'static str, value: String, scale: f32, color: Rgba) -> AnyElement {
+    div()
+        .flex()
+        .flex_col()
+        .flex_1()
+        .min_w(px(0.0))
+        .child(div().text_size(px(9.0 * scale)).text_color(TM.dim).child(label))
+        .child(
+            div()
+                .h(px(15.0 * scale))
+                .overflow_hidden()
+                .text_size(px(11.0 * scale))
+                .text_color(color)
+                .child(value),
+        )
+        .into_any_element()
+}
+
+/// Baris Mulai + grid member. Tinggi grid harus sama dengan sesi_extra.
+pub fn sesi(app: &TmApp, scale: f32) -> AnyElement {
+    let Some(session) = app.session.as_ref() else {
+        return div().into_any_element();
+    };
+    let mulai = app.started_at.clone().unwrap_or_else(|| "--:--".to_string());
+    let head = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .justify_between()
+        .child(div().text_size(px(11.0 * scale)).text_color(TM.dim).child("Mulai"))
+        .child(div().text_size(px(11.0 * scale)).text_color(TM.text).child(mulai));
+    if !session.is_member {
+        return head.into_any_element();
+    }
+    let f = |k: &str| app.member_field(k).unwrap_or_else(|| "-".into());
+    let grup = session.grup.to_uppercase();
+    let pair = |a: AnyElement, b: AnyElement| {
+        div()
+            .flex()
+            .flex_row()
+            .gap(px(8.0 * scale))
+            .child(a)
+            .child(b)
+            .into_any_element()
+    };
+    let grid = div()
+        .mt(px(SESI_ROW_GAP * scale))
+        .flex()
+        .flex_col()
+        .gap(px(SESI_ROW_GAP * scale))
+        .child(pair(
+            cell(
+                "Nama",
+                app.member_field("nama_lengkap")
+                    .unwrap_or_else(|| session.nama.clone()),
+                scale,
+                TM.text,
+            ),
+            cell(
+                "Grup",
+                if grup.is_empty() { "-".into() } else { grup },
+                scale,
+                TM.accent,
+            ),
+        ))
+        .child(pair(
+            cell("Email", f("email"), scale, TM.text),
+            cell("No. HP", f("no_hp"), scale, TM.text),
+        ))
+        .child(pair(
+            cell("Terdaftar", f("dibuat_pada"), scale, TM.muted),
+            cell("Berlaku s/d", f("kadaluarsa_pada"), scale, TM.accent),
+        ));
+    div().flex().flex_col().child(head).child(grid).into_any_element()
+}

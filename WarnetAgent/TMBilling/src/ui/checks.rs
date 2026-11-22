@@ -208,3 +208,18 @@ fn admin_and_emergency_show_system_instead_of_countdown() {
     assert_eq!(crate::state::timer_text(true, 5078), "System");
     assert_eq!(crate::state::timer_text(false, 5078), crate::state::human_time(5078));
 }
+#[test]
+fn sesi_extra_only_for_member() {
+    use crate::ui::overlay::panels::sesi_extra;
+    assert_eq!(sesi_extra(false), 0.0);
+    assert!(sesi_extra(true) > 0.0);
+}
+#[test]
+fn extra_height_grows_only_for_member_sesi() {
+    use crate::platform::window::overlay_geometry;
+    use crate::ui::overlay::card::extra_height;
+    let g = overlay_geometry((1920.0, 1080.0));
+    assert_eq!(extra_height(0, g, false), 0.0);
+    assert!(extra_height(0, g, true) > 0.0);
+    assert_eq!(extra_height(1, g, true), extra_height(1, g, false));
+}
