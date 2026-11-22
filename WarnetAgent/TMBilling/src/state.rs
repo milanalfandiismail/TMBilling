@@ -147,6 +147,8 @@ pub struct TmApp {
     pub hold_resized: bool,
     /// Sisa frame yang boleh ditahan hitam sambil menunggu viewport gpui.
     pub viewport_wait: u8,
+    /// Transisi bentuk/modal sedang berjalan; isi ditahan sampai viewport cocok.
+    pub vp_guard: bool,
     /// Fase kedip caret; di-toggle timer 530 ms hanya saat ada field aktif.
     pub caret_on: bool,
     /// Penghitung frame untuk jejak diagnostik TM_UI_LOG.

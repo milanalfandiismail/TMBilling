@@ -849,6 +849,7 @@ impl TmApp {
             wm::place(h, l, t, w, height);
             self.applied_rect = Some((l, t, r, b));
             self.viewport_wait = 30;
+            self.vp_guard = hide_first;
             // gpui menerapkan resize secara async; place ulang di frame berikutnya
             // supaya jendela tidak sempat tampil dengan ukuran lama.
             let raw = h.0 as isize;
@@ -982,7 +983,9 @@ impl Render for TmApp {
             let vp = window.viewport_size();
             let stale = (vp.width.as_f32() - (r - l) as f32).abs() > 2.0
                 || (vp.height.as_f32() - (b - t) as f32).abs() > 2.0;
-            if stale && self.viewport_wait > 0 {
+            // Hanya transisi bentuk/modal: perubahan tinggi tab tidak perlu
+            // ditahan hitam karena isi lama masih ukuran kartu yang sama.
+            if stale && self.viewport_wait > 0 && self.vp_guard {
                 self.viewport_wait -= 1;
                 window.refresh();
                 cx.notify();
