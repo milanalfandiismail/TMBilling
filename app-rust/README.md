@@ -32,7 +32,7 @@ tmbilling-server.exe
 | Path | Isi |
 |---|---|
 | `src/main.rs` | Entry point, mode CLI, bootstrap, bind port, scheduler + tray. |
-| `src/app.rs` | Router axum: 245 registrasi `.route(`, guard CSRF/whitelist, aset statis. |
+| `src/app.rs` | Router axum: 248 registrasi `.route(`, guard CSRF/whitelist, aset statis. |
 | `src/state.rs` | `AppState`: pool sqlx, cache in-memory, antrean perintah, `write()` (gerbang tulis tunggal). |
 | `src/routes/` | 27 domain, 63 file: handler HTTP tipis. |
 | `src/services/` | 27 domain, 62 file: seluruh aturan bisnis. |
@@ -66,6 +66,7 @@ Artefak rilis: `tmbilling-server.exe`, `app-rust/packaging/install.bat`, `app-ru
 - Instalasi dari checkout: salin `target\release\tmbilling-server.exe` ke `app-rust/packaging/`, lalu jalankan `install.bat` (menyalin biner ke folder induk dan mendaftarkan autostart login).
 - Instalasi dari ZIP rilis: ekstrak paket, jalankan `install.bat` di root hasil ekstrak.
 - Pembaruan: `update.bat "TMBilling_Server_vX.zip"` → `tmbilling-server.exe --apply-update`. Berkas `.env`, `instance/`, dan `backups/` tidak ditimpa.
+- Update klien (WarnetAgent): taruh `TMBilling.exe` baru di `<folder server>/client-update/`, lalu klik kanan PC di dashboard → **Update Klien**.
 ## Troubleshooting
 | Gejala | Penyebab / tindakan |
 |---|---|

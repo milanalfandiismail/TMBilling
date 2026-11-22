@@ -5,13 +5,17 @@
 window.DashboardModalPower = {
     remoteAction(pcId, action, pcKode = '') {
         if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
-        const actionLabel = action === 'shutdown' ? 'Shutdown (Matikan)' : 'Restart (Mulai Ulang)';
+        const actionLabel = { shutdown: 'Shutdown (Matikan)', restart: 'Restart (Mulai Ulang)', update: 'Update Klien' }[action] || 'Restart (Mulai Ulang)';
+        const actionName = { shutdown: 'Shutdown', restart: 'Restart', update: 'Update klien' }[action] || 'Restart';
+        const actionWarn = action === 'update'
+            ? 'Klien mengunduh paket dari server billing, lalu menutup dan menjalankan ulang dirinya sendiri. Pastikan tidak ada pekerjaan penting yang belum tersimpan.'
+            : 'Perhatian: PC akan langsung mati/restart secara paksa. Semua pekerjaan yang belum disimpan di PC client akan hilang.';
         const pcName = pcKode || `PC #${pcId}`;
 
         Modal.confirm(`
             <div class="text-center">
                 <p class="text-xs lg:text-base text-neutral-400 font-bold uppercase tracking-wider">${actionLabel} PC ${pcName}?</p>
-                <p class="text-[10px] lg:text-base text-red-400 font-bold mt-1">⚠️ Perhatian: PC akan langsung mati/restart secara paksa. Semua pekerjaan yang belum disimpan di PC client akan hilang.</p>
+                <p class="text-[10px] lg:text-base text-${action === 'update' ? 'amber' : 'red'}-400 font-bold mt-1">⚠️ ${actionWarn}</p>
             </div>
         `, async () => {
             try {
@@ -21,7 +25,7 @@ window.DashboardModalPower = {
                 if (!result.success) {
                     throw new Error(result.error || 'Gagal mengirim perintah');
                 }
-                Toast.success(`Perintah ${action === 'shutdown' ? 'Shutdown' : 'Restart'} berhasil dikirim ke PC!`);
+                Toast.success(`Perintah ${actionName} berhasil dikirim ke PC!`);
             } catch (err) {
                 console.error('[DashboardDetailModal] Remote action error:', err);
                 Toast.error(err.message || 'Gagal mengirim perintah remote');

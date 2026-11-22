@@ -339,6 +339,43 @@ async fn remote_shutdown_mengantre_perintah() {
 }
 
 #[tokio::test]
+async fn remote_update_mengantre_perintah() {
+    let (_dir, st) = state("remote_update").await;
+    let pc_id = seed_pc(&st).await;
+    let (cookies, kasir_id) = admin(&st).await;
+    buka_shift(&st, kasir_id).await;
+    let reply = kirim(
+        st.clone(),
+        "POST",
+        &format!("/api/v1/kasir/monitor/remote/{pc_id}/update"),
+        None,
+        &cookies,
+        None,
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK, "{}", reply.body);
+    assert_eq!(st.commands.regular.pop(pc_id).as_deref(), Some("update"));
+}
+
+#[tokio::test]
+async fn remote_batch_update_ditolak() {
+    let (_dir, st) = state("remote_update_batch").await;
+    let pc_id = seed_pc(&st).await;
+    let (cookies, kasir_id) = admin(&st).await;
+    buka_shift(&st, kasir_id).await;
+    let reply = kirim(
+        st.clone(),
+        "POST",
+        "/api/v1/kasir/monitor/remote/batch",
+        Some(serde_json::json!({"pc_ids": [pc_id], "action": "update"})),
+        &cookies,
+        None,
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::BAD_REQUEST);
+}
+
+#[tokio::test]
 async fn uptime_daily_admin_dan_kasir_ditolak() {
     let (_dir, st) = state("uptime").await;
     let (cookies, _uid) = admin(&st).await;

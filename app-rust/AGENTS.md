@@ -39,7 +39,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [DOCUMENTATION.md](
 | `README.md` | Ringkasan publik, sorotan fitur, dan quickstart server Rust. |
 | `docs/superpowers/plans/`, `docs/superpowers/specs/` | Rencana/desain agent; di-ignore Git, bukan runtime. |
 | `AGENTS.md` | Peta modul untuk AI agent (dokumen ini). |
-| `DOCUMENTATION.md` | Dokumentasi teknis lengkap (arsitektur, 247 route, 24 tabel, frontend, klien, operasional). |
+| `DOCUMENTATION.md` | Dokumentasi teknis lengkap (arsitektur, 248 route, 24 tabel, frontend, klien, operasional). |
 | `README.md` | Build, menjalankan server, rilis, troubleshooting. |
 | `LICENSE` | MIT License. |
 | `app/static/`, `app/templates/` | Aset frontend bersama yang di-embed ke biner Rust saat build. |
@@ -53,7 +53,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [DOCUMENTATION.md](
 - `app-rust/src/db/mod.rs`: buka pool SQLite (WAL, foreign key, busy timeout). `app-rust/src/db/migrate.rs`: `ensure_schema` aditif + snapshot + stempel revisi. `app-rust/src/db/write_lock.rs`: gerbang tulis (`WRITE_LOCK_SLOW` bila antre lama).
 
 #### B. Router (`app-rust/src/app.rs`)
-- 247 registrasi `.route(`; sumber kebenaran endpoint.
+- 248 registrasi `.route(`; sumber kebenaran endpoint.
 - Urutan guard: publik/client agent (tanpa guard) → `csrf` → `whitelist` → `admin_only`/`shift_required` pada domain sensitif.
 - `/static/{*path}` disajikan dari aset ter-embed dengan `Cache-Control: immutable`; `assets::cache_version()` (hash isi) dipakai sebagai `?v=`.
 - `/api/health` publik; halaman `/kasir/`, `/kasir/documentation`, `/kasir/login` dirender minijinja.
@@ -62,7 +62,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [DOCUMENTATION.md](
 | Domain | Tanggung Jawab |
 |---|---|
 | `auth/` | Login/logout kasir & admin, login member publik, cek sesi. |
-| `client/` | Handshake agent, heartbeat, polling sesi/perintah, emergency & admin login. |
+| `client/` | Handshake agent, heartbeat, polling sesi/perintah, emergency & admin login, unduh paket update klien `GET /api/v1/public/client/update.exe` (dari `<root>/client-update/TMBilling.exe`). |
 | `pages.rs` | Halaman kasir, login, dokumentasi, penerbitan ulang cookie CSRF. |
 | `dashboard/` | Statistik dashboard, ringkasan PC, omzet hari ini. |
 | `pc/`, `grup/`, `paket/` | CRUD meja, grup tarif, paket billing + arsip/restore. |
@@ -102,7 +102,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 
 | Direktori / Biner | Tanggung Jawab & Cakupan |
 |---|---|
-| `TMBilling/` | Klien utama aktif GPUI Rust: `src/{state.rs,app.rs,polling.rs}`, `src/ui/kiosk/{login,info,afk}.rs` (layar AFK terkunci + input PIN/password), `src/ui/overlay/{card,modals}.rs`, `src/platform/*` (registry credentials, keyboard hook, `window_manager::place` — ukuran via gpui `window.resize` + SetWindowPos; tray: klik kanan menu, double-click restore). `vendor/gpui-pre-windows` = patch `[patch.crates-io]`: clear Opaque hitam (bawaan putih) supaya WARP/VM tidak menampilkan pita putih saat resize. Arsitektur lama Tauri (arsip): `src/kiosk/`, `src/overlay/`, `src-tauri/`. Kredensial darurat dari registry/`config.ini`, fail-closed bila kosong. |
+| `TMBilling/` | Klien utama aktif GPUI Rust: `src/{state.rs,app.rs,polling.rs,update.rs}` (`update.rs` = update klien manual: unduh paket, verifikasi SHA-256, tukar exe, keluar agar watchdog menghidupkan ulang), `src/ui/kiosk/{login,info,afk}.rs` (layar AFK terkunci + input PIN/password), `src/ui/overlay/{card,modals}.rs`, `src/platform/*` (registry credentials, keyboard hook, `window_manager::place` — ukuran via gpui `window.resize` + SetWindowPos; tray: klik kanan menu, double-click restore). `vendor/gpui-pre-windows` = patch `[patch.crates-io]`: clear Opaque hitam (bawaan putih) supaya WARP/VM tidak menampilkan pita putih saat resize. Arsitektur lama Tauri (arsip): `src/kiosk/`, `src/overlay/`, `src-tauri/`. Kredensial darurat dari registry/`config.ini`, fail-closed bila kosong. |
 | `MGCTM/` | Watchdog C++ pengawas `TMBilling.exe`. |
 | `mtm/` | Auxiliary watchdog & resilience guard. |
 | `TMBilling_Monitor/` | Telemetri Rust + `HardwareHelper.exe` (LibreHardwareMonitor): CPU/GPU load & temp, RAM, active window, NIC speed. |

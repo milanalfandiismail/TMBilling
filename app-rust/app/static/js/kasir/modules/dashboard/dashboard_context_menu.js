@@ -144,6 +144,13 @@ Object.assign(window.Dashboard, {
 
                 ${pc.status !== 'offline' ? `
                 <div class="border-t border-[#222] my-1 remote-hide-action"></div>
+                <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-amber-400 hover:bg-amber-950/40 hover:text-amber-300 transition-colors text-left"
+                        onclick="Dashboard.closeContextMenu(); Dashboard.remoteAction(${pcId}, 'update')">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v10m0 0l-3-3m3 3l3-3" />
+                    </svg>
+                    <span>Update Klien</span>
+                </button>
                 <button class="ctx-item remote-hide-action w-full flex items-center gap-3 px-4 py-2 text-xs lg:text-base text-red-400 hover:bg-red-950/40 hover:text-red-300 transition-colors text-left"
                         onclick="Dashboard.closeContextMenu(); Dashboard.remoteAction(${pcId}, 'restart')">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

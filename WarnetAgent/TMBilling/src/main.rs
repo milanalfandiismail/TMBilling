@@ -9,6 +9,8 @@ mod qris_cache;
 mod state;
 mod theme;
 mod ui;
+#[allow(dead_code)]
+mod update;
 
 use gpui_kit::*;
 

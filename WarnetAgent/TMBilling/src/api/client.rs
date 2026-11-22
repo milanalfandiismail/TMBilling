@@ -227,6 +227,27 @@ impl ApiClient {
         Some(bytes)
     }
 
+    /// Paket exe klien terbaru dari server; `None` bila server belum menyediakan.
+    pub async fn update_bytes(&self) -> Option<Vec<u8>> {
+        let resp = self
+            .http
+            .get(self.url(&self.client_path("update.exe")))
+            .header("X-Client-Key", &self.api_key)
+            .timeout(std::time::Duration::from_secs(120))
+            .send()
+            .await
+            .ok()?;
+        if !resp.status().is_success() {
+            return None;
+        }
+        let bytes = resp.bytes().await.ok()?.to_vec();
+        if bytes.is_empty() {
+            None
+        } else {
+            Some(bytes)
+        }
+    }
+
     pub async fn warnet_config(&self) -> Result<WarnetConfig, ApiError> {
         let mut config: WarnetConfig = self.get(&self.client_path("warnet")).await?;
         config.qris_url = qris_source(

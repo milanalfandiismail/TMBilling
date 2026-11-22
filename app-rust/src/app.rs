@@ -845,6 +845,10 @@ pub fn router(state: Arc<AppState>) -> Router {
         )
         .route("/api/v1/public/client/status", post(client_routes::status))
         .route(
+            "/api/v1/public/client/update.exe",
+            get(client_routes::update_exe),
+        )
+        .route(
             "/api/v1/public/client/selesai",
             post(client_routes::selesai),
         )

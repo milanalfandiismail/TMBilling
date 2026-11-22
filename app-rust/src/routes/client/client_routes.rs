@@ -78,7 +78,7 @@ fn mac_of(data: &Value) -> String {
         .to_string()
 }
 
-async fn gerbang(st: &AppState, headers: &HeaderMap, peer: &str) -> Result<(), Response> {
+pub(crate) async fn gerbang(st: &AppState, headers: &HeaderMap, peer: &str) -> Result<(), Response> {
     let kirim = headers
         .get("x-client-key")
         .and_then(|v| v.to_str().ok())
@@ -438,4 +438,28 @@ pub async fn vnc_stopped(
         200,
         json!({"success": true, "message": "Status VNC stopped diperbarui"}),
     )
+}
+
+/// Kirim biner klien terbaru. Admin menaruh `TMBilling.exe` di `<root>/client-update/`.
+pub async fn update_exe(
+    State(state): St,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    headers: HeaderMap,
+) -> Response {
+    let peer = peer_ip(&headers, peer);
+    if let Err(res) = gerbang(&state, &headers, &peer).await {
+        return res;
+    }
+    let paket = state.cfg.root.join("client-update").join("TMBilling.exe");
+    match std::fs::read(&paket) {
+        Ok(bytes) => {
+            let mut res = Response::new(axum::body::Body::from(bytes));
+            res.headers_mut().insert(
+                axum::http::header::CONTENT_TYPE,
+                axum::http::HeaderValue::from_static("application/octet-stream"),
+            );
+            res
+        }
+        Err(_) => http::json(404, json!({"error": "paket update belum tersedia"})),
+    }
 }

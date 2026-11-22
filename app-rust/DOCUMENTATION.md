@@ -53,7 +53,7 @@
    - [4.30 In-Place Reactive Rerender & Zero Page Reload Engine](#430-in-place-reactive-rerender--zero-page-reload-engine)
    - [4.31 Zero-Config Security & Credential Bootstrap Architecture](#431-zero-config-security--credential-bootstrap-architecture)
 5. [Panduan Teknis Backend Rust (axum & sqlx)](#5-panduan-teknis-backend-rust-axum--sqlx)
-   - [5.1 Modul Routing Rust (27 Domain / 247 Route)](#51-modul-routing-rust)
+   - [5.1 Modul Routing Rust (27 Domain / 248 Route)](#51-modul-routing-rust)
    - [5.2 Service, Repository & Pola Arsitektur](#52-service-repository--pola-arsitektur)
    - [5.3 Skema Database (24 Tabel)](#53-skema-database-24-tabel)
 6. [Panduan Teknis Frontend (Modular Vanilla JS & CSS)](#6-panduan-teknis-frontend-modular-vanilla-js--css)
@@ -128,7 +128,7 @@ c:\Project GIT\TMBilling
 │   ├── README.md                       # Build, menjalankan, rilis, troubleshooting
 │   ├── src/
 │   │   ├── main.rs                     # Entry: --init, --apply-update, server normal
-│   │   ├── app.rs                      # Router axum: 247 registrasi .route(
+│   │   ├── app.rs                      # Router axum: 248 registrasi .route(
 │   │   ├── state.rs                    # AppState + write() (gerbang tulis tunggal)
 │   │   ├── config.rs                   # Config, .env, SECRET_KEY write-through
 │   │   ├── routes/                     # 27 domain, 63 file handler HTTP
@@ -512,12 +512,12 @@ c:\Project GIT\TMBilling
 ## 5. Panduan Teknis Backend Rust (axum & sqlx)
 
 ### 5.1 Modul Routing Rust
-Backend TMBilling terbagi ke dalam **27 direktori domain** di `app-rust/src/routes/` (63 file) dengan **247 registrasi `.route(`** di `app-rust/src/app.rs`:
+Backend TMBilling terbagi ke dalam **27 direktori domain** di `app-rust/src/routes/` (63 file) dengan **248 registrasi `.route(`** di `app-rust/src/app.rs`:
 
 | Domain | Prefix utama | Endpoint | Tanggung Jawab |
 |---|---|---|---|
 | `auth/` | `/api/v1/kasir/auth`, `/api/v1/public/auth` | 7 | Login/logout kasir & admin, login member, cek sesi. |
-| `client/` | `/api/v1/public/client` | 13 | Handshake agent, heartbeat, polling sesi/perintah, emergency login. |
+| `client/` | `/api/v1/public/client` | 13 | Handshake agent, heartbeat, polling sesi/perintah, emergency login, unduh paket update klien (`update.exe`). |
 | `dashboard/` | `/api/v1/kasir/dashboard` | 3 | Statistik dashboard, ringkasan PC, omzet hari ini. |
 | `pc/` | `/api/v1/kasir/pc` | 9 | CRUD PC, IP/MAC, koordinat denah, arsip. |
 | `grup/` | `/api/v1/kasir/grup` | 5 | Grup ruangan & tarif per menit. |
@@ -655,8 +655,18 @@ Berlokasi di direktori `WarnetAgent/Deploy/`:
 - **`allow_firewall.bat`**: Skrip pendaftaran aturan Windows Defender Firewall untuk port 5900 dan executable TMBilling.
 - **`tightvnc_settings.reg`**: Konfigurasi registry untuk layanan remote screen TightVNC Server (LoopbackOnly).
 
----
+### 7.7 Update Klien Manual
 
+Update klien bersifat manual, satu PC per aksi, tanpa penjadwalan atau rollout massal:
+
+1. Admin menaruh `TMBilling.exe` baru di `<folder server>/client-update/TMBilling.exe`.
+2. Kasir klik kanan PC di dashboard → **Update Klien** (`POST /api/v1/kasir/monitor/remote/{pc_id}/update`, label "Update klien"); aksi ini hanya untuk satu PC (bukan batch) dan server menolak PC mode SYSTEM lewat guard `sesi_system`.
+3. Klien mengunduh paket dari `GET /api/v1/public/client/update.exe`, memverifikasi SHA-256 paket terhadap isi berkas yang ditulis, menaruh salinan exe lama di `TMBilling.old.exe`, lalu menulis `Hash_TMBilling` registry (nilai lama pindah ke `Hash_TMBilling_prev`) **sebelum** mengganti exe dengan satu rename atomik `TMBilling.new.exe` → `TMBilling.exe` (logika di `WarnetAgent/TMBilling/src/update.rs`). Karena boot menerima dua hash, mati listrik di titik mana pun tetap menyisakan klien yang bisa start; kegagalan registry atau rename sebelum exe tersentuh mengembalikan hash lama dan menghapus berkas sementara.
+4. Klien `exit(0)`; MGCTM menghidupkan exe baru dalam ≤5 detik. Tidak ada auto-rollback bila exe baru sendiri gagal start: admin menyalin `TMBilling.old.exe` ke `TMBilling.exe` lalu menulis ulang `Hash_TMBilling` dengan hash berkas itu.
+
+Catatan keamanan: paket tidak ditandatangani. SHA-256 hanya membandingkan byte yang diunduh dengan berkas yang ditulis, jadi klien mempercayai server billing apa adanya — siapa pun yang memegang API key atau bisa menyadap jalur LAN dapat mengirim exe pilihan sendiri. Lindungi server dan API key, dan taruh klien di LAN tepercaya.
+
+---
 ## 8. Spesifikasi Protokol API & VNC Bridge
 
 ### 8.1 Standar Format JSON REST API
@@ -676,8 +686,8 @@ Jika terjadi kegagalan:
 }
 ```
 
-### 8.2 Katalog Endpoint REST API (247 Route Rust)
-Total registrasi `.route(` di `app-rust/src/app.rs`: **247 route**. Sumber kebenaran endpoint adalah file tersebut; tabel di bawah merangkum per domain (jumlah = perkiraan per prefix, beberapa domain berbagi prefix).
+### 8.2 Katalog Endpoint REST API (248 Route Rust)
+Total registrasi `.route(` di `app-rust/src/app.rs`: **248 route**. Sumber kebenaran endpoint adalah file tersebut; tabel di bawah merangkum per domain (jumlah = perkiraan per prefix, beberapa domain berbagi prefix).
 
 > Endpoint kesehatan `GET /api/health` bersifat publik dan dipakai probe eksternal; payload-nya tidak memuat path atau angka sensitif.
 >
@@ -686,7 +696,7 @@ Total registrasi `.route(` di `app-rust/src/app.rs`: **247 route**. Sumber keben
 | Domain | Prefix | Endpoint | Cakupan |
 |---|---|---|---|
 | auth | `/api/v1/kasir/auth`, `/api/v1/public/auth` | 7 | login, logout, check, admin-check, status member |
-| client | `/api/v1/public/client` | 13 | handshake, heartbeat, poll sesi/perintah, telemetri, screenshot |
+| client | `/api/v1/public/client` | 13 | handshake, heartbeat, poll sesi/perintah, telemetri, screenshot, paket update klien (`GET .../update.exe`) |
 | dashboard | `/api/v1/kasir/dashboard` | 3 | summary, omzet, status PC |
 | arsip | `/api/v1/kasir/arsip` | 2 | daftar agregat arsip, restore per resource |
 | backup | `/api/v1/kasir/backup` | 7 | list, buat, unduh, restore, hapus, status manual |

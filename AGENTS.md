@@ -5,7 +5,7 @@ Sistem Manajemen Billing Warnet & Game Center. Backend aktif: biner Rust `app-ru
 Dokumen acuan lengkap (WAJIB dibaca sebelum menyentuh kode):
 
 - `app-rust/AGENTS.md` — peta modul backend, endpoint, service, model, aturan uang/sesi, perintah cepat, standar test.
-- `app-rust/DOCUMENTATION.md` — dokumentasi teknis lengkap (arsitektur, 245 route, 24 tabel, frontend, klien, operasional).
+- `app-rust/DOCUMENTATION.md` — dokumentasi teknis lengkap (arsitektur, 248 route, 24 tabel, frontend, klien, operasional).
 - `app-rust/README.md` — build, menjalankan server, rilis, troubleshooting.
 - `docs/RUST_MIGRATION.md` — arsitektur, prosedur upgrade, dan rollback.
 

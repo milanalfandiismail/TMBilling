@@ -481,7 +481,7 @@ pub async fn remote_action(
     if let Err(res) = auth::shift_required(&state, &kasir).await {
         return res;
     }
-    if action != "shutdown" && action != "restart" {
+    if action != "shutdown" && action != "restart" && action != "update" {
         return gagal(400, "Aksi tidak valid");
     }
     let pc = match pc_repo::get_by_id(&state.pool, pc_id).await {
@@ -496,10 +496,10 @@ pub async fn remote_action(
     }
     // Dieksekusi aplikasi Tauri dari antrean reguler; TMMonitor tidak mengenal restart/shutdown.
     state.commands.regular.push(pc.id, &action);
-    let label = if action == "shutdown" {
-        "Shutdown"
-    } else {
-        "Restart"
+    let label = match action.as_str() {
+        "shutdown" => "Shutdown",
+        "update" => "Update klien",
+        _ => "Restart",
     };
     logger::rec(
         &kasir.user.username,

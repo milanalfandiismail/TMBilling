@@ -96,6 +96,14 @@ pub async fn run(client: ApiClient, tx: UnboundedSender<AppEvent>) {
                                 }
                             });
                         }
+                        if cmd == "update" {
+                            let upd_client = client.clone();
+                            tokio::spawn(async move {
+                                if let Err(e) = crate::update::install(&upd_client).await {
+                                    crate::update::catat(&format!("[update] gagal: {e}"));
+                                }
+                            });
+                        }
                         let _ = tx.send(AppEvent::Command(cmd));
                     }
                     let _ = tx.send(AppEvent::Status(status));

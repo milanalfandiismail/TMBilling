@@ -28,7 +28,7 @@
 **TMBilling** adalah solusi manajemen operasional terpadu untuk warnet, cybercafe, dan arena esports modern. Dirancang dengan arsitektur **3-Layer Separation of Concerns (SoC)** yang tangguh, sistem ini mengintegrasikan server billing kasir, kasir kantin/FnB terpadu, kendali jarak jauh (remote control TightVNC berbasis web), monitoring hardware baseline anti-maling, dan pertahanan klien 5-lapis (*5-Layer Anti-Tamper Security*).
 
 > 📚 **Dokumentasi Lengkap (Single Source of Truth):**  
-> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 245 route API, dan skema database, buka **[app-rust/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/app-rust/DOCUMENTATION.md)**.
+> Untuk panduan arsitektur mendalam, spesifikasi fitur lengkap, katalog 248 route API, dan skema database, buka **[app-rust/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/app-rust/DOCUMENTATION.md)**.
 
 ---
 
@@ -136,10 +136,12 @@ c:\Project GIT\TMBilling
    - Menghitung hash SHA-256 binary untuk proteksi integritas dan langsung menjalankan agen di background.
 
 5. **Cara Pembaruan / Update Versi Klien**:
-   Karena biner klien memiliki proteksi anti-tamper dan pengawas supervisor ganda (*watchdog mutual guard*), pembaruan versi klien dilakukan dengan alur bersih berikut:
-   1. Jalankan **`uninstall.bat`** (atau `TMBilling_Uninstaller.exe`) di PC klien untuk menghentikan seluruh proses proteksi secara legal dan membersihkan instalasi versi lama.
-   2. Unduh dan ekstrak paket klien versi terbaru (`TMBilling_Client_v<versi>.zip`) dari **[GitHub Releases](https://github.com/milanalfandiismail/TMBilling/releases)**.
-   3. Jalankan **`install.bat`** seperti biasa, lalu masukkan IP Server Billing dan API Key yang sesuai.
+   Klien yang sudah memuat fitur update dapat diperbarui dari dashboard tanpa menyentuh PC:
+   1. Admin menaruh `TMBilling.exe` versi baru di `<folder server>/client-update/TMBilling.exe`.
+   2. Kasir klik kanan PC di dashboard lalu pilih **Update Klien**. Klien mengunduh paket, memverifikasi SHA-256, mengganti exe dengan rename atomik, menulis ulang `Hash_TMBilling`, lalu keluar dan dihidupkan lagi oleh watchdog dalam ≤5 detik.
+   3. PC yang masih memakai klien lama (belum punya fitur update) harus di-`install.bat` sekali secara manual; setelah itu pembaruan berikutnya bisa dari dashboard.
+
+   Fallback bila exe baru gagal start: salin `TMBilling.old.exe` menjadi `TMBilling.exe` di PC tersebut, tulis ulang nilai `Hash_TMBilling` dengan hash berkas itu, lalu jalankan klien kembali.
 
 6. **Uninstalasi Klien**:
    Jalankan **`uninstall.bat`** di PC klien untuk meluncurkan panel uninstalasi aman.
@@ -184,7 +186,7 @@ c:\Project GIT\TMBilling
 
 | Dokumen | Deskripsi |
 | :--- | :--- |
-| **[app-rust/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/app-rust/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog 31 domain fitur, 245 route REST API, skema 24 tabel, panduan backend Rust/frontend/klien, dan spesifikasi VNC bridge. |
+| **[app-rust/DOCUMENTATION.md](file:///c:/Project%20GIT/TMBilling/app-rust/DOCUMENTATION.md)** | **Master Dokumentasi Teknis (Single Source of Truth)** — Memuat arsitektur sistem, katalog 31 domain fitur, 248 route REST API, skema 24 tabel, panduan backend Rust/frontend/klien, dan spesifikasi VNC bridge. |
 | **[CHANGELOG.md](file:///c:/Project%20GIT/TMBilling/CHANGELOG.md)** | **Catatan Rilis** — Riwayat log perubahan dan rilis; entri terbaru mengikuti versi `app-rust/Cargo.toml`. |
 
 ---

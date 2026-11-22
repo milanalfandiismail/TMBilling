@@ -62,6 +62,7 @@ async fn state(tag: &str) -> (TempDir, Arc<AppState>) {
 
 struct Reply {
     status: StatusCode,
+    headers: HeaderMap,
     body: String,
 }
 
@@ -107,10 +108,10 @@ async fn kirim(
     let res = router(st).oneshot(req).await.unwrap();
     let status = res.status();
     let headers: HeaderMap = res.headers().clone();
-    let _ = headers;
     let body = res.into_body().collect().await.unwrap().to_bytes();
     Reply {
         status,
+        headers,
         body: String::from_utf8_lossy(&body).to_string(),
     }
 }
@@ -378,4 +379,51 @@ async fn status_member_membawa_data_profil() {
     assert_eq!(m["no_hp"], json!("081234567890"));
     assert!(m["kadaluarsa_pada_display"].is_string(), "member={m}");
     assert!(m["dibuat_pada_display"].is_string(), "member={m}");
+}
+
+#[tokio::test]
+async fn paket_update_404_saat_file_belum_ada() {
+    let (_dir, st) = state("update_kosong").await;
+    let reply = kirim(
+        st,
+        "GET",
+        "/api/v1/public/client/update.exe",
+        Some(KUNCI),
+        None,
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::NOT_FOUND);
+    assert!(reply.json()["error"]
+        .as_str()
+        .unwrap()
+        .contains("belum tersedia"));
+}
+
+#[tokio::test]
+async fn paket_update_mengirim_biner_dari_folder_root() {
+    let (dir, st) = state("update_ada").await;
+    let paket = dir.0.join("client-update");
+    std::fs::create_dir_all(&paket).unwrap();
+    std::fs::write(paket.join("TMBilling.exe"), b"exe-baru").unwrap();
+    let reply = kirim(
+        st,
+        "GET",
+        "/api/v1/public/client/update.exe",
+        Some(KUNCI),
+        None,
+    )
+    .await;
+    assert_eq!(reply.status, StatusCode::OK);
+    assert_eq!(
+        reply.headers.get("content-type").unwrap(),
+        "application/octet-stream"
+    );
+    assert_eq!(reply.body, "exe-baru");
+}
+
+#[tokio::test]
+async fn paket_update_menolak_tanpa_api_key() {
+    let (_dir, st) = state("update_tanpa_key").await;
+    let reply = kirim(st, "GET", "/api/v1/public/client/update.exe", None, None).await;
+    assert_eq!(reply.status, StatusCode::UNAUTHORIZED);
 }
