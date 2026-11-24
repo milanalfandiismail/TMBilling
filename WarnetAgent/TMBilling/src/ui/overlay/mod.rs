@@ -9,6 +9,8 @@ use std::rc::Rc;
 pub type ActFn = Rc<dyn Fn(&mut Window, &mut App)>;
 pub type TabFn = Rc<dyn Fn(usize, &mut Window, &mut App)>;
 
+pub type LaunchFn = Rc<dyn Fn(String, Option<String>, &mut Window, &mut App)>;
+
 #[derive(Clone)]
 pub struct OverlayActions {
     pub open: ModalFn,
@@ -26,6 +28,9 @@ pub struct OverlayActions {
     pub power_confirm: PowerConfirmFn,
     pub focus_pin: ActFn,
     pub focus_admin: FocusFn,
+    pub launcher_tab: TabFn,
+    pub launcher_launch: LaunchFn,
+    pub open_launcher: ActFn,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -34,6 +39,8 @@ pub enum ToolId {
     Volume = 1,
     Mouse = 2,
     Keyboard = 3,
+    Menu = 4,
+    Paket = 5,
 }
 
 /// Alat Cepat membuka applet Windows, sama seperti klien Tauri.
@@ -42,7 +49,7 @@ pub fn tool_command(tool: ToolId) -> Option<(&'static str, &'static [&'static st
         ToolId::Volume => Some(("sndvol.exe", &[])),
         ToolId::Mouse => Some(("control.exe", &["main.cpl"])),
         ToolId::Keyboard => Some(("control.exe", &["keyboard"])),
-        ToolId::Lock => None,
+        ToolId::Lock | ToolId::Menu | ToolId::Paket => None,
     }
 }
 

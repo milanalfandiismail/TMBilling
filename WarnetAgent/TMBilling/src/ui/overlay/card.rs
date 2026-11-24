@@ -96,10 +96,17 @@ fn badge_chip(app: &TmApp, compact: bool, scale: f32) -> AnyElement {
 }
 
 /// Extra height the tab panel adds below the card body; the window is resized to match.
+/// Tinggi kartu launcher terpisah di bawah overlay (height 48px + margin gap 8px).
+pub const LAUNCHER_BAR_H: f32 = 48.0;
+pub const LAUNCHER_BAR_GAP: f32 = 8.0;
+
+/// Extra height the tab panel and launcher card add below the card body; the window is resized to match.
 pub fn extra_height(tab: usize, geom: OverlayGeometry, member: bool) -> f32 {
     let scale = geom.width / 380.0;
     let sesi = if tab == 0 { panels::sesi_extra(member) } else { 0.0 };
-    sesi * scale
+    let launcher_extra = (LAUNCHER_BAR_H + LAUNCHER_BAR_GAP) * scale;
+    launcher_extra
+        + sesi * scale
         + match tab {
             1 => (panels::TOOLS_H - 30.0) * scale,
             2 => (panels::QRIS_H - 30.0) * scale,
@@ -278,5 +285,93 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                 .child(panels::sesi(app, scale))
                 .into_any_element(),
         })
+        .child(launcher_card_bar(scale, m.radius, actions))
         .into_any_element()
+}
+
+/// Kartu terpisah khusus Game Launcher yang terletak tepat di bawah kartu utama overlay.
+fn launcher_card_bar(scale: f32, radius: f32, actions: &OverlayActions) -> impl IntoElement {
+    let open = actions.open_launcher.clone();
+    div()
+        .id("ov-game-launcher-card")
+        .mt(px(LAUNCHER_BAR_GAP * scale))
+        .h(px(LAUNCHER_BAR_H * scale))
+        .w_full()
+        .px(px(14.0 * scale))
+        .rounded(px(radius))
+        .border_1()
+        .border_color(TM.border)
+        .bg(TM.card)
+        .hover(|s| s.bg(TM.hover).border_color(TM.accent))
+        .active(|s| s.bg(TM.hover))
+        .cursor_pointer()
+        .flex()
+        .flex_row()
+        .items_center()
+        .justify_between()
+        .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+            open(window, cx);
+        })
+        .child(
+            div()
+                .flex()
+                .flex_row()
+                .items_center()
+                .gap(px(10.0 * scale))
+                .child(
+                    div()
+                        .w(px(26.0 * scale))
+                        .h(px(26.0 * scale))
+                        .rounded(px(6.0 * scale))
+                        .bg(TM.hover)
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .child(
+                            div()
+                                .flex()
+                                .flex_row()
+                                .flex_wrap()
+                                .gap(px(2.0 * scale))
+                                .w(px(12.0 * scale))
+                                .h(px(12.0 * scale))
+                                .child(div().w(px(5.0 * scale)).h(px(5.0 * scale)).rounded(px(1.0)).bg(TM.accent))
+                                .child(div().w(px(5.0 * scale)).h(px(5.0 * scale)).rounded(px(1.0)).bg(TM.accent))
+                                .child(div().w(px(5.0 * scale)).h(px(5.0 * scale)).rounded(px(1.0)).bg(TM.accent))
+                                .child(div().w(px(5.0 * scale)).h(px(5.0 * scale)).rounded(px(1.0)).bg(TM.accent))
+                        )
+                )
+                .child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .gap(px(1.0))
+                        .child(
+                            div()
+                                .text_size(px(12.0 * scale))
+                                .text_color(TM.text)
+                                .font_weight(FontWeight::BOLD)
+                                .child("Game Launcher")
+                        )
+                        .child(
+                            div()
+                                .text_size(px(10.0 * scale))
+                                .text_color(TM.muted)
+                                .child("Buka katalog game & aplikasi")
+                        )
+                )
+        )
+        .child(
+            div()
+                .flex()
+                .items_center()
+                .justify_center()
+                .w(px(22.0 * scale))
+                .h(px(22.0 * scale))
+                .rounded(px(4.0 * scale))
+                .bg(TM.hover)
+                .text_size(px(11.0 * scale))
+                .text_color(TM.accent)
+                .child("▶")
+        )
 }

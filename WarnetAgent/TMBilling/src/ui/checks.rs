@@ -185,6 +185,8 @@ fn quick_tools_launch_windows_applets() {
         Some(("control.exe", &["keyboard"][..]))
     );
     assert_eq!(crate::ui::overlay::tool_command(ToolId::Lock), None);
+    assert_eq!(crate::ui::overlay::tool_command(ToolId::Menu), None);
+    assert_eq!(crate::ui::overlay::tool_command(ToolId::Paket), None);
 }
 
 #[test]
@@ -217,9 +219,74 @@ fn sesi_extra_only_for_member() {
 #[test]
 fn extra_height_grows_only_for_member_sesi() {
     use crate::platform::window::overlay_geometry;
-    use crate::ui::overlay::card::extra_height;
+    use crate::ui::overlay::card::{extra_height, LAUNCHER_BAR_H, LAUNCHER_BAR_GAP};
     let g = overlay_geometry((1920.0, 1080.0));
-    assert_eq!(extra_height(0, g, false), 0.0);
-    assert!(extra_height(0, g, true) > 0.0);
+    let scale = g.width / 380.0;
+    let launcher_extra = (LAUNCHER_BAR_H + LAUNCHER_BAR_GAP) * scale;
+    assert_eq!(extra_height(0, g, false), launcher_extra);
+    assert!(extra_height(0, g, true) > launcher_extra);
     assert_eq!(extra_height(1, g, true), extra_height(1, g, false));
+}
+
+#[test]
+fn launcher_modal_and_tool_integration() {
+    use crate::state::{Modal, View, hold_fullscreen_modal, modal_fullscreen};
+    use crate::ui::overlay::ToolId;
+
+    // Modal Launcher harus fullscreen di mode overlay jika dipanggil
+    assert!(modal_fullscreen(View::Overlay, Some(Modal::Launcher)));
+    assert!(hold_fullscreen_modal(View::Overlay, Modal::Launcher));
+
+    // ToolId Lock tidak meluncurkan command eksternal bawaan
+    assert_eq!(crate::ui::overlay::tool_command(ToolId::Lock), None);
+}
+
+#[test]
+fn launcher_metrics_responsive_columns() {
+    use crate::ui::launcher::get_metrics_for_width;
+
+    let (cols_4k, _) = get_metrics_for_width(2560.0);
+    assert_eq!(cols_4k, 10);
+
+    let (cols_1080p, _) = get_metrics_for_width(1920.0);
+    assert_eq!(cols_1080p, 9);
+
+    let (cols_768p, _) = get_metrics_for_width(1366.0);
+    assert_eq!(cols_768p, 8);
+
+    let (cols_small, _) = get_metrics_for_width(1024.0);
+    assert_eq!(cols_small, 6);
+}
+
+#[test]
+fn image_format_magic_bytes_detection() {
+    use crate::poster_cache::detect_image_format;
+    use gpui_kit::ImageFormat;
+
+    // PNG signature: 0x89 0x50 0x4E 0x47
+    let png_bytes = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00];
+    assert_eq!(detect_image_format(&png_bytes), ImageFormat::Png);
+
+    // JPEG signature: 0xFF 0xD8
+    let jpg_bytes = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10];
+    assert_eq!(detect_image_format(&jpg_bytes), ImageFormat::Jpeg);
+}
+
+#[test]
+fn game_item_word_and_app_type() {
+    use crate::api::models::GameItem;
+
+    let word = GameItem {
+        id: 16,
+        nama: "Microsoft Word".into(),
+        tipe: Some("aplikasi".into()),
+        kategori: Some("Utility / Software, Productivity".into()),
+        exe_path: Some(r"C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE".into()),
+        argumen: None,
+        icon: Some("word.jpg".into()),
+        icon_url: Some("/static/uploads/games/word.jpg".into()),
+        aktif: Some(true),
+    };
+    assert!(word.is_aplikasi());
+    assert_eq!(word.action_label(), "▶ BUKA");
 }

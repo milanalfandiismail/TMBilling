@@ -74,6 +74,8 @@ impl TmApp {
 
     pub fn start(&mut self, cx: &mut Context<Self>) {
         self.login.info_page = 1;
+        self.menu_page = 1;
+        self.paket_page = 1;
         self.caret_on = true;
         // Tab is bound by gpui-kit's own focus traversal, so the key listener never sees it:
         // intercept it here and walk our own fields.
@@ -287,13 +289,6 @@ impl TmApp {
             return;
         }
         match key {
-            // F11 is the admin hotkey of the Tauri client; F10 opens the read-only menu.
-            "f10" => {
-                self.menu_page = 1;
-                self.modal = Some(Modal::Menu);
-                cx.notify();
-                return;
-            }
             "f11" if crate::state::admin_hotkey_allowed(self.session.is_some()) => {
                 self.login.admin_user.clear();
                 self.login.admin_pass.clear();
@@ -599,6 +594,9 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
     let power_me = me.clone();
     let pin_focus_me = me.clone();
     let admin_focus_me = me.clone();
+    let launcher_tab_me = me.clone();
+    let launcher_launch_me = me.clone();
+    let launcher_open_me = me.clone();
     OverlayActions {
         focus_pin: Rc::new(move |_w: &mut Window, cx: &mut App| {
             pin_focus_me.update(cx, |_, cx| cx.notify());
@@ -633,13 +631,21 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
         }) as ActFn,
         page_prev: Rc::new(move |_w: &mut Window, cx: &mut App| {
             prev_me.update(cx, |app, cx| {
-                app.menu_page = app.menu_page.saturating_sub(1).max(1);
+                match app.modal {
+                    Some(Modal::Menu) => app.menu_page = app.menu_page.saturating_sub(1).max(1),
+                    Some(Modal::Paket) => app.paket_page = app.paket_page.saturating_sub(1).max(1),
+                    _ => {}
+                }
                 cx.notify();
             });
         }) as ActFn,
         page_next: Rc::new(move |_w: &mut Window, cx: &mut App| {
             next_me.update(cx, |app, cx| {
-                app.menu_page += 1;
+                match app.modal {
+                    Some(Modal::Menu) => app.menu_page += 1,
+                    Some(Modal::Paket) => app.paket_page += 1,
+                    _ => {}
+                }
                 cx.notify();
             });
         }) as ActFn,
@@ -673,6 +679,22 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
         tool: Rc::new(move |tool: ToolId, _w: &mut Window, cx: &mut App| {
             tool_me.update(cx, |app, cx| app.run_tool(tool, cx));
         }) as ToolFn,
+        launcher_tab: Rc::new(move |tab: usize, _w: &mut Window, cx: &mut App| {
+            launcher_tab_me.update(cx, |app, cx| {
+                app.launcher_tab = tab;
+                cx.notify();
+            });
+        }) as crate::ui::overlay::TabFn,
+        launcher_launch: Rc::new(move |exe: String, args: Option<String>, _w: &mut Window, cx: &mut App| {
+            launcher_launch_me.update(cx, |app, cx| {
+                app.launch_game(&exe, args.as_deref(), cx);
+            });
+        }) as crate::ui::overlay::LaunchFn,
+        open_launcher: Rc::new(move |_w: &mut Window, cx: &mut App| {
+            launcher_open_me.update(cx, |app, cx| {
+                app.open_game_launcher(cx);
+            });
+        }) as ActFn,
     }
 }
 
@@ -710,9 +732,44 @@ impl TmApp {
             self.lock_afk(cx);
             return;
         }
+        if tool == ToolId::Menu {
+            self.menu_page = 1;
+            self.modal = Some(Modal::Menu);
+            cx.notify();
+            return;
+        }
+        if tool == ToolId::Paket {
+            self.paket_page = 1;
+            self.modal = Some(Modal::Paket);
+            cx.notify();
+            return;
+        }
         if let Some((exe, args)) = crate::ui::overlay::tool_command(tool) {
             let _ = std::process::Command::new(exe).args(args).spawn();
         }
+    }
+
+    /// Jalankan biner TMGameLauncher.exe yang berada di folder yang sama dengan TMBilling.exe.
+    pub fn open_game_launcher(&mut self, _cx: &mut Context<Self>) {
+        let exe_path = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|dir| dir.join("TMGameLauncher.exe")))
+            .unwrap_or_else(|| std::path::PathBuf::from("TMGameLauncher.exe"));
+
+        let _ = std::process::Command::new(exe_path).spawn();
+    }
+
+    pub fn launch_game(&mut self, exe: &str, args: Option<&str>, _cx: &mut Context<Self>) {
+        let mut cmd = std::process::Command::new(exe);
+        if let Some(parent) = std::path::Path::new(exe).parent() {
+            cmd.current_dir(parent);
+        }
+        if let Some(a) = args {
+            if !a.trim().is_empty() {
+                cmd.args(a.split_whitespace());
+            }
+        }
+        let _ = cmd.spawn();
     }
 
     /// Sama seperti Tauri: member langsung terkunci, guest memilih PIN dulu.

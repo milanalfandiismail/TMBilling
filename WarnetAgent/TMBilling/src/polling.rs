@@ -18,6 +18,7 @@ pub enum AppEvent {
     #[allow(dead_code)] // shortcut: dibaca Task 8 (tools) dan Task 12 (screenshot)
     Command(String),
     Qris(Option<std::sync::Arc<Image>>),
+    Games(Vec<crate::api::models::GameItem>),
 }
 
 pub fn next_interval(ok: bool, hint: Option<u64>) -> u64 {

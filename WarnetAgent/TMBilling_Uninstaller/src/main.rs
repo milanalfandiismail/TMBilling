@@ -272,6 +272,11 @@ fn execute_uninstall(plain_password: &str) {
         .status();
 
     let _ = Command::new("taskkill")
+        .args(["/F", "/IM", "TMGameLauncher.exe"])
+        .creation_flags(CREATE_NO_WINDOW)
+        .status();
+
+    let _ = Command::new("taskkill")
         .args(["/F", "/IM", "TMMonitor.exe"])
         .creation_flags(CREATE_NO_WINDOW)
         .status();
@@ -346,6 +351,7 @@ fn execute_uninstall(plain_password: &str) {
     let files_to_delete = vec![
         "MGCTM.exe",
         "TMBilling.exe",
+        "TMGameLauncher.exe",
         "TMMonitor.exe",
         "mtm.exe",
         "HardwareHelper.exe",
@@ -364,6 +370,7 @@ fn execute_uninstall(plain_password: &str) {
         "agent_debug.log",
         "C:\\TMBILLING\\MGCTM.exe",
         "C:\\TMBILLING\\TMBilling.exe",
+        "C:\\TMBILLING\\TMGameLauncher.exe",
         "C:\\TMBILLING\\TMMonitor.exe",
         "C:\\TMBILLING\\mtm.exe",
         "C:\\TMBILLING\\HardwareHelper.exe",

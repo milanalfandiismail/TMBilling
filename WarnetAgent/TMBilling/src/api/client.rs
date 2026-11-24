@@ -134,6 +134,12 @@ impl ApiClient {
         self.post(&self.client_path("status"), body).await
     }
 
+    /// Background polling observer khusus Game Launcher yang aman dari reset mode admin.
+    pub async fn status_launcher(&self, ip: &str, mac: &str) -> Result<StatusResponse, ApiError> {
+        let body = serde_json::json!({ "ip_address": ip, "mac_address": mac, "role": "launcher" });
+        self.post(&self.client_path("status"), body).await
+    }
+
     pub async fn logout(&self, ip: &str, mac: &str) -> Result<(), ApiError> {
         let body = serde_json::json!({ "ip_address": ip, "mac_address": mac });
         let _: serde_json::Value = self.post(&self.client_path("selesai"), body).await?;
@@ -202,6 +208,48 @@ impl ApiClient {
             .header(reqwest::header::CONTENT_TYPE, "image/png")
             .body(png);
         self.send(req).await.map(|_| ())
+    }
+
+    /// Mengambil daftar game & aplikasi dari `/api/v1/public/game`.
+    pub async fn games(&self) -> Result<Vec<GameItem>, ApiError> {
+        #[derive(serde::Deserialize)]
+        struct GameListResp {
+            success: bool,
+            data: Vec<GameItem>,
+        }
+        let req = self.http.get(self.url("/api/v1/public/game/all"));
+        let body = self.send(req).await?;
+        let res: GameListResp = serde_json::from_str(&body).map_err(|_| ApiError::Parse)?;
+        if res.success {
+            Ok(res.data)
+        } else {
+            Ok(Vec::new())
+        }
+    }
+
+    /// Mengambil byte gambar dari URL (poster/cover) dengan timeout aman.
+    pub async fn fetch_image_bytes(&self, url: &str) -> Option<Vec<u8>> {
+        let full_url = if url.starts_with("http://") || url.starts_with("https://") {
+            url.to_string()
+        } else {
+            self.url(url)
+        };
+        let resp = self
+            .http
+            .get(&full_url)
+            .timeout(std::time::Duration::from_secs(10))
+            .send()
+            .await
+            .ok()?;
+        if !resp.status().is_success() {
+            return None;
+        }
+        let bytes = resp.bytes().await.ok()?.to_vec();
+        if bytes.is_empty() {
+            None
+        } else {
+            Some(bytes)
+        }
     }
 
     /// Bytes of the QRIS image, reused from RAM while the source URL is unchanged.

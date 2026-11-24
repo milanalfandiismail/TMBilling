@@ -2,8 +2,10 @@ pub mod badge;
 pub mod button;
 #[cfg(test)]
 mod checks;
+pub mod html;
 pub mod input;
 pub mod kiosk;
+pub mod launcher;
 pub mod modal;
 pub mod overlay;
 pub mod pager;
@@ -15,4 +17,3 @@ pub use input::TmInput;
 pub use modal::modal_shell;
 pub use pager::TmPager;
 pub use tabs::TmTabs;
-pub mod html;

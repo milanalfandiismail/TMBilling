@@ -234,6 +234,7 @@ pub fn router(state: Arc<AppState>) -> Router {
             "/api/v1/kasir/menu/{id}/permanent",
             axum::routing::delete(menu_routes::permanent),
         )
+        .route("/api/v1/public/game", get(game_public_routes::list))
         .route("/api/v1/public/game/all", get(game_public_routes::list))
         .route(
             "/api/v1/public/game/kategori",
@@ -907,17 +908,27 @@ pub fn router(state: Arc<AppState>) -> Router {
 }
 
 async fn static_file(Path(path): Path<String>) -> Response {
-    match StaticAssets::get(&path) {
-        Some(file) => {
-            let mime = crate::assets::content_type(&path);
-            let body: Body = Body::from(file.data.into_owned());
-            let mut res = (StatusCode::OK, body).into_response();
-            res.headers_mut()
-                .insert(header::CONTENT_TYPE, HeaderValue::from_static(mime));
-            res.headers_mut()
-                .insert(header::CACHE_CONTROL, HeaderValue::from_static(IMMUTABLE));
-            res
-        }
-        None => StatusCode::NOT_FOUND.into_response(),
+    if let Some(file) = StaticAssets::get(&path) {
+        let mime = crate::assets::content_type(&path);
+        let body: Body = Body::from(file.data.into_owned());
+        let mut res = (StatusCode::OK, body).into_response();
+        res.headers_mut()
+            .insert(header::CONTENT_TYPE, HeaderValue::from_static(mime));
+        res.headers_mut()
+            .insert(header::CACHE_CONTROL, HeaderValue::from_static(IMMUTABLE));
+        return res;
     }
+
+    // Fallback: baca dari filesystem disk (misal uploads/games, uploads/menu yang diunggah dinamis)
+    let disk_path = std::path::Path::new("app/static").join(&path);
+    if let Ok(bytes) = std::fs::read(&disk_path) {
+        let mime = crate::assets::content_type(&path);
+        let body: Body = Body::from(bytes);
+        let mut res = (StatusCode::OK, body).into_response();
+        res.headers_mut()
+            .insert(header::CONTENT_TYPE, HeaderValue::from_static(mime));
+        return res;
+    }
+
+    StatusCode::NOT_FOUND.into_response()
 }

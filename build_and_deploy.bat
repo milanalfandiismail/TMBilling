@@ -25,10 +25,16 @@ if %ERRORLEVEL% NEQ 0 (
     pause
     exit /b %ERRORLEVEL%
 )
-echo Menyalin file TMBilling.exe ke folder Deploy...
+echo Menyalin file TMBilling.exe dan TMGameLauncher.exe ke folder Deploy...
 copy /Y "%CURRENT_DIR%\WarnetAgent\TMBilling\target\release\TMBilling.exe" "%CURRENT_DIR%\WarnetAgent\Deploy\TMBilling.exe"
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Gagal menyalin TMBilling.exe!
+    pause
+    exit /b %ERRORLEVEL%
+)
+copy /Y "%CURRENT_DIR%\WarnetAgent\TMBilling\target\release\TMGameLauncher.exe" "%CURRENT_DIR%\WarnetAgent\Deploy\TMGameLauncher.exe"
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Gagal menyalin TMGameLauncher.exe!
     pause
     exit /b %ERRORLEVEL%
 )

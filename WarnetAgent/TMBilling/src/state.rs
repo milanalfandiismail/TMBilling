@@ -137,6 +137,10 @@ pub struct TmApp {
     pub taskbar_guard: Option<crate::platform::window_manager::TaskbarGuard>,
     pub pin: String,
     pub menu_page: usize,
+    pub paket_page: usize,
+    pub games: Vec<crate::api::models::GameItem>,
+    pub launcher_search: String,
+    pub launcher_tab: usize,
     pub member_json: Option<serde_json::Value>,
     /// QRIS asli dari server; tile mock hanya dipakai bila None.
     pub qris_image: Option<std::sync::Arc<gpui_kit::Image>>,
@@ -263,6 +267,8 @@ pub fn arm_shutdown(current: Option<i64>, timer: Option<u32>, has_session: bool)
 pub enum Modal {
     Member,
     Menu,
+    Paket,
+    Launcher,
     Detail(usize),
     QrisFull,
     AfkPin,
@@ -499,6 +505,11 @@ impl TmApp {
                 self.apply_status(status)
             }
             AppEvent::Command(_) => false,
+            AppEvent::Games(games) => {
+                let changed = self.games.len() != games.len();
+                self.games = games;
+                changed
+            }
             AppEvent::Qris(image) => {
                 let changed = match (&self.qris_image, &image) {
                     (Some(old), Some(new)) => !std::sync::Arc::ptr_eq(old, new),

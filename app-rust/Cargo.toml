@@ -95,6 +95,15 @@ windows-sys = { version = "0.59", features = [
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }
 http-body-util = "0.1"
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
+windows-sys = { version = "0.59", features = [
+    "Win32_System_ProcessStatus",
+    "Win32_System_Threading",
+] }
+
+[[test]]
+name = "stress_1000_pc_test"
+path = "tests/contract/stress_1000_pc_test.rs"
 
 [[test]]
 name = "member_shift_notes_test"

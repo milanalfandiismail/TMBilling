@@ -51,7 +51,7 @@ if "%IS_ADMIN%"=="0" (
 )
 
 echo 1. Menghentikan proses lama yang berjalan (jika ada)...
-taskkill /F /IM MGCTM.exe /IM TMMonitor.exe /IM HardwareHelper.exe /IM TMBilling.exe /IM mtm.exe /IM tvnserver.exe >nul 2>&1
+taskkill /F /IM MGCTM.exe /IM TMMonitor.exe /IM HardwareHelper.exe /IM TMBilling.exe /IM TMGameLauncher.exe /IM mtm.exe /IM tvnserver.exe >nul 2>&1
 timeout /t 2 /nobreak >nul
 
 :: Bersihkan file cache/temp hardware lama dari mesin sebelumnya
@@ -70,6 +70,7 @@ echo 3. Menyalin berkas Agen, Kiosk, dan Utilitas...
 copy /y "%~dp0MGCTM.exe" "%INSTALL_DIR%\" >nul 2>&1
 copy /y "%~dp0TMMonitor.exe" "%INSTALL_DIR%\" >nul 2>&1
 copy /y "%~dp0TMBilling.exe" "%INSTALL_DIR%\" >nul 2>&1
+copy /y "%~dp0TMGameLauncher.exe" "%INSTALL_DIR%\" >nul 2>&1
 copy /y "%~dp0HardwareHelper.sys" "%INSTALL_DIR%\" >nul 2>&1
 
 if exist "%~dp0TightVNC" (

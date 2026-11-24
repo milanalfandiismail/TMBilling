@@ -7,6 +7,32 @@ pub fn local_hhmm() -> String {
     format!("{:02}:{:02}", st.wHour, st.wMinute)
 }
 
+/// Ukuran Work Area monitor (area kerja dikurangi tinggi Taskbar).
+pub fn work_area_bounds() -> (f32, f32) {
+    #[cfg(windows)]
+    {
+        use windows::Win32::Foundation::RECT;
+        use windows::Win32::UI::WindowsAndMessaging::{SystemParametersInfoW, SPI_GETWORKAREA, SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS};
+        let mut rect = RECT::default();
+        let ok = unsafe {
+            SystemParametersInfoW(
+                SPI_GETWORKAREA,
+                0,
+                Some(&mut rect as *mut RECT as *mut _),
+                SYSTEM_PARAMETERS_INFO_UPDATE_FLAGS(0),
+            )
+        };
+        if ok.is_ok() {
+            let width = (rect.right - rect.left) as f32;
+            let height = (rect.bottom - rect.top) as f32;
+            if width > 0.0 && height > 0.0 {
+                return (width, height);
+            }
+        }
+    }
+    (1920.0, 1040.0)
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct OverlayGeometry {
     pub width: f32,

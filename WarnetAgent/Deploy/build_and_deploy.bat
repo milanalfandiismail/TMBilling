@@ -8,19 +8,25 @@ echo.
 
 set "DEPLOY_DIR=%~dp0"
 
-echo [1/5] Memulai kompilasi Tauri Client (TMBilling)...
+echo [1/5] Memulai kompilasi TMBilling Client dan Game Launcher (Rust GPUI)...
 cd /d "%DEPLOY_DIR%..\TMBilling"
-call npm run tauri build
+cargo build --release
 if %ERRORLEVEL% NEQ 0 (
     echo.
-    echo [ERROR] Gagal melakukan build Tauri Client!
+    echo [ERROR] Gagal melakukan build TMBilling & TMGameLauncher!
     pause
     exit /b %ERRORLEVEL%
 )
-echo Menyalin file TMBilling.exe ke folder Deploy...
-copy /Y "%DEPLOY_DIR%..\TMBillingTauri\src-tauri\target\release\TMBilling.exe" "%DEPLOY_DIR%TMBilling.exe"
+echo Menyalin file TMBilling.exe dan TMGameLauncher.exe ke folder Deploy...
+copy /Y "%DEPLOY_DIR%..\TMBilling\target\release\TMBilling.exe" "%DEPLOY_DIR%TMBilling.exe"
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Gagal menyalin TMBilling.exe!
+    pause
+    exit /b %ERRORLEVEL%
+)
+copy /Y "%DEPLOY_DIR%..\TMBilling\target\release\TMGameLauncher.exe" "%DEPLOY_DIR%TMGameLauncher.exe"
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Gagal menyalin TMGameLauncher.exe!
     pause
     exit /b %ERRORLEVEL%
 )

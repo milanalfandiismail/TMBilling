@@ -5,6 +5,7 @@ mod audio;
 mod gallery;
 mod platform;
 mod polling;
+mod poster_cache;
 mod qris_cache;
 mod state;
 mod theme;
@@ -37,6 +38,7 @@ fn env_modal() -> Option<state::Modal> {
         Ok("logout") => Some(state::Modal::Logout),
         Ok("admin") => Some(state::Modal::Admin),
         Ok("power") => Some(state::Modal::Power(state::PowerAction::Restart)),
+        Ok("launcher") => Some(state::Modal::Launcher),
         _ => None,
     }
 }
@@ -92,7 +94,9 @@ fn main() {
         Some(guard) => guard,
         None => return,
     };
-    platform::keyboard::init();
+    if !dev_safe() {
+        platform::keyboard::init();
+    }
 
     let gallery = std::env::args().any(|a| a == "--gallery");
     let overlay = std::env::args().any(|a| a == "--overlay");
@@ -147,6 +151,50 @@ fn main() {
                             "kadaluarsa_pada_display": "22/12/2026 20:12 WITA",
                             "dibuat_pada_display": "22/11/2026 20:12 WITA",
                         }));
+                        // Mock games untuk pengujian launcher tanpa server (lengkap dengan poster lokal jika ada)
+                        let mock_items = [
+                            (1, "Valorant", "game", "FPS", "valorant.jpg"),
+                            (2, "Dota 2", "game", "MOBA", "dota2.jpg"),
+                            (3, "Counter-Strike 2", "game", "FPS", "cs2.jpg"),
+                            (4, "Point Blank", "game", "FPS", "pointblank.jpg"),
+                            (5, "Mobile Legends (PC)", "game", "MOBA", "mlbb.jpg"),
+                            (6, "PUBG: Battlegrounds", "game", "Battle Royale", "pubg.jpg"),
+                            (7, "Apex Legends", "game", "Battle Royale", "apex.jpg"),
+                            (8, "Grand Theft Auto V", "game", "RPG / Open World", "gtav.jpg"),
+                            (9, "Cyberpunk 2077", "game", "RPG / Open World", "cyberpunk.jpg"),
+                            (10, "Elden Ring", "game", "RPG / Open World", "eldenring.jpg"),
+                            (11, "Baldur's Gate 3", "game", "RPG / Open World", "baldursgate3.jpg"),
+                            (12, "Rust", "game", "Survival", "rust.jpg"),
+                            (13, "Marvel's Spider-Man", "game", "Action", "spiderman.jpg"),
+                            (14, "Terraria", "game", "Casual & Party", "terraria.jpg"),
+                            (15, "EA SPORTS FC 24", "game", "Sport", "fc24.jpg"),
+                            (16, "Google Chrome", "aplikasi", "Browser", "chrome.jpg"),
+                            (17, "Discord", "aplikasi", "Chat", "discord.jpg"),
+                        ];
+                        app.games = mock_items.iter().map(|(id, name, tipe, kat, icon)| {
+                            let url = format!("/static/uploads/games/{}", icon);
+                            let local_candidates = [
+                                format!("app-rust/app/static/uploads/games/{}", icon),
+                                format!("../../app-rust/app/static/uploads/games/{}", icon),
+                            ];
+                            for c in &local_candidates {
+                                if let Ok(bytes) = std::fs::read(c) {
+                                    crate::poster_cache::store_poster(&url, gpui_kit::ImageFormat::Jpeg, &bytes);
+                                    break;
+                                }
+                            }
+                            crate::api::models::GameItem {
+                                id: *id,
+                                nama: (*name).into(),
+                                tipe: Some((*tipe).into()),
+                                kategori: Some((*kat).into()),
+                                exe_path: Some("notepad.exe".into()),
+                                argumen: None,
+                                icon: Some((*icon).into()),
+                                icon_url: Some(url),
+                                aktif: Some(true),
+                            }
+                        }).collect();
                     }
                     app.start(cx);
                     app

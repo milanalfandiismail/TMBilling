@@ -208,6 +208,7 @@ pub async fn status(
     st.uptime.set_billing(pc.id, sesi.is_some());
 
     let admin_role = matches!(role, Some("admin") | Some("emergency") | Some("system"));
+    let is_launcher = matches!(role, Some("launcher"));
 
     if admin_role && !pc.is_admin_mode.unwrap_or(false) {
         logger::rec(
@@ -219,12 +220,13 @@ pub async fn status(
     }
     // Grace: satu poll `role=client` yang sudah terkirim sebelum login admin tidak
     // boleh mematikan mode admin yang baru dibuat.
+    // Observer: role=launcher adalah background polling dari game launcher dan TIDAK boleh mematikan mode admin.
     let fresh_admin = sesi
         .as_ref()
         .and_then(|s| s.mulai_pada.as_deref().and_then(parse_dt))
         .map(|d| (now - d).num_seconds() < ADMIN_GRACE_SECONDS)
         .unwrap_or(false);
-    if !admin_role && pc.is_admin_mode.unwrap_or(false) && !fresh_admin {
+    if !admin_role && !is_launcher && pc.is_admin_mode.unwrap_or(false) && !fresh_admin {
         pc_repo::set_admin_mode(&st.pool, pc.id, false)
             .await
             .map_err(|e| e.to_string())?;

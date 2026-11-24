@@ -78,6 +78,34 @@ fn icon(id: ToolId, scale: f32, color: Rgba) -> AnyElement {
             )
             .child(bar(8.0, 1.0))
             .into_any_element(),
+        ToolId::Menu => div()
+            .flex()
+            .flex_col()
+            .justify_center()
+            .gap(px(2.5 * scale))
+            .w(px(13.0 * scale))
+            .h(px(12.0 * scale))
+            .child(bar(13.0, 1.5))
+            .child(bar(9.0, 1.5))
+            .child(bar(13.0, 1.5))
+            .into_any_element(),
+        ToolId::Paket => div()
+            .flex()
+            .flex_col()
+            .items_center()
+            .justify_center()
+            .w(px(13.0 * scale))
+            .h(px(12.0 * scale))
+            .rounded(px(2.0))
+            .border_1()
+            .border_color(color)
+            .child(
+                div()
+                    .w_full()
+                    .h(px(1.0))
+                    .bg(color),
+            )
+            .into_any_element(),
     }
 }
 
@@ -141,15 +169,17 @@ pub fn tools(app: &TmApp, scale: f32, actions: &OverlayActions) -> impl IntoElem
                         .flex_row()
                         .gap(px(9.0 * scale))
                         .child(tool_tile(ToolId::Lock, "Lock", scale, app.is_afk, actions))
-                        .child(tool_tile(ToolId::Volume, "Volume", scale, false, actions)),
+                        .child(tool_tile(ToolId::Volume, "Volume", scale, false, actions))
+                        .child(tool_tile(ToolId::Mouse, "Mouse", scale, false, actions)),
                 )
                 .child(
                     div()
                         .flex()
                         .flex_row()
                         .gap(px(9.0 * scale))
-                        .child(tool_tile(ToolId::Mouse, "Mouse", scale, false, actions))
-                        .child(tool_tile(ToolId::Keyboard, "Keyboard", scale, false, actions)),
+                        .child(tool_tile(ToolId::Keyboard, "Keyboard", scale, false, actions))
+                        .child(tool_tile(ToolId::Menu, "Menu", scale, false, actions))
+                        .child(tool_tile(ToolId::Paket, "Paket", scale, false, actions)),
                 ),
         )
 }

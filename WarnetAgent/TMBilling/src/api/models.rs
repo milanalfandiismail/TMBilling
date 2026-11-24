@@ -80,3 +80,39 @@ pub struct WarnetConfig {
     #[serde(default)]
     pub menu: Vec<serde_json::Value>,
 }
+
+/// Item Game/Aplikasi dari katalog publik server `/api/v1/public/game`.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct GameItem {
+    pub id: i64,
+    pub nama: String,
+    #[serde(default)]
+    pub tipe: Option<String>, // "game" | "aplikasi"
+    #[serde(default)]
+    pub kategori: Option<String>,
+    #[serde(default)]
+    pub exe_path: Option<String>,
+    #[serde(default)]
+    pub argumen: Option<String>,
+    #[serde(default)]
+    pub icon: Option<String>,
+    #[serde(default)]
+    pub icon_url: Option<String>,
+    #[serde(default)]
+    pub aktif: Option<bool>,
+}
+
+impl GameItem {
+    pub fn is_aplikasi(&self) -> bool {
+        self.tipe.as_deref().unwrap_or("game").eq_ignore_ascii_case("aplikasi")
+    }
+
+    pub fn action_label(&self) -> &'static str {
+        if self.is_aplikasi() {
+            "▶ BUKA"
+        } else {
+            "▶ MAIN"
+        }
+    }
+}
+

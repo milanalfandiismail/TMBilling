@@ -62,7 +62,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [DOCUMENTATION.md](
 | Domain | Tanggung Jawab |
 |---|---|
 | `auth/` | Login/logout kasir & admin, login member publik, cek sesi. |
-| `client/` | Handshake agent, heartbeat, polling sesi/perintah, emergency & admin login, unduh paket update klien `GET /api/v1/public/client/update.exe` (dari `<root>/client-update/TMBilling.exe`). |
+| `client/` | Handshake agent, heartbeat, polling sesi/perintah (role `launcher` tidak me-reset `is_admin_mode`), emergency & admin login, katalog game publik `GET /api/v1/public/game` & `/api/v1/public/game/all`, unduh paket update klien `GET /api/v1/public/client/update.exe` (dari `<root>/client-update/TMBilling.exe`). |
 | `pages.rs` | Halaman kasir, login, dokumentasi, penerbitan ulang cookie CSRF. |
 | `dashboard/` | Statistik dashboard, ringkasan PC, omzet hari ini. |
 | `pc/`, `grup/`, `paket/` | CRUD meja, grup tarif, paket billing + arsip/restore. |
@@ -102,7 +102,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 
 | Direktori / Biner | Tanggung Jawab & Cakupan |
 |---|---|
-| `TMBilling/` | Klien utama aktif GPUI Rust: `src/{state.rs,app.rs,polling.rs,update.rs}` (`update.rs` = update klien manual: unduh paket, verifikasi SHA-256, tukar exe, keluar agar watchdog menghidupkan ulang), `src/ui/kiosk/{login,info,afk}.rs` (layar AFK terkunci + input PIN/password), `src/ui/overlay/{card,modals}.rs`, `src/platform/*` (registry credentials, keyboard hook, `window_manager::place` — ukuran via gpui `window.resize` + SetWindowPos; tray: klik kanan menu, double-click restore). `vendor/gpui-pre-windows` = patch `[patch.crates-io]`: clear Opaque hitam (bawaan putih) supaya WARP/VM tidak menampilkan pita putih saat resize. Arsitektur lama Tauri (arsip): `src/kiosk/`, `src/overlay/`, `src-tauri/`. Kredensial darurat dari registry/`config.ini`, fail-closed bila kosong. |
+| `TMBilling/` | Klien utama aktif GPUI Rust: multi-biner (`TMBilling.exe` & `TMGameLauncher.exe`). Modul: `src/{state.rs,app.rs,polling.rs,update.rs,poster_cache.rs}`, katalog game FigCraft di `src/ui/launcher/{card,layout,mod}.rs`, UI Kiosk: `src/ui/kiosk/{login,info,afk}.rs`, Overlay: `src/ui/overlay/{card,modals}.rs`, `src/platform/*` (registry credentials, keyboard hook, window_manager, tray). `vendor/gpui-pre-windows` = patch [patch.crates-io]. Kredensial darurat dari registry/`config.ini`, fail-closed bila kosong. |
 | `MGCTM/` | Watchdog C++ pengawas `TMBilling.exe`. |
 | `mtm/` | Auxiliary watchdog & resilience guard. |
 | `TMBilling_Monitor/` | Telemetri Rust + `HardwareHelper.exe` (LibreHardwareMonitor): CPU/GPU load & temp, RAM, active window, NIC speed. |
