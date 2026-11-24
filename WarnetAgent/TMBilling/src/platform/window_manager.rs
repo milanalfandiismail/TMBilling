@@ -90,6 +90,21 @@ pub fn monitor_rect(h: HWND) -> Option<RECT> {
     }
 }
 
+pub fn work_area_rect(h: HWND) -> Option<RECT> {
+    unsafe {
+        let monitor = MonitorFromWindow(h, MONITOR_DEFAULTTONEAREST);
+        let mut info = MONITORINFO {
+            cbSize: std::mem::size_of::<MONITORINFO>() as u32,
+            ..Default::default()
+        };
+        if GetMonitorInfoW(monitor, &mut info).as_bool() {
+            Some(info.rcWork)
+        } else {
+            None
+        }
+    }
+}
+
 /// `ResizeBuffers` tidak langsung dipakai DWM; tanpa ini jendela menampilkan
 /// isi lama sampai ada aktivasi (Alt+Tab), terutama di VM/WARP.
 /// Diagnostik VM: jejak geometri ke %TEMP%\tmbilling-ui.log bila TM_UI_LOG=1.

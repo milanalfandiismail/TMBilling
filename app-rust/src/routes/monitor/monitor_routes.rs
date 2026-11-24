@@ -521,8 +521,8 @@ pub async fn remote_batch(State(state): St, kasir: Kasir, body: Bytes) -> Respon
     }
     let data = http::parse_json(&body);
     let action = data.get("action").and_then(|v| v.as_str()).unwrap_or("");
-    if action != "shutdown" && action != "restart" {
-        return gagal(400, "Aksi tidak valid (hanya shutdown/restart)");
+    if action != "shutdown" && action != "restart" && action != "update" {
+        return gagal(400, "Aksi tidak valid (hanya shutdown/restart/update)");
     }
     let ids: Vec<i64> = data
         .get("pc_ids")
@@ -532,10 +532,10 @@ pub async fn remote_batch(State(state): St, kasir: Kasir, body: Bytes) -> Respon
     if ids.is_empty() {
         return gagal(400, "Daftar PC (pc_ids) harus berupa array non-kosong");
     }
-    let label = if action == "shutdown" {
-        "Shutdown"
-    } else {
-        "Restart"
+    let label = match action {
+        "shutdown" => "Shutdown",
+        "update" => "Update klien",
+        _ => "Restart",
     };
     let mut sukses: Vec<String> = Vec::new();
     let mut errors: Vec<Value> = Vec::new();

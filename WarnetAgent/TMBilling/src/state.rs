@@ -129,6 +129,8 @@ pub struct TmApp {
     /// Rect terakhir yang benar-benar dipasang ke window.
     pub applied_rect: Option<(i32, i32, i32, i32)>,
     pub saved_rect: Option<(i32, i32, i32, i32)>,
+    /// Rect monitor terakhir saat penyesuaian geometri window; jika resolusi berubah, reset applied_mode.
+    pub applied_monitor_rect: Option<(i32, i32, i32, i32)>,
     /// Sesi admin/emergency aktif: polling mengirim role admin.
     pub is_admin_session: bool,
     /// SHA-256 kredensial darurat dari registry/config.ini; kosong = fitur mati.

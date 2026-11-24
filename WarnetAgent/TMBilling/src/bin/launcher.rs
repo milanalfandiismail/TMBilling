@@ -413,6 +413,7 @@ impl Render for LauncherApp {
         };
 
         let on_close: tmbilling_core::ui::overlay::ActFn = std::rc::Rc::new(|_w, _cx| {
+            tmbilling_core::platform::single_instance::restore_exe("TMBilling.exe");
             std::process::exit(0);
         });
 
@@ -522,7 +523,12 @@ fn main() {
             ..Default::default()
         };
 
-        cx.open_window(options, |_window, cx| cx.new(|cx| LauncherApp::new(cx)))
+        cx.open_window(options, |window, cx| {
+            if let Some(h) = tmbilling_core::platform::window_manager::hwnd(window) {
+                tmbilling_core::platform::single_instance::activate_window(h);
+            }
+            cx.new(|cx| LauncherApp::new(cx))
+        })
             .unwrap();
     });
 }

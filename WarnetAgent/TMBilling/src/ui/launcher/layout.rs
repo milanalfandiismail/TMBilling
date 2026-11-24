@@ -100,7 +100,7 @@ pub fn navbar(
                         }),
                 )
         })
-        // Kanan: Countdown Sesi + Tombol Tutup (jika modal)
+        // Kanan: Countdown Sesi + Tombol ✕ (jika modal)
         .child(
             div()
                 .flex()
@@ -139,10 +139,13 @@ pub fn navbar(
                         div()
                             .id("launcher-close-btn")
                             .cursor_pointer()
-                            .h(px(34.0))
-                            .px(px(14.0))
+                            .flex_shrink_0()
+                            .w(px(36.0))
+                            .h(px(32.0))
                             .bg(c(0x1C1C1C))
-                            .hover(|s| s.bg(c(0xDC2626)))
+                            .border_1()
+                            .border_color(c(0x27272A))
+                            .hover(|s| s.bg(c(0xDC2626)).border_color(c(0xEF4444)))
                             .rounded(px(6.0))
                             .flex()
                             .items_center()
@@ -150,10 +153,10 @@ pub fn navbar(
                             .on_click(move |_: &ClickEvent, window, cx| cb(window, cx))
                             .child(
                                 div()
-                                    .text_size(px(12.0))
+                                    .text_size(px(14.0))
                                     .font_weight(FontWeight::BOLD)
-                                    .text_color(c(0xE5E5E5))
-                                    .child("Tutup"),
+                                    .text_color(c(0xFFFFFF))
+                                    .child("✕"),
                             ),
                     )
                 }),

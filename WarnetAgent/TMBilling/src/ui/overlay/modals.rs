@@ -9,7 +9,6 @@ use crate::ui::button::{ButtonTone, TmButton};
 use crate::ui::input::TmInput;
 use crate::ui::kiosk::login::qr_image;
 use crate::ui::overlay::OverlayActions;
-use crate::ui::tabs::TmTabs;
 
 /// Penghubung ActFn (tanpa ClickEvent) ke handler gpui.
 fn click(f: crate::ui::overlay::ActFn) -> impl Fn(&ClickEvent, &mut Window, &mut App) + 'static {
@@ -201,17 +200,25 @@ fn scoped_close(actions: &OverlayActions) -> AnyElement {
 }
 
 fn menu(app: &TmApp, actions: &OverlayActions) -> AnyElement {
-    let items = app.cfg.as_ref().map(|c| c.menu.clone()).unwrap_or_default();
-    let per_page = 3usize;
-    let total = crate::state::page_count(items.len(), per_page);
+    let items = app.cfg.as_ref().map(|c| c.menu.as_slice()).unwrap_or(&[]);
+    let per_page = 4usize;
+    let total = (items.len() + per_page - 1) / per_page;
+    let total = total.max(1);
     let page = app.menu_page.clamp(1, total);
     let start = (page - 1) * per_page;
-    let mut list = div().flex().flex_col();
+
+    let mut list = div().flex().flex_col().w(px(360.0));
     for (offset, item) in items.iter().skip(start).take(per_page).enumerate() {
         let index = start + offset;
         let nama = text(item, "nama").unwrap_or_else(|| "-".into());
         let harga = item.get("harga").and_then(|v| v.as_i64()).unwrap_or(0);
-        let open = actions.open.clone();
+        let kategori = text(item, "kategori").unwrap_or_else(|| "Menu".into());
+        let stok = item.get("stok").and_then(|v| v.as_i64());
+        let stok_str = match stok {
+            Some(s) if s > 0 => format!("{kategori} · Stok {s}"),
+            Some(_) => format!("{kategori} · Habis"),
+            None => kategori,
+        };
         list = list.child(
             div()
                 .id(("menu-row", index))
@@ -221,10 +228,13 @@ fn menu(app: &TmApp, actions: &OverlayActions) -> AnyElement {
                 .h(px(44.0))
                 .px(px(6.0))
                 .rounded(px(TM.radius_md))
-                .cursor_pointer()
-                .hover(|s| s.bg(TM.hover))
-                .on_click(move |_: &ClickEvent, window, cx| open(Modal::Detail(index), window, cx))
-                .child(div().text_size(px(12.0)).text_color(TM.text).child(nama))
+                .child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .child(div().text_size(px(12.0)).text_color(TM.text).child(nama))
+                        .child(div().text_size(px(10.0)).text_color(TM.dim).child(stok_str)),
+                )
                 .child(
                     div()
                         .text_size(px(12.0))
@@ -247,19 +257,6 @@ fn menu(app: &TmApp, actions: &OverlayActions) -> AnyElement {
     let body = div()
         .flex()
         .flex_col()
-        .child(
-            div()
-                .flex()
-                .flex_col()
-                .w(px(360.0))
-                .child(
-                    TmTabs::new(vec!["Menu".to_string(), "Paket".to_string()], 0usize)
-                        .item_width(80.0)
-                        .text_size(12.0)
-                        .render(),
-                )
-                .child(div().h(px(8.0))),
-        )
         .child(list)
         .child(
             div()
@@ -285,7 +282,7 @@ fn menu(app: &TmApp, actions: &OverlayActions) -> AnyElement {
 
     dialog(
         420.0,
-        "Periksa Menu",
+        "Daftar Menu",
         body,
         footer(vec![
             pager_button("<", actions.page_prev.clone()),

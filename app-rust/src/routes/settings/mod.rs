@@ -1,3 +1,4 @@
+pub mod client_update_routes;
 pub mod database_routes;
 pub mod migration_routes;
 pub mod network_routes;

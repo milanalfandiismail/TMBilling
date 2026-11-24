@@ -285,19 +285,28 @@ pub fn card(app: &TmApp, geom: OverlayGeometry, actions: &OverlayActions) -> imp
                 .child(panels::sesi(app, scale))
                 .into_any_element(),
         })
-        .child(launcher_card_bar(scale, m.radius, actions))
+        .child(launcher_card_bar(scale, m.radius, compact, actions))
         .into_any_element()
 }
 
 /// Kartu terpisah khusus Game Launcher yang terletak tepat di bawah kartu utama overlay.
-fn launcher_card_bar(scale: f32, radius: f32, actions: &OverlayActions) -> impl IntoElement {
+fn launcher_card_bar(scale: f32, radius: f32, compact: bool, actions: &OverlayActions) -> impl IntoElement {
     let open = actions.open_launcher.clone();
+    let bar_h = if compact { 44.0 } else { LAUNCHER_BAR_H * scale };
+    let bar_gap = if compact { 6.0 } else { LAUNCHER_BAR_GAP * scale };
+    let title_font = if compact { 11.0 } else { 12.0 * scale };
+    let sub_font = if compact { 9.0 } else { 10.0 * scale };
+    let icon_size = if compact { 24.0 } else { 26.0 * scale };
+    let grid_w = if compact { 11.0 } else { 12.0 * scale };
+    let dot_size = if compact { 4.5 } else { 5.0 * scale };
+    let px_pad = if compact { 10.0 } else { 14.0 * scale };
+
     div()
         .id("ov-game-launcher-card")
-        .mt(px(LAUNCHER_BAR_GAP * scale))
-        .h(px(LAUNCHER_BAR_H * scale))
+        .mt(px(bar_gap))
+        .h(px(bar_h))
         .w_full()
-        .px(px(14.0 * scale))
+        .px(px(px_pad))
         .rounded(px(radius))
         .border_1()
         .border_color(TM.border)
@@ -317,12 +326,12 @@ fn launcher_card_bar(scale: f32, radius: f32, actions: &OverlayActions) -> impl 
                 .flex()
                 .flex_row()
                 .items_center()
-                .gap(px(10.0 * scale))
+                .gap(px(if compact { 8.0 } else { 10.0 * scale }))
                 .child(
                     div()
-                        .w(px(26.0 * scale))
-                        .h(px(26.0 * scale))
-                        .rounded(px(6.0 * scale))
+                        .w(px(icon_size))
+                        .h(px(icon_size))
+                        .rounded(px(5.0 * scale))
                         .bg(TM.hover)
                         .flex()
                         .items_center()
@@ -333,12 +342,12 @@ fn launcher_card_bar(scale: f32, radius: f32, actions: &OverlayActions) -> impl 
                                 .flex_row()
                                 .flex_wrap()
                                 .gap(px(2.0 * scale))
-                                .w(px(12.0 * scale))
-                                .h(px(12.0 * scale))
-                                .child(div().w(px(5.0 * scale)).h(px(5.0 * scale)).rounded(px(1.0)).bg(TM.accent))
-                                .child(div().w(px(5.0 * scale)).h(px(5.0 * scale)).rounded(px(1.0)).bg(TM.accent))
-                                .child(div().w(px(5.0 * scale)).h(px(5.0 * scale)).rounded(px(1.0)).bg(TM.accent))
-                                .child(div().w(px(5.0 * scale)).h(px(5.0 * scale)).rounded(px(1.0)).bg(TM.accent))
+                                .w(px(grid_w))
+                                .h(px(grid_w))
+                                .child(div().w(px(dot_size)).h(px(dot_size)).rounded(px(1.0)).bg(TM.accent))
+                                .child(div().w(px(dot_size)).h(px(dot_size)).rounded(px(1.0)).bg(TM.accent))
+                                .child(div().w(px(dot_size)).h(px(dot_size)).rounded(px(1.0)).bg(TM.accent))
+                                .child(div().w(px(dot_size)).h(px(dot_size)).rounded(px(1.0)).bg(TM.accent))
                         )
                 )
                 .child(
@@ -348,14 +357,14 @@ fn launcher_card_bar(scale: f32, radius: f32, actions: &OverlayActions) -> impl 
                         .gap(px(1.0))
                         .child(
                             div()
-                                .text_size(px(12.0 * scale))
+                                .text_size(px(title_font))
                                 .text_color(TM.text)
                                 .font_weight(FontWeight::BOLD)
                                 .child("Game Launcher")
                         )
                         .child(
                             div()
-                                .text_size(px(10.0 * scale))
+                                .text_size(px(sub_font))
                                 .text_color(TM.muted)
                                 .child("Buka katalog game & aplikasi")
                         )
@@ -366,12 +375,10 @@ fn launcher_card_bar(scale: f32, radius: f32, actions: &OverlayActions) -> impl 
                 .flex()
                 .items_center()
                 .justify_center()
-                .w(px(22.0 * scale))
-                .h(px(22.0 * scale))
-                .rounded(px(4.0 * scale))
-                .bg(TM.hover)
-                .text_size(px(11.0 * scale))
-                .text_color(TM.accent)
-                .child("▶")
+                .w(px(if compact { 18.0 } else { 22.0 * scale }))
+                .h(px(if compact { 18.0 } else { 22.0 * scale }))
+                .text_size(px(if compact { 12.0 } else { 14.0 * scale }))
+                .text_color(TM.dim)
+                .child("›")
         )
 }

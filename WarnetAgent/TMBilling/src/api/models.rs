@@ -108,11 +108,7 @@ impl GameItem {
     }
 
     pub fn action_label(&self) -> &'static str {
-        if self.is_aplikasi() {
-            "▶ BUKA"
-        } else {
-            "▶ MAIN"
-        }
+        "▶ BUKA"
     }
 }
 

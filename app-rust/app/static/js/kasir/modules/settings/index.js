@@ -14,6 +14,7 @@ const Settings = {
     ...(window.SettingsGeneral || {}),
     ...(window.SettingsScheduler || {}),
     ...(window.SettingsNetwork || {}),
+    ...(window.SettingsClientUpdate || {}),
 
     async load(preserveSubTab = false) {
         // Tampilkan sub-tab default (Umum & Kiosk) segera agar halaman tidak kosong
@@ -260,6 +261,13 @@ const Settings = {
             if (typeof BranchManager !== 'undefined') {
                 BranchManager.loadMyBranchKey();
                 BranchManager.renderBranchesSettingsTable();
+            }
+        }
+
+        // Paket Update Klien (WarnetAgent) — init module & refresh info
+        if (this.currentSubTab === 'client_update') {
+            if (typeof SettingsClientUpdate !== 'undefined') {
+                SettingsClientUpdate.init();
             }
         }
 

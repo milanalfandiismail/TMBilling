@@ -76,6 +76,18 @@ mod tests {
     }
 
     #[test]
+    fn card_uses_compact_layout_at_1280x1024() {
+        let g = overlay_geometry((1280.0, 1024.0));
+        assert_eq!((g.width, g.height), (318.0, 234.0));
+    }
+
+    #[test]
+    fn card_uses_compact_layout_at_1366x768() {
+        let g = overlay_geometry((1366.0, 768.0));
+        assert_eq!((g.width, g.height), (318.0, 234.0));
+    }
+
+    #[test]
     fn card_never_exceeds_the_viewport() {
         for vp in [(1024.0, 768.0), (1366.0, 768.0), (1920.0, 1080.0), (2560.0, 1440.0), (3840.0, 2160.0)] {
             let g = overlay_geometry(vp);

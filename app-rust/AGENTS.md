@@ -73,7 +73,7 @@ Master Dokumentasi Acuan Tunggal (*Single Source of Truth*): [DOCUMENTATION.md](
 | `report/` | Laporan billing/keuangan, struk, ekspor PDF/Excel, cleanup. |
 | `monitor/`, `hardware/` | Telemetri, proses, screenshot privat, remote action, baseline hardware. |
 | `vnc/` | Start/stop/status proxy + relay WebSocket RFB. |
-| `settings/` | Pengaturan, API key, whitelist, backup/restore, impor database Python 1.6.5, migrasi & update, QRIS. |
+| `settings/` | Pengaturan, API key, whitelist, backup/restore, impor database Python 1.6.5, migrasi & update, client-update (TMBilling.exe), QRIS. |
 | `backup/`, `blackout/`, `notes/`, `maintenance/`, `game/`, `tournament/`, `tutorial/`, `user/`, `arsip/`, `public/`, `server_monitor/`, `mikrotik/` | Domain operasional lain; nama folder = fitur. |
 
 #### D. Service (`app-rust/src/services/` — 27 domain, 62 file)
@@ -143,6 +143,7 @@ Aplikasi klien berjalan di setiap PC member/kiosk:
 | Turnamen | `modules/tournament.js` | `app-rust/src/routes/tournament/`, `app-rust/src/services/tournament/` | `Tournament`, `TournamentMatch` |
 | Backup & Restore | `modules/settings/settings_general.js` | `app-rust/src/routes/backup/`, `app-rust/src/services/backup/` | `Settings` |
 | Auto-Update | `modules/settings/migration.js` | `app-rust/src/routes/settings/migration_routes.rs`, `app-rust/src/update.rs` | — |
+| Client Update | `modules/settings/settings_client_update.js` | `app-rust/src/routes/settings/client_update_routes.rs`, `client-update/TMBilling.exe` | `Settings` |
 | Client Security | `modules/dashboard/dashboard_compact.js` | `app-rust/src/routes/auth/`, `app-rust/src/middleware/{auth,csrf,whitelist}.rs` | `PC`, `cache/mismatch` |
 | Nota Generator | `modules/struk.js` | `app-rust/src/services/transaksi.rs`, `app-rust/src/services/menu/` | `Transaksi` |
 | Katalog Game | `modules/game/` | `app-rust/src/routes/game/`, `app-rust/src/services/game/` | `Game`, `GameKategori` |

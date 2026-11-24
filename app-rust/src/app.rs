@@ -26,6 +26,7 @@ use crate::routes::public::tv_public_routes;
 use crate::routes::report::report_routes;
 use crate::routes::server_monitor::server_monitor_routes;
 use crate::routes::sesi::sesi_routes;
+use crate::routes::settings::client_update_routes;
 use crate::routes::settings::database_routes;
 use crate::routes::settings::migration_routes;
 use crate::routes::settings::network_routes;
@@ -106,6 +107,18 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route(
             "/api/v1/kasir/settings/{key}",
             get(settings_routes::get_one).put(settings_routes::put_one),
+        )
+        .route(
+            "/api/v1/kasir/settings/client-update",
+            get(client_update_routes::get_info).delete(client_update_routes::delete_package),
+        )
+        .route(
+            "/api/v1/kasir/settings/client-update/upload",
+            post(client_update_routes::upload_package),
+        )
+        .route(
+            "/api/v1/kasir/settings/client-update/broadcast",
+            post(client_update_routes::broadcast_update),
         )
         .route(
             "/api/v1/kasir/grup",

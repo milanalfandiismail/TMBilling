@@ -690,7 +690,10 @@ pub fn overlay_actions(cx: &mut Context<TmApp>) -> OverlayActions {
                 app.launch_game(&exe, args.as_deref(), cx);
             });
         }) as crate::ui::overlay::LaunchFn,
-        open_launcher: Rc::new(move |_w: &mut Window, cx: &mut App| {
+        open_launcher: Rc::new(move |w: &mut Window, cx: &mut App| {
+            if let Some(h) = crate::platform::window_manager::hwnd(w) {
+                crate::platform::window_manager::minimize_to_tray(h);
+            }
             launcher_open_me.update(cx, |app, cx| {
                 app.open_game_launcher(cx);
             });
@@ -734,14 +737,12 @@ impl TmApp {
         }
         if tool == ToolId::Menu {
             self.menu_page = 1;
-            self.modal = Some(Modal::Menu);
-            cx.notify();
+            self.show_modal(Modal::Menu, cx);
             return;
         }
         if tool == ToolId::Paket {
             self.paket_page = 1;
-            self.modal = Some(Modal::Paket);
-            cx.notify();
+            self.show_modal(Modal::Paket, cx);
             return;
         }
         if let Some((exe, args)) = crate::ui::overlay::tool_command(tool) {
@@ -751,6 +752,10 @@ impl TmApp {
 
     /// Jalankan biner TMGameLauncher.exe yang berada di folder yang sama dengan TMBilling.exe.
     pub fn open_game_launcher(&mut self, _cx: &mut Context<Self>) {
+        if crate::platform::single_instance::focus_exe("TMGameLauncher.exe") {
+            return;
+        }
+
         let exe_path = std::env::current_exe()
             .ok()
             .and_then(|p| p.parent().map(|dir| dir.join("TMGameLauncher.exe")))
@@ -849,6 +854,20 @@ impl TmApp {
             self.is_afk,
         ));
 
+        let Some(h) = wm::hwnd(window) else { return };
+
+        let mon = wm::work_area_rect(h).or_else(|| wm::monitor_rect(h));
+        let mon_rect = mon.map(|m| (m.left, m.top, m.right, m.bottom));
+        if mon_rect.is_some() && self.applied_monitor_rect != mon_rect {
+            wm::trace(format!(
+                "display resolution changed: {:?} -> {:?}",
+                self.applied_monitor_rect, mon_rect
+            ));
+            self.applied_monitor_rect = mon_rect;
+            self.applied_mode = None;
+            self.saved_rect = None;
+        }
+
         let member = self.session.as_ref().is_some_and(|s| s.is_member);
         let mode = (overlay, fullscreen_modal, self.overlay_tab, member);
         if self.applied_mode == Some(mode) {
@@ -856,13 +875,12 @@ impl TmApp {
         }
         let shape = crate::state::shape_changed(self.applied_mode, overlay);
         self.applied_mode = Some(mode);
-        let Some(h) = wm::hwnd(window) else { return };
         wm::strip_frame(h);
 
         let rect = if overlay && !fullscreen_modal {
             wm::set_taskbar_visibility(true);
             self.saved_rect.take().or_else(|| {
-                let m = wm::monitor_rect(h)?;
+                let m = wm::work_area_rect(h).or_else(|| wm::monitor_rect(h))?;
                 let g = overlay_geometry(((m.right - m.left) as f32, (m.bottom - m.top) as f32));
                 let m8 = g.margin as i32;
                 let hh = g.height + overlay_card_mod::extra_height(self.overlay_tab, g, member);
@@ -885,6 +903,7 @@ impl TmApp {
                 }
                 wm::set_taskbar_visibility(false);
             }
+            // Kiosk selalu memakai monitor_rect penuh (rcMonitor) agar menutupi seluruh layar termasuk area taskbar.
             wm::monitor_rect(h).map(|r| (r.left, r.top, r.right, r.bottom))
         };
 
@@ -900,9 +919,11 @@ impl TmApp {
                 wm::hide(h);
             }
             const GPUI_BORDER_OFFSET: (f32, f32) = (16.0, 8.0);
+            let vp_w = if overlay && !fullscreen_modal { w as f32 } else { w as f32 - GPUI_BORDER_OFFSET.0 };
+            let vp_h = if overlay && !fullscreen_modal { height as f32 } else { height as f32 - GPUI_BORDER_OFFSET.1 };
             window.resize(gpui_kit::Size::new(
-                px(w as f32 - GPUI_BORDER_OFFSET.0),
-                px(height as f32 - GPUI_BORDER_OFFSET.1),
+                px(vp_w),
+                px(vp_h),
             ));
             wm::place(h, l, t, w, height);
             self.applied_rect = Some((l, t, r, b));
@@ -1106,7 +1127,7 @@ impl Render for TmApp {
         let viewport = (f32::from(vp.width), f32::from(vp.height));
         // The window itself is the card here, so the monitor is what decides the size tier.
         let geom = wm::hwnd(window)
-            .and_then(wm::monitor_rect)
+            .and_then(|h| wm::work_area_rect(h).or_else(|| wm::monitor_rect(h)))
             .map(|m| overlay_geometry(((m.right - m.left) as f32, (m.bottom - m.top) as f32)))
             .unwrap_or_else(|| overlay_geometry(viewport));
         let actions_ov = overlay_actions(cx);

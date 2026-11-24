@@ -108,6 +108,7 @@ pub mod paths {
                 .join("assets")
                 .join("tutorials")
                 .join("temp"),
+            cfg.root.join("client-update"),
         ];
         for d in dirs {
             fs::create_dir_all(&d).with_context(|| format!("gagal membuat {}", d.display()))?;
