@@ -235,9 +235,7 @@ pub async fn history(
     let search = q.q.unwrap_or_default().trim().to_lowercase();
     let like_pat = format!("%{search}%");
 
-    let tz_name = std::env::var("TIMEZONE")
-        .or_else(|_| std::env::var("APP_TIMEZONE"))
-        .unwrap_or_else(|_| st.cfg.timezone.clone());
+    let tz_name = crate::services::settings::settings_service::active_timezone(&st).await;
     let tz_lbl = crate::utils::time::tz_label(&tz_name);
 
     if kind == "sesi" {

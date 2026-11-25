@@ -33,8 +33,9 @@ async fn once(st: &Arc<AppState>) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn flush_uptime(st: &Arc<AppState>) -> anyhow::Result<()> {
-    let tanggal = crate::utils::time::today_local(&st.cfg.timezone)
+pub async fn flush_uptime(st: &Arc<AppState>) -> anyhow::Result<()> {
+    let tz = services::settings::settings_service::active_timezone(st).await;
+    let tanggal = crate::utils::time::today_local(&tz)
         .format("%Y-%m-%d")
         .to_string();
     let delta: Vec<(i64, i64, i64)> = st
@@ -43,20 +44,25 @@ async fn flush_uptime(st: &Arc<AppState>) -> anyhow::Result<()> {
         .into_iter()
         .map(|(id, acc)| (id, acc.online, acc.billing))
         .collect();
+    if delta.is_empty() {
+        return Ok(());
+    }
+    let _guard = st.write().await;
     crate::repositories::uptime::flush(&st.pool, &tanggal, &delta).await?;
     Ok(())
 }
 
 /// Backup otomatis bila arsip terakhir lebih tua dari 24 jam; prune uptime sekali sehari.
 async fn harian(st: &Arc<AppState>) -> anyhow::Result<()> {
-    let now = crate::utils::time::now_db();
     let basi = services::backup::backup_service::latest_age_hours(st);
     if basi.map(|jam| jam >= 24.0).unwrap_or(true) {
         services::backup::backup_service::create(st, false).await?;
     }
-    let batas = (now - chrono::Duration::days(366))
+    let tz = services::settings::settings_service::active_timezone(st).await;
+    let batas = (crate::utils::time::today_local(&tz) - chrono::Duration::days(366))
         .format("%Y-%m-%d")
         .to_string();
+    let _guard = st.write().await;
     crate::repositories::uptime::prune(&st.pool, &batas).await?;
     Ok(())
 }

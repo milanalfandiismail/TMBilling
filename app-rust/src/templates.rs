@@ -78,14 +78,21 @@ fn env() -> &'static Environment<'static> {
         // Jinja memanggil format_display(...) sebagai global; padanan filter Python.
         env.add_function(
             "format_display",
-            |raw: Value, kwargs: minijinja::value::Kwargs| -> Result<String, minijinja::Error> {
+            |state: &minijinja::State,
+             raw: Value,
+             kwargs: minijinja::value::Kwargs|
+             -> Result<String, minijinja::Error> {
                 let s = raw.as_str().map(|v| v.to_string()).unwrap_or_default();
                 let fmt = kwargs
                     .get::<Option<String>>("fmt")?
                     .unwrap_or_else(|| "%d/%m/%Y %H:%M".to_string());
-                let tz_name = std::env::var("TIMEZONE")
-                    .or_else(|_| std::env::var("APP_TIMEZONE"))
-                    .unwrap_or_else(|_| "Asia/Makassar".to_string());
+                let tz_name = state
+                    .lookup("user_timezone")
+                    .and_then(|v| v.as_str().map(str::to_string))
+                    .filter(|v| !v.is_empty())
+                    .or_else(|| std::env::var("TIMEZONE").ok())
+                    .or_else(|| std::env::var("APP_TIMEZONE").ok())
+                    .unwrap_or_else(|| "Asia/Makassar".to_string());
                 let label = crate::utils::time::tz_label(&tz_name);
                 let resolved_fmt = fmt.replace("%Z", &label);
                 Ok(crate::utils::time::parse_dt(&s)

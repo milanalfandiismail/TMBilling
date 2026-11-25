@@ -9,18 +9,6 @@ use crate::services::{
 };
 use crate::state::AppState;
 
-fn tz_abbr(zona: &str) -> &'static str {
-    if zona.contains("Makassar") {
-        "WITA"
-    } else if zona.contains("Jayapura") {
-        "WIT"
-    } else if zona.contains("Singapore") || zona.contains("Hong_Kong") {
-        "SGT"
-    } else {
-        "WIB"
-    }
-}
-
 pub async fn live_data(st: &AppState) -> Value {
     let dasar = dashboard_service::pc_list(st).await;
     let pcs = dasar
@@ -64,7 +52,9 @@ pub async fn live_data(st: &AppState) -> Value {
         .await
         .unwrap_or_default();
     promos.sort_by_key(|p| p.harga);
-    let turnamen = turnamen_live(st).await;
+    let tz_name = settings_service::active_timezone(st).await;
+    let tz_label = crate::utils::time::tz_label(&tz_name);
+    let turnamen = turnamen_live(st, &tz_name).await;
 
     json!({
         "occupancy": {
@@ -84,7 +74,7 @@ pub async fn live_data(st: &AppState) -> Value {
             "slides_enabled": slides.split(',').map(|s| s.trim().parse::<i64>().unwrap_or(0)).filter(|n| *n > 0).collect::<Vec<_>>(),
             "warnet_rules": aturan,
             "warnet_rules_html": aturan_html,
-            "timezone_abbr": tz_abbr(&st.cfg.timezone),
+            "timezone_abbr": tz_label,
             "warnet_title": judul,
         },
         "menu_items": menu.iter().map(|m| m.to_json()).collect::<Vec<_>>(),
@@ -92,8 +82,7 @@ pub async fn live_data(st: &AppState) -> Value {
 }
 
 /// Turnamen aktif + tahap aktif + klasemen swiss, bentuk sama dengan Python `TVSignageService`.
-async fn turnamen_live(st: &AppState) -> Value {
-    let tz = &st.cfg.timezone;
+async fn turnamen_live(st: &AppState, tz: &str) -> Value {
     let daftar = match turnamen_repo::get_all(&st.pool).await {
         Ok(v) => v,
         Err(_) => return Value::Null,

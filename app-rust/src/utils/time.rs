@@ -51,6 +51,7 @@ pub fn tz_label(name: &str) -> String {
         "Asia/Jayapura" => "WIT".into(),
         "Asia/Kuala_Lumpur" => "MYT".into(),
         "Asia/Singapore" => "SGT".into(),
+        "Asia/Hong_Kong" => "HKT".into(),
         "Asia/Ho_Chi_Minh" => "ICT".into(),
         _ => tz(name).name().rsplit('/').next().unwrap_or("WITA").into(),
     }

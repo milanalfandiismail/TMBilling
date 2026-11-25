@@ -16,16 +16,21 @@ use crate::templates;
 
 pub(crate) async fn dasar(st: &AppState) -> Value {
     let ambil = |kunci: &'static str, bawaan: &'static str| set::get_or(st, kunci, bawaan);
+    let tz_name = set::active_timezone(st).await;
+    let warnet_address = ambil("warnet_address", "").await;
+    let warnet_gmaps = ambil("warnet_gmaps", "").await;
+    let gmaps_info = crate::utils::helpers::parse_google_maps_info(&warnet_gmaps, &warnet_address);
     json!({
         "warnet_title": ambil("warnet_title", "TMBilling").await,
-        "warnet_address": ambil("warnet_address", "").await,
+        "warnet_address": warnet_address,
         "warnet_rules": ambil("warnet_announcement", "").await,
         "footer_label": ambil("warnet_title", "TMBilling").await,
-        "gmaps_info": ambil("warnet_gmaps", "").await,
+        "gmaps_info": gmaps_info,
         "page_title": "TMBilling",
         "version": st.cfg.version,
         "v_cache": crate::assets::cache_version(),
-        "timezone_label": crate::utils::time::tz_label(&st.cfg.timezone),
+        "user_timezone": tz_name,
+        "timezone_label": crate::utils::time::tz_label(&tz_name),
     })
 }
 
@@ -121,12 +126,59 @@ pub async fn livepc(State(st): State<Arc<AppState>>) -> Response {
     halaman("public/livepc/index.html", ctx, "")
 }
 
+fn parse_hw_json(baseline: &str, current: &str) -> Value {
+    serde_json::from_str::<Value>(baseline)
+        .ok()
+        .filter(|v| v.is_object())
+        .or_else(|| serde_json::from_str::<Value>(current).ok().filter(|v| v.is_object()))
+        .unwrap_or_else(|| json!({}))
+}
+
+fn hw_cpu_cores(hw: &Value) -> Value {
+    hw.get("cpu")
+        .and_then(|c| c.get("cores"))
+        .or_else(|| hw.get("CpuCores"))
+        .or_else(|| hw.get("cpu_cores"))
+        .cloned()
+        .filter(|v| !v.is_null())
+        .unwrap_or(Value::Null)
+}
+
+fn hw_ram_sticks(hw: &Value) -> Vec<String> {
+    let arr = hw
+        .get("ram_sticks")
+        .or_else(|| hw.get("RamSticks"))
+        .and_then(Value::as_array);
+    let Some(items) = arr else { return Vec::new() };
+    items
+        .iter()
+        .filter_map(|v| {
+            if let Some(s) = v.as_str() {
+                Some(s.to_string())
+            } else if v.is_object() {
+                let cap = v.get("capacity").or_else(|| v.get("Capacity")).and_then(Value::as_str).unwrap_or("");
+                let mhz = v.get("speed").or_else(|| v.get("Speed")).and_then(Value::as_str).unwrap_or("");
+                let txt = format!("{cap} {mhz}").trim().to_string();
+                if txt.is_empty() { None } else { Some(txt) }
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+fn teks_atau_belum(raw: &str) -> &str {
+    let t = raw.trim();
+    if t.is_empty() || t == "-" { "Belum Terkumpul" } else { t }
+}
+
 pub async fn specs(State(st): State<Arc<AppState>>) -> Response {
     let mut ctx = dasar(&st).await;
     let grup = grup_json(&st).await;
-    let pc: Vec<(i64, String, String, String, String, String, String)> = sqlx::query_as(
+    let mut pc: Vec<(i64, String, String, String, String, String, String, String, String)> = sqlx::query_as(
         "SELECT pc.id, pc.kode, COALESCE(g.nama,'reguler'), COALESCE(g.warna,'#3b82f6'),
-                COALESCE(h.cpu_name,'-'), COALESCE(h.gpu_name,'-'), COALESCE(h.total_ram,'-')
+                COALESCE(h.cpu_name,''), COALESCE(h.gpu_name,''), COALESCE(h.total_ram,''),
+                COALESCE(h.hardware_baseline,''), COALESCE(h.hardware_current_specs,'')
          FROM pc LEFT JOIN grup g ON g.id = pc.grup_id
          LEFT JOIN hardware_monitor h ON h.pc_id = pc.id
          WHERE pc.aktif = 1",
@@ -134,12 +186,14 @@ pub async fn specs(State(st): State<Arc<AppState>>) -> Response {
     .fetch_all(&st.pool)
     .await
     .unwrap_or_default();
+    pc.sort_by_key(|p| crate::utils::helpers::natural_sort_key(&p.1));
+
     let groups: Vec<Value> = grup
         .as_array()
         .cloned()
         .unwrap_or_default()
         .into_iter()
-        .map(|g| {
+        .filter_map(|mut g| {
             let nama = g["nama"].as_str().unwrap_or("").to_string();
             let daftar: Vec<Value> = pc
                 .iter()
@@ -148,27 +202,35 @@ pub async fn specs(State(st): State<Arc<AppState>>) -> Response {
                     json!({
                         "kode": p.1,
                         "aktif": true,
-                        "hardware": {"cpu_name": p.4, "gpu_name": p.5, "total_ram": p.6},
+                        "hardware": {
+                            "cpu_name": teks_atau_belum(&p.4),
+                            "gpu_name": teks_atau_belum(&p.5),
+                            "total_ram": teks_atau_belum(&p.6),
+                        },
                     })
                 })
                 .collect();
-            let mut g = g;
+            if daftar.is_empty() {
+                return None;
+            }
             g["pc_list"] = Value::Array(daftar.clone());
             g["sorted_pc_list"] = Value::Array(daftar);
-            g
+            Some(g)
         })
         .collect();
+
     let mut katalog = serde_json::Map::new();
-    for (id, kode, grup_nama, warna, cpu, gpu, ram) in &pc {
+    for (id, kode, grup_nama, warna, cpu, gpu, ram, baseline, current) in &pc {
+        let hw = parse_hw_json(baseline, current);
         katalog.insert(
             kode.clone(),
             json!({
                 "kode": kode,
                 "grup": {"nama": grup_nama, "warna": warna},
                 "online": st.online.is_online(*id),
-                "cpu": {"name": cpu, "cores": Value::Null},
-                "gpu": {"name": gpu},
-                "ram": {"total": ram, "sticks": []},
+                "cpu": {"name": teks_atau_belum(cpu), "cores": hw_cpu_cores(&hw)},
+                "gpu": {"name": teks_atau_belum(gpu)},
+                "ram": {"total": teks_atau_belum(ram), "sticks": hw_ram_sticks(&hw)},
             }),
         );
     }
@@ -320,35 +382,54 @@ pub async fn member_dashboard(
 
 /// `/pc-status` publik: status meja tanpa membocorkan nama member.
 pub async fn pc_status(State(st): State<Arc<AppState>>) -> Response {
-    let baris: Vec<(String, String, Option<String>, Option<String>, Option<i64>, bool)> = sqlx::query_as(
-        "SELECT pc.kode, COALESCE(g.nama,'reguler'), s.tipe, s.nama_guest,
-                CASE WHEN s.mulai_pada IS NULL THEN NULL
-                     ELSE MAX(0, s.durasi_beli_menit - CAST((strftime('%s','now') - strftime('%s', s.mulai_pada)) / 60 AS INTEGER))
-                END,
-                pc.is_admin_mode
+    let mut baris: Vec<(i64, String, String, bool)> = sqlx::query_as(
+        "SELECT pc.id, pc.kode, COALESCE(g.nama,'reguler'), pc.is_admin_mode
          FROM pc LEFT JOIN grup g ON g.id = pc.grup_id
-         LEFT JOIN sesi s ON s.pc_id = pc.id AND s.status = 'aktif'
-         WHERE pc.aktif = 1 ORDER BY pc.kode",
+         WHERE pc.aktif = 1",
     )
     .fetch_all(&st.pool)
     .await
     .unwrap_or_default();
+    baris.sort_by_key(|r| crate::utils::helpers::natural_sort_key(&r.1));
+
+    let sesi_aktif = crate::repositories::sesi::get_all_aktif(&st.pool)
+        .await
+        .unwrap_or_default();
+    let mut by_pc: HashMap<i64, crate::models::sesi::Sesi> = HashMap::new();
+    for s in sesi_aktif {
+        if let Some(pc_id) = s.pc_id {
+            by_pc.insert(pc_id, s);
+        }
+    }
+
+    let now = crate::utils::time::now_db();
     let pcs: Vec<Value> = baris
         .into_iter()
-        .map(|(kode, grup, tipe, guest, sisa, admin)| {
-            let ada_sesi = tipe.is_some();
-            let terpakai = ada_sesi || admin;
+        .map(|(pc_id, kode, grup, admin)| {
+            let sesi = by_pc.get(&pc_id);
+            let terpakai = sesi.is_some() || admin;
             let nama = if admin {
                 "Admin / Teknisi"
-            } else if ada_sesi {
-                if tipe.as_deref() == Some("member") { "Member" } else { guest.as_deref().unwrap_or("Guest") }
+            } else if let Some(s) = sesi {
+                if s.tipe == "member" {
+                    "Member"
+                } else {
+                    s.nama_guest.as_deref().unwrap_or("Guest")
+                }
             } else {
                 ""
             };
             let sisa_tampil = if admin {
                 Some("ADMIN".to_string())
             } else {
-                sisa.map(|m| if m >= 60 { format!("{}j {}m", m / 60, m % 60) } else { format!("{m}m") })
+                sesi.map(|s| {
+                    let m = s.sisa_menit(now);
+                    if m >= 60 {
+                        format!("{}j {}m", m / 60, m % 60)
+                    } else {
+                        format!("{m}m")
+                    }
+                })
             };
             json!({
                 "kode": kode,
@@ -378,11 +459,11 @@ pub async fn kasir_index(
         return Redirect::to("/kasir/login").into_response();
     };
     let mut ctx = dasar(&st).await;
+    let tz_label = ctx["timezone_label"].as_str().unwrap_or("WITA").to_string();
     gabung(
         &mut ctx,
         json!({
-            "user_timezone": st.cfg.timezone,
-            "user_timezone_label": crate::utils::time::tz_label(&st.cfg.timezone),
+            "user_timezone_label": tz_label,
             "username": sesi.uname,
             "session": {
                 "username": sesi.uname,

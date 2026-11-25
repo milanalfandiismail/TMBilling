@@ -100,3 +100,48 @@ async fn instance_kedua_ditolak() {
     drop(kunci);
     assert!(tmbilling_server::utils::instance::acquire(&dir.0).is_ok());
 }
+
+#[tokio::test]
+async fn flush_uptime_memakai_timezone_db() {
+    let (_dir, st) = state("uptime_tz").await;
+
+    tmbilling_server::services::settings::settings_service::set(
+        &st,
+        "timezone",
+        "Asia/Tokyo",
+    )
+    .await
+    .unwrap();
+
+    let grup_id: i64 =
+        sqlx::query_scalar("INSERT INTO grup (nama) VALUES ('reguler') RETURNING id")
+            .fetch_one(&st.pool)
+            .await
+            .unwrap();
+
+    let pc_id = sqlx::query("INSERT INTO pc (kode, nama, ip_address, mac_address, grup_id) VALUES ('PC-TZ', 'PC TZ', '192.168.1.199', 'AA:BB:CC:DD:EE:99', ?)")
+        .bind(grup_id)
+        .execute(&st.pool)
+        .await
+        .unwrap()
+        .last_insert_rowid();
+
+    st.uptime.heartbeat(pc_id, false, 1000);
+    st.uptime.heartbeat(pc_id, false, 1030);
+    tmbilling_server::scheduler::flush_uptime(&st).await.unwrap();
+
+    let target_tgl = tmbilling_server::utils::time::today_local("Asia/Tokyo")
+        .format("%Y-%m-%d")
+        .to_string();
+
+    let row: Option<(i64, i64)> = sqlx::query_as(
+        "SELECT total_online_seconds, total_billing_seconds FROM pc_uptime_log WHERE pc_id = ? AND tanggal = ?",
+    )
+    .bind(pc_id)
+    .bind(&target_tgl)
+    .fetch_optional(&st.pool)
+    .await
+    .unwrap();
+
+    assert_eq!(row, Some((30, 0)));
+}

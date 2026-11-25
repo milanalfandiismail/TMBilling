@@ -86,7 +86,6 @@ pub async fn update(
     }
 }
 
-// shortcut: tambah-stok belum memeriksa shift aktif, pasang saat ShiftService tersedia (Task 8).
 pub async fn tambah_stok(
     State(state): St,
     kasir: Kasir,

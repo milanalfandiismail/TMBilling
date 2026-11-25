@@ -328,3 +328,154 @@ async fn dashboard_dan_tv_publik() {
     assert_eq!(tv.status, StatusCode::OK, "{}", tv.body);
     assert_eq!(tv.json()["data"]["occupancy"]["total_pc"], 1);
 }
+
+#[tokio::test]
+async fn halaman_publik_render_200_tanpa_emoji() {
+    let (_dir, st) = state("pub_pages").await;
+    for path in [
+        "/",
+        "/livepc",
+        "/paket",
+        "/spesifikasi",
+        "/games",
+        "/tv",
+        "/tv/static",
+        "/member/login",
+    ] {
+        let res = send(st.clone(), "GET", path, "", None, None).await;
+        assert_eq!(res.status, StatusCode::OK, "path={path}");
+        assert!(
+            !res.body.contains("Render gagal"),
+            "template gagal dirender pada {path}: {}",
+            res.body
+        );
+        assert!(
+            res.body.contains("<!DOCTYPE html") || res.body.contains("<html"),
+            "respons bukan HTML valid pada {path}"
+        );
+        for emoji in ["💡", "🎮", "💻", "📢"] {
+            assert!(
+                !res.body.contains(emoji),
+                "masih ada emoji {emoji} di {path}"
+            );
+        }
+    }
+}
+
+#[tokio::test]
+async fn perubahan_timezone_tercermin_di_tv_dan_halaman_publik() {
+    let (_dir, st) = state("pub_tz").await;
+    let (cookie, csrf) = admin(st.clone()).await;
+
+    let set_tz = send(
+        st.clone(),
+        "PUT",
+        "/api/v1/kasir/settings/timezone",
+        &cookie,
+        Some(&csrf),
+        Some(json!({"value": "Asia/Jakarta"})),
+    )
+    .await;
+    assert_eq!(set_tz.status, StatusCode::OK, "{}", set_tz.body);
+
+    let tv = send(st.clone(), "GET", "/api/v1/public/tv/data", "", None, None).await;
+    assert_eq!(tv.status, StatusCode::OK, "{}", tv.body);
+    assert_eq!(tv.json()["data"]["settings"]["timezone_abbr"], "WIB");
+}
+
+#[tokio::test]
+async fn landing_gmaps_specs_dan_pc_status() {
+    let (_dir, st) = state("cms_adv").await;
+    let (cookie, csrf) = admin(st.clone()).await;
+
+    // 1. Landing page gmaps_info parser verification
+    let iframe_gmaps = r#"<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d-1.23!2d116.85!3d-1.26" width="600"></iframe>"#;
+    let set_gmaps = send(
+        st.clone(),
+        "PUT",
+        "/api/v1/kasir/settings/warnet_gmaps",
+        &cookie,
+        Some(&csrf),
+        Some(json!({
+            "value": iframe_gmaps,
+        })),
+    )
+    .await;
+    assert_eq!(set_gmaps.status, StatusCode::OK, "{}", set_gmaps.body);
+
+    let landing = send(st.clone(), "GET", "/", "", None, None).await;
+    assert_eq!(landing.status, StatusCode::OK);
+    assert!(
+        landing.body.contains("https:&#x2f;&#x2f;www.google.com&#x2f;maps&#x2f;embed?pb=!1m18!1m12!1m3!1d-1.23!2d116.85!3d-1.26")
+            || landing.body.contains("https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d-1.23!2d116.85!3d-1.26"),
+        "iframe embed url tidak muncul di landing: {}",
+        landing.body
+    );
+
+    // 2. Specs sorting & baseline cores/sticks extraction
+    sqlx::query("INSERT INTO grup (nama, warna, keterangan, aktif, dibuat_pada) VALUES ('VIP', '#e11d48', '', 1, '2026-01-01 00:00:00')")
+        .execute(&st.pool)
+        .await
+        .unwrap();
+
+    let _pc10_id = sqlx::query("INSERT INTO pc (kode, nama, ip_address, mac_address, grup_id, aktif, is_admin_mode, pos_x, pos_y) VALUES ('PC-10','PC 10','192.168.1.10','AA:BB:CC:DD:EE:10',1,1,0,-1,-1)")
+        .execute(&st.pool)
+        .await
+        .unwrap()
+        .last_insert_rowid();
+
+    let pc2_id = sqlx::query("INSERT INTO pc (kode, nama, ip_address, mac_address, grup_id, aktif, is_admin_mode, pos_x, pos_y) VALUES ('PC-2','PC 02','192.168.1.2','AA:BB:CC:DD:EE:02',1,1,0,-1,-1)")
+        .execute(&st.pool)
+        .await
+        .unwrap()
+        .last_insert_rowid();
+
+    let baseline_json = json!({
+        "cpu": {"name": "AMD Ryzen 5 5600X", "cores": 6},
+        "ram_sticks": ["8 GB DDR4 3200", "8 GB DDR4 3200"]
+    }).to_string();
+
+    sqlx::query("INSERT INTO hardware_monitor (pc_id, cpu_name, gpu_name, total_ram, hardware_baseline) VALUES (?, 'AMD Ryzen 5 5600X', 'RTX 3060', '16 GB', ?)")
+        .bind(pc2_id)
+        .bind(&baseline_json)
+        .execute(&st.pool)
+        .await
+        .unwrap();
+
+    let specs = send(st.clone(), "GET", "/spesifikasi", "", None, None).await;
+    assert_eq!(specs.status, StatusCode::OK);
+    // Verifikasi natural sort: PC-2 sebelum PC-10 di HTML
+    let pos_pc2 = specs.body.find("PC-2").unwrap_or(usize::MAX);
+    let pos_pc10 = specs.body.find("PC-10").unwrap_or(usize::MAX);
+    assert!(pos_pc2 < pos_pc10, "PC-2 harus sebelum PC-10 (natural sort)");
+    assert!(specs.body.contains(r#""cores":6"#), "cores harus terisi di specs catalog json");
+    assert!(specs.body.contains("8 GB DDR4 3200"), "ram sticks harus ada di catalog json");
+
+    // 3. /pc-status natural sort & remaining time calculation
+    // Sesi aktif untuk PC-2 (guest, 60 menit beli, pause 10 menit, mulai sekarang)
+    let now = tmbilling_server::utils::time::now_db();
+    let mulai = (now - chrono::Duration::minutes(20)).format("%Y-%m-%d %H:%M:%S").to_string();
+    sqlx::query(
+        "INSERT INTO sesi (pc_id, tipe, status, mulai_pada, durasi_beli_menit, menit_pause_total, nama_guest, total_bayar, is_admin, is_afk)
+         VALUES (?, 'guest', 'aktif', ?, 60, 10, 'Budi', 10000, 0, 0)"
+    )
+    .bind(pc2_id)
+    .bind(&mulai)
+    .execute(&st.pool)
+    .await
+    .unwrap();
+
+    let status_res = send(st.clone(), "GET", "/pc-status", "", None, None).await;
+    assert_eq!(status_res.status, StatusCode::OK);
+    let pcs = status_res.json();
+    let arr = pcs.as_array().expect("array expected");
+    assert_eq!(arr.len(), 2);
+    // Natural sort: arr[0] = PC-2, arr[1] = PC-10
+    assert_eq!(arr[0]["kode"], "PC-2");
+    assert_eq!(arr[1]["kode"], "PC-10");
+    assert_eq!(arr[0]["nama"], "Budi");
+    // Sisa: 60 - (20 - 10) = 50m
+    assert_eq!(arr[0]["sisa_waktu_display"], "50m");
+    assert_eq!(arr[0]["status"], "terpakai");
+    assert_eq!(arr[1]["status"], "kosong");
+}

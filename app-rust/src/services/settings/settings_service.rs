@@ -146,6 +146,17 @@ pub async fn client_api_key(st: &AppState) -> String {
     }
 }
 
+/// Timezone aktif: setting DB (`timezone`) jika valid, fallback ke `.env` (`st.cfg.timezone`).
+pub async fn active_timezone(st: &AppState) -> String {
+    if let Some(raw) = get(st, "timezone").await {
+        let trimmed = raw.trim();
+        if !trimmed.is_empty() && trimmed.parse::<chrono_tz::Tz>().is_ok() {
+            return trimmed.to_string();
+        }
+    }
+    st.cfg.timezone.clone()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
