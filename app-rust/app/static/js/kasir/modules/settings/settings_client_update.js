@@ -139,8 +139,14 @@ const SettingsClientUpdate = {
             }
         };
 
+        const resetFileInput = () => {
+            const fileInput = document.getElementById('client-update-file-input');
+            if (fileInput) fileInput.value = '';
+        };
+
         xhr.onload = () => {
             this.isUploading = false;
+            resetFileInput();
             if (xhr.status >= 200 && xhr.status < 300) {
                 if (progressStatus) progressStatus.innerText = '✓ Biner berhasil disimpan ke server!';
                 setTimeout(() => {
@@ -148,7 +154,9 @@ const SettingsClientUpdate = {
                     this.refresh();
                 }, 1500);
             } else {
-                let errText = 'Gagal mengunggah file';
+                let errText = xhr.status === 413
+                    ? 'Ukuran file melebihi batas maksimal server (256 MB)'
+                    : 'Gagal mengunggah file';
                 try {
                     const resp = JSON.parse(xhr.responseText);
                     if (resp.error) errText = resp.error;
@@ -160,7 +168,14 @@ const SettingsClientUpdate = {
 
         xhr.onerror = () => {
             this.isUploading = false;
+            resetFileInput();
             alert('Terjadi kesalahan jaringan saat mengunggah file');
+            if (progressContainer) progressContainer.classList.add('hidden');
+        };
+
+        xhr.onabort = () => {
+            this.isUploading = false;
+            resetFileInput();
             if (progressContainer) progressContainer.classList.add('hidden');
         };
 

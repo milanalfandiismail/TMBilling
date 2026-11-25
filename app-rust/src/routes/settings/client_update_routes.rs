@@ -139,7 +139,24 @@ pub async fn upload_package(State(state): St, kasir: Kasir, mut form: Multipart)
     let mut hasher = Sha256::new();
     let mut header_bytes = Vec::with_capacity(2);
 
-    while let Ok(Some(mut field)) = form.next_field().await {
+    loop {
+        let mut field = match form.next_field().await {
+            Ok(Some(f)) => f,
+            Ok(None) => break,
+            Err(e) => {
+                let _ = tokio::fs::remove_file(&tmp_path).await;
+                let status = if e.status() == axum::http::StatusCode::PAYLOAD_TOO_LARGE {
+                    413
+                } else {
+                    400
+                };
+                return http::json(
+                    status,
+                    json!({"success": false, "error": format!("Gagal membaca multipart form: {}", e.body_text())}),
+                );
+            }
+        };
+
         let field_name = field.name().unwrap_or("").to_string();
         if field_name == "file" || field.file_name().is_some() {
             found_file = true;
@@ -154,19 +171,36 @@ pub async fn upload_package(State(state): St, kasir: Kasir, mut form: Multipart)
                 }
             };
 
-            while let Ok(Some(chunk)) = field.chunk().await {
-                if header_bytes.len() < 2 {
-                    let take_len = (2 - header_bytes.len()).min(chunk.len());
-                    header_bytes.extend_from_slice(&chunk[..take_len]);
-                }
-                hasher.update(&chunk);
-                total_bytes += chunk.len() as u64;
-                if let Err(e) = out_file.write_all(&chunk).await {
-                    let _ = tokio::fs::remove_file(&tmp_path).await;
-                    return http::json(
-                        500,
-                        json!({"success": false, "error": format!("Gagal menulis chunk: {}", e)}),
-                    );
+            loop {
+                match field.chunk().await {
+                    Ok(Some(chunk)) => {
+                        if header_bytes.len() < 2 {
+                            let take_len = (2 - header_bytes.len()).min(chunk.len());
+                            header_bytes.extend_from_slice(&chunk[..take_len]);
+                        }
+                        hasher.update(&chunk);
+                        total_bytes += chunk.len() as u64;
+                        if let Err(e) = out_file.write_all(&chunk).await {
+                            let _ = tokio::fs::remove_file(&tmp_path).await;
+                            return http::json(
+                                500,
+                                json!({"success": false, "error": format!("Gagal menulis chunk: {}", e)}),
+                            );
+                        }
+                    }
+                    Ok(None) => break,
+                    Err(e) => {
+                        let _ = tokio::fs::remove_file(&tmp_path).await;
+                        let status = if e.status() == axum::http::StatusCode::PAYLOAD_TOO_LARGE {
+                            413
+                        } else {
+                            400
+                        };
+                        return http::json(
+                            status,
+                            json!({"success": false, "error": format!("Stream upload terputus: {}", e.body_text())}),
+                        );
+                    }
                 }
             }
 

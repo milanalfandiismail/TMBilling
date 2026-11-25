@@ -38,7 +38,7 @@ use crate::routes::user::user_routes;
 use crate::routes::vnc::vnc_routes;
 use crate::state::AppState;
 use axum::body::Body;
-use axum::extract::Path;
+use axum::extract::{DefaultBodyLimit, Path};
 use axum::http::{header, HeaderValue, StatusCode};
 use axum::response::{IntoResponse, Response};
 use axum::routing::{get, post, put};
@@ -114,7 +114,8 @@ pub fn router(state: Arc<AppState>) -> Router {
         )
         .route(
             "/api/v1/kasir/settings/client-update/upload",
-            post(client_update_routes::upload_package),
+            post(client_update_routes::upload_package)
+                .layer(DefaultBodyLimit::max(256 * 1024 * 1024)),
         )
         .route(
             "/api/v1/kasir/settings/client-update/broadcast",
