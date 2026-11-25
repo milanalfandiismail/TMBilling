@@ -45,3 +45,33 @@ pub fn release(key: &str) {
 pub fn reset() {
     seen().lock().unwrap().clear();
 }
+
+/// Guard RAII untuk idempotensi.
+/// Menahan kunci saat `acquire()`. Jika dibatalkan atau drop sebelum `commit()`,
+/// kunci otomatis dilepas sehingga client bisa mencoba ulang.
+pub struct IdempotencyGuard(Option<String>);
+
+impl IdempotencyGuard {
+    pub fn acquire(key: Option<&str>) -> Result<Self, String> {
+        let k = key.unwrap_or("").trim();
+        if k.is_empty() {
+            return Ok(Self(None));
+        }
+        if !claim(k) {
+            return Err("Permintaan ini sudah diproses".into());
+        }
+        Ok(Self(Some(k.to_string())))
+    }
+
+    pub fn commit(mut self) {
+        self.0 = None;
+    }
+}
+
+impl Drop for IdempotencyGuard {
+    fn drop(&mut self) {
+        if let Some(k) = self.0.take() {
+            release(&k);
+        }
+    }
+}

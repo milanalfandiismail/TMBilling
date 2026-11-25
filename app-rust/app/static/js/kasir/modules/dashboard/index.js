@@ -450,7 +450,8 @@ const Dashboard = {
                     <!-- Opsi 2: Interval Polling -->
                     <div class="p-3.5 sm:p-4 lg:p-5 bg-[#050505] border border-[#1c1c1c] rounded space-y-2 sm:space-y-2.5">
                         <label class="block font-bold text-neutral-200 select-none flex items-center gap-2 text-xs sm:text-sm lg:max-xl:text-xs xl:text-base uppercase tracking-wider">
-                            <span>⏱️</span> Interval Refresh Real-time
+                            <svg class="w-4 h-4 text-neutral-400 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Interval Refresh Real-time
                         </label>
                         <p class="text-[9px] lg:max-xl:text-xs xl:text-base text-neutral-500 leading-relaxed mb-2">
                             Frekuensi update serentak data PC, status shift kasir, dan omzet di layar kasir.

@@ -170,6 +170,21 @@ pub async fn decrement_stok_if_available(
     Ok(res.rows_affected() > 0)
 }
 
+/// Varian untuk transaksi SQLite aktif.
+pub async fn decrement_stok_if_available_tx(
+    conn: &mut sqlx::SqliteConnection,
+    id: i64,
+    jumlah: i64,
+) -> Result<bool, sqlx::Error> {
+    let res = sqlx::query("UPDATE menu_item SET stok = stok - ? WHERE id = ? AND stok >= ?")
+        .bind(jumlah)
+        .bind(id)
+        .bind(jumlah)
+        .execute(conn)
+        .await?;
+    Ok(res.rows_affected() > 0)
+}
+
 pub async fn max_nota_seq(pool: &SqlitePool, date_str: &str) -> Result<i64, sqlx::Error> {
     let prefix = format!("TMM-{date_str}-");
     let len = prefix.chars().count() as i64;
@@ -221,6 +236,30 @@ pub async fn insert_transaksi(
     get_transaksi(pool, row.0)
         .await
         .map(|t| t.expect("baris yang baru dibuat selalu ada"))
+}
+
+pub async fn insert_transaksi_tx(
+    conn: &mut sqlx::SqliteConnection,
+    t: &TransaksiBaru<'_>,
+) -> Result<i64, sqlx::Error> {
+    let row: (i64,) = sqlx::query_as(
+        "INSERT INTO transaksi_menu (no_nota, menu_id, jumlah, total_harga, pc_kode, tanggal, kasir_id, tunai, kembalian, metode_pembayaran, operator) \
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id",
+    )
+    .bind(t.no_nota)
+    .bind(t.menu_id)
+    .bind(t.jumlah)
+    .bind(t.total_harga)
+    .bind(t.pc_kode)
+    .bind(t.tanggal)
+    .bind(t.kasir_id)
+    .bind(t.tunai)
+    .bind(t.kembalian)
+    .bind(t.metode_pembayaran)
+    .bind(t.operator)
+    .fetch_one(conn)
+    .await?;
+    Ok(row.0)
 }
 
 pub async fn get_transaksi(
@@ -349,12 +388,18 @@ pub async fn total_pemasukan_by_date(
     tanggal: Option<&str>,
     kasir_id: Option<i64>,
     metode: Option<&str>,
+    tz_name: &str,
 ) -> sqlx::Result<i64> {
     let mut sql = String::from("SELECT COALESCE(SUM(total_harga),0) FROM transaksi_menu WHERE 1=1");
     let mut binds: Vec<String> = Vec::new();
     if let Some(t) = tanggal {
-        sql.push_str(" AND date(tanggal) = date(?)");
-        binds.push(t.into());
+        if let Some((start, end)) = crate::utils::time::day_range_utc_str(t, tz_name) {
+            sql.push_str(" AND tanggal >= ? AND tanggal < ?");
+            binds.push(start);
+            binds.push(end);
+        } else {
+            sql.push_str(" AND 1=0");
+        }
     }
     if let Some(k) = kasir_id {
         sql.push_str(" AND kasir_id = ?");
@@ -379,6 +424,7 @@ pub async fn transactions_by_date(
     tanggal: Option<&str>,
     kasir_id: Option<i64>,
     metode: Option<&str>,
+    tz_name: &str,
 ) -> sqlx::Result<Vec<TransaksiMenu>> {
     let mut sql = String::from(
         "SELECT tm.id, tm.no_nota, tm.menu_id, tm.jumlah, tm.total_harga, tm.pc_kode,
@@ -390,8 +436,13 @@ pub async fn transactions_by_date(
     );
     let mut binds: Vec<String> = Vec::new();
     if let Some(t) = tanggal {
-        sql.push_str(" AND date(tm.tanggal) = date(?)");
-        binds.push(t.into());
+        if let Some((start, end)) = crate::utils::time::day_range_utc_str(t, tz_name) {
+            sql.push_str(" AND tm.tanggal >= ? AND tm.tanggal < ?");
+            binds.push(start);
+            binds.push(end);
+        } else {
+            sql.push_str(" AND 1=0");
+        }
     }
     if let Some(k) = kasir_id {
         sql.push_str(" AND tm.kasir_id = ?");
@@ -418,9 +469,17 @@ pub async fn delete_all_transaksi(pool: &SqlitePool) -> sqlx::Result<u64> {
     Ok(res.rows_affected())
 }
 
-pub async fn delete_transaksi_by_date(pool: &SqlitePool, tanggal: &str) -> sqlx::Result<u64> {
-    let res = sqlx::query("DELETE FROM transaksi_menu WHERE date(tanggal) = date(?)")
-        .bind(tanggal)
+pub async fn delete_transaksi_by_date(
+    pool: &SqlitePool,
+    tanggal: &str,
+    tz_name: &str,
+) -> sqlx::Result<u64> {
+    let Some((start, end)) = crate::utils::time::day_range_utc_str(tanggal, tz_name) else {
+        return Ok(0);
+    };
+    let res = sqlx::query("DELETE FROM transaksi_menu WHERE tanggal >= ? AND tanggal < ?")
+        .bind(start)
+        .bind(end)
         .execute(pool)
         .await?;
     Ok(res.rows_affected())

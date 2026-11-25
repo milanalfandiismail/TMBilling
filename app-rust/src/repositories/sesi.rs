@@ -144,17 +144,23 @@ pub async fn delete_resolved_blackout(
     Ok(res.rows_affected())
 }
 
-pub async fn count_by_date(pool: &SqlitePool, tanggal: &str) -> sqlx::Result<i64> {
-    sqlx::query_scalar("SELECT COUNT(*) FROM sesi WHERE date(mulai_pada) = date(?)")
-        .bind(tanggal)
+pub async fn count_by_date(pool: &SqlitePool, tanggal: &str, tz_name: &str) -> sqlx::Result<i64> {
+    let Some((start, end)) = crate::utils::time::day_range_utc_str(tanggal, tz_name) else {
+        return Ok(0);
+    };
+    sqlx::query_scalar("SELECT COUNT(*) FROM sesi WHERE mulai_pada >= ? AND mulai_pada < ?")
+        .bind(start)
+        .bind(end)
         .fetch_one(pool)
         .await
 }
 
-pub async fn distinct_tanggal(pool: &SqlitePool) -> sqlx::Result<Vec<String>> {
+pub async fn distinct_tanggal(pool: &SqlitePool, tz_name: &str) -> sqlx::Result<Vec<String>> {
+    let mod_str = crate::utils::time::sqlite_tz_modifier(tz_name);
     sqlx::query_scalar(
-        "SELECT DISTINCT date(mulai_pada) AS t FROM sesi WHERE mulai_pada IS NOT NULL ORDER BY t DESC",
+        "SELECT DISTINCT date(mulai_pada, ?) AS t FROM sesi WHERE mulai_pada IS NOT NULL ORDER BY t DESC",
     )
+    .bind(mod_str)
     .fetch_all(pool)
     .await
 }
@@ -166,12 +172,21 @@ pub async fn delete_history(pool: &SqlitePool) -> sqlx::Result<u64> {
     Ok(res.rows_affected())
 }
 
-pub async fn delete_history_by_date(pool: &SqlitePool, tanggal: &str) -> sqlx::Result<u64> {
-    let res =
-        sqlx::query("DELETE FROM sesi WHERE status != 'aktif' AND date(mulai_pada) = date(?)")
-            .bind(tanggal)
-            .execute(pool)
-            .await?;
+pub async fn delete_history_by_date(
+    pool: &SqlitePool,
+    tanggal: &str,
+    tz_name: &str,
+) -> sqlx::Result<u64> {
+    let Some((start, end)) = crate::utils::time::day_range_utc_str(tanggal, tz_name) else {
+        return Ok(0);
+    };
+    let res = sqlx::query(
+        "DELETE FROM sesi WHERE status != 'aktif' AND mulai_pada >= ? AND mulai_pada < ?",
+    )
+    .bind(start)
+    .bind(end)
+    .execute(pool)
+    .await?;
     Ok(res.rows_affected())
 }
 

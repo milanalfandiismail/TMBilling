@@ -84,17 +84,17 @@ pub async fn billing(
     let tanggal = parse_tanggal(tanggal)?;
     let (page, per) = pagination_args(page, per_page, 10)?;
     let t = tanggal.as_deref();
-    let gross = trx_repo::total_pemasukan(&st.pool, t, kasir_id, metode).await?;
-    let refund = trx_repo::total_refund(&st.pool, t, kasir_id, metode).await?;
-    let kantin = menu_repo::total_pemasukan_by_date(&st.pool, t, kasir_id, metode).await?;
-    let guest = trx_repo::pendapatan_kategori(&st.pool, "guest", t, kasir_id, metode).await?;
-    let member = trx_repo::pendapatan_kategori(&st.pool, "member", t, kasir_id, metode).await?;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let gross = trx_repo::total_pemasukan(&st.pool, t, kasir_id, metode, &tz).await?;
+    let refund = trx_repo::total_refund(&st.pool, t, kasir_id, metode, &tz).await?;
+    let kantin = menu_repo::total_pemasukan_by_date(&st.pool, t, kasir_id, metode, &tz).await?;
+    let guest = trx_repo::pendapatan_kategori(&st.pool, "guest", t, kasir_id, metode, &tz).await?;
+    let member = trx_repo::pendapatan_kategori(&st.pool, "member", t, kasir_id, metode, &tz).await?;
 
     let offset = (page - 1) * per;
     let (rows, total) =
-        trx_repo::history_paginated(&st.pool, t, kasir_id, metode, q, per, offset).await?;
-    let breakdown = trx_repo::breakdown_metode(&st.pool, t, kasir_id, metode, q).await?;
-    let tz = &st.cfg.timezone;
+        trx_repo::history_paginated(&st.pool, t, kasir_id, metode, q, per, offset, &tz).await?;
+    let breakdown = trx_repo::breakdown_metode(&st.pool, t, kasir_id, metode, q, &tz).await?;
 
     let data: Vec<Value> = rows
         .iter()
@@ -103,10 +103,10 @@ pub async fn billing(
                 "id": r.id,
                 "no_nota": r.no_nota.clone().unwrap_or_else(|| format!("OLD-{}", r.id)),
                 "tanggal": r.dibuat_pada.as_deref().and_then(time::parse_dt)
-                    .map(|d| time::format_display(d, tz))
+                    .map(|d| time::format_display(d, &tz))
                     .unwrap_or_default(),
                 "waktu": r.dibuat_pada.as_deref().and_then(time::parse_dt)
-                    .map(|d| time::format_display(d, tz))
+                    .map(|d| time::format_display(d, &tz))
                     .unwrap_or_default(),
                 "pc_kode": r.pc_kode.clone().unwrap_or_else(|| "-".into()),
                 "nama_pelanggan": nama_pelanggan(r.member_nama.as_deref(), r.guest_nama.as_deref()),
@@ -163,9 +163,9 @@ pub async fn kantin(
 ) -> Hasil<Value> {
     let tanggal = parse_tanggal(tanggal)?;
     let (page, per) = pagination_args(page, per_page, 12)?;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     let rows =
-        menu_repo::transactions_by_date(&st.pool, tanggal.as_deref(), kasir_id, metode).await?;
-    let tz = &st.cfg.timezone;
+        menu_repo::transactions_by_date(&st.pool, tanggal.as_deref(), kasir_id, metode, &tz).await?;
 
     // Kelompokkan per nota supaya satu baris = satu pesanan.
     let kata = q.unwrap_or("").to_lowercase();
@@ -194,11 +194,11 @@ pub async fn kantin(
                 json!({
                     "id": r.id,
                     "no_nota": nota,
-                    "tanggal": r.tanggal.map(|d| time::format_display(d, tz)).unwrap_or_default(),
+                    "tanggal": r.tanggal.map(|d| time::format_display(d, &tz)).unwrap_or_default(),
                     "pc_kode": r.pc_kode.clone().unwrap_or_else(|| "-".into()),
                     "kasir": r.kasir_nama.clone().or(r.operator.clone()).unwrap_or_else(|| "Kasir".into()),
                     "kasir_nama": r.kasir_nama.clone().or(r.operator.clone()).unwrap_or_else(|| "Kasir".into()),
-                    "waktu": r.tanggal.map(|d| time::format_display(d, tz)).unwrap_or_default(),
+                    "waktu": r.tanggal.map(|d| time::format_display(d, &tz)).unwrap_or_default(),
                     "metode_pembayaran": r.metode_pembayaran.clone().unwrap_or_else(|| "Tunai".into()),
                 }),
                 Vec::new(),
@@ -267,14 +267,15 @@ pub async fn kantin(
 }
 
 pub async fn harian(st: &AppState, kasir_id: Option<i64>) -> Hasil<Value> {
-    let hari_ini = time::today_local(&st.cfg.timezone)
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let hari_ini = time::today_local(&tz)
         .format("%Y-%m-%d")
         .to_string();
-    let billing = trx_repo::total_pemasukan(&st.pool, Some(&hari_ini), kasir_id, None).await?;
-    let refund = trx_repo::total_refund(&st.pool, Some(&hari_ini), kasir_id, None).await?;
+    let billing = trx_repo::total_pemasukan(&st.pool, Some(&hari_ini), kasir_id, None, &tz).await?;
+    let refund = trx_repo::total_refund(&st.pool, Some(&hari_ini), kasir_id, None, &tz).await?;
     let kantin =
-        menu_repo::total_pemasukan_by_date(&st.pool, Some(&hari_ini), kasir_id, None).await?;
-    let total_sesi = sesi_repo::count_by_date(&st.pool, &hari_ini).await?;
+        menu_repo::total_pemasukan_by_date(&st.pool, Some(&hari_ini), kasir_id, None, &tz).await?;
+    let total_sesi = sesi_repo::count_by_date(&st.pool, &hari_ini, &tz).await?;
     let aktif = sesi_repo::count_aktif(&st.pool).await?;
     Ok(json!({
         "tanggal": hari_ini,
@@ -287,7 +288,8 @@ pub async fn harian(st: &AppState, kasir_id: Option<i64>) -> Hasil<Value> {
 }
 
 pub async fn tanggal_list(st: &AppState) -> Hasil<Value> {
-    let tanggal = sesi_repo::distinct_tanggal(&st.pool).await?;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let tanggal = sesi_repo::distinct_tanggal(&st.pool, &tz).await?;
     Ok(json!({ "tanggal": tanggal }))
 }
 
@@ -577,9 +579,10 @@ pub async fn clear_transactions_by_date(st: &AppState, tanggal: &str, operator: 
             }
         }
     }
-    let trx = trx_repo::delete_by_date(&st.pool, &tanggal).await?;
-    let menu = menu_repo::delete_transaksi_by_date(&st.pool, &tanggal).await?;
-    let sesi = sesi_repo::delete_history_by_date(&st.pool, &tanggal).await?;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let trx = trx_repo::delete_by_date(&st.pool, &tanggal, &tz).await?;
+    let menu = menu_repo::delete_transaksi_by_date(&st.pool, &tanggal, &tz).await?;
+    let sesi = sesi_repo::delete_history_by_date(&st.pool, &tanggal, &tz).await?;
     logger::audit_json(
         operator,
         "CLEAR_TANGGAL",

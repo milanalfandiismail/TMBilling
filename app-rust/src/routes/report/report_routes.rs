@@ -382,7 +382,7 @@ pub async fn export_billing(
         q.tanggal.as_deref(),
         kasir_filter(&st, &kasir, q.kasir_id).await,
         Some(1),
-        Some(100),
+        Some(100_000),
         q.metode_pembayaran.as_deref().filter(|m| !m.is_empty()),
         None,
     )
@@ -396,7 +396,8 @@ pub async fn export_billing(
         data.get("tanggal").and_then(|x| x.as_str()).unwrap_or("-")
     );
     let bytes = pdf::render(&judul, "TMBilling", &baris_billing(&data));
-    let cap = time::now_local(&st.cfg.timezone)
+    let tz = crate::services::settings::settings_service::active_timezone(&st).await;
+    let cap = time::now_local(&tz)
         .format("%Y%m%d_%H%M%S")
         .to_string();
     pdf_response(bytes, &format!("laporan_billing_{cap}.pdf"))
@@ -408,7 +409,7 @@ pub async fn export_kantin(State(st): St, kasir: Kasir, Query(q): Query<LaporanQ
         q.tanggal.as_deref(),
         kasir_filter(&st, &kasir, q.kasir_id).await,
         Some(1),
-        Some(100),
+        Some(100_000),
         q.metode_pembayaran.as_deref().filter(|m| !m.is_empty()),
         None,
     )
@@ -445,7 +446,8 @@ pub async fn export_kantin(State(st): St, kasir: Kasir, Query(q): Query<LaporanQ
         data.get("tanggal").and_then(|x| x.as_str()).unwrap_or("-")
     );
     let bytes = pdf::render(&judul, "TMBilling", &baris);
-    let cap = time::now_local(&st.cfg.timezone)
+    let tz = crate::services::settings::settings_service::active_timezone(&st).await;
+    let cap = time::now_local(&tz)
         .format("%Y%m%d_%H%M%S")
         .to_string();
     pdf_response(bytes, &format!("laporan_kantin_{cap}.pdf"))
@@ -460,7 +462,7 @@ pub async fn export_pnl(State(st): St, kasir: Kasir, Query(q): Query<LaporanQuer
         q.tanggal.as_deref(),
         None,
         Some(1),
-        Some(100),
+        Some(100_000),
         None,
         None,
     )
@@ -495,7 +497,8 @@ pub async fn export_pnl(State(st): St, kasir: Kasir, Query(q): Query<LaporanQuer
         data.get("tanggal").and_then(|x| x.as_str()).unwrap_or("-")
     );
     let bytes = pdf::render(&judul, "TMBilling", &baris);
-    let cap = time::now_local(&st.cfg.timezone)
+    let tz = crate::services::settings::settings_service::active_timezone(&st).await;
+    let cap = time::now_local(&tz)
         .format("%Y%m%d_%H%M%S")
         .to_string();
     pdf_response(bytes, &format!("laporan_pnl_{cap}.pdf"))
@@ -519,7 +522,8 @@ pub async fn export_audit_pdf(State(st): St, kasir: Kasir, Query(q): Query<LogQu
         }
     }
     let bytes = pdf::render("Audit Log Sistem", "TMBilling", &baris);
-    let cap = time::now_local(&st.cfg.timezone)
+    let tz = crate::services::settings::settings_service::active_timezone(&st).await;
+    let cap = time::now_local(&tz)
         .format("%Y%m%d_%H%M%S")
         .to_string();
     pdf_response(bytes, &format!("audit_log_{cap}.pdf"))

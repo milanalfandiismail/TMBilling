@@ -31,6 +31,18 @@ pub async fn claim_refund(pool: &SqlitePool, id: i64) -> sqlx::Result<bool> {
     Ok(res.rows_affected() == 1)
 }
 
+/// Menandai transaksi sudah direfund secara atomik di dalam SQL Transaction aktif.
+pub async fn claim_refund_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+    id: i64,
+) -> sqlx::Result<bool> {
+    let res = sqlx::query("UPDATE transaksi SET is_refunded = 1 WHERE id = ? AND is_refunded = 0")
+        .bind(id)
+        .execute(&mut **tx)
+        .await?;
+    Ok(res.rows_affected() == 1)
+}
+
 /// Nomor urut nota tertinggi untuk prefix `TM-YYYYMMDD-`.
 pub async fn max_nota_seq(pool: &SqlitePool, date_str: &str) -> sqlx::Result<i64> {
     let prefix = format!("TM-{date_str}-");
@@ -88,12 +100,18 @@ fn filter_sql(
     kasir_id: Option<i64>,
     metode: Option<&str>,
     q: Option<&str>,
+    tz_name: &str,
 ) -> (String, Vec<String>) {
     let mut parts: Vec<String> = Vec::new();
     let mut binds: Vec<String> = Vec::new();
     if let Some(t) = tanggal {
-        parts.push("date(t.dibuat_pada) = date(?)".into());
-        binds.push(t.to_string());
+        if let Some((start, end)) = crate::utils::time::day_range_utc_str(t, tz_name) {
+            parts.push("(t.dibuat_pada >= ? AND t.dibuat_pada < ?)".into());
+            binds.push(start);
+            binds.push(end);
+        } else {
+            parts.push("1=0".into());
+        }
     }
     if let Some(k) = kasir_id {
         parts.push("t.user_id = ?".into());
@@ -133,8 +151,9 @@ pub async fn total_pemasukan(
     tanggal: Option<&str>,
     kasir_id: Option<i64>,
     metode: Option<&str>,
+    tz_name: &str,
 ) -> sqlx::Result<i64> {
-    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, None);
+    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, None, tz_name);
     scalar(
         &format!("SELECT COALESCE(SUM(t.jumlah),0) FROM transaksi t WHERE {BILLING}{clause}"),
         &binds,
@@ -148,8 +167,9 @@ pub async fn total_refund(
     tanggal: Option<&str>,
     kasir_id: Option<i64>,
     metode: Option<&str>,
+    tz_name: &str,
 ) -> sqlx::Result<i64> {
-    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, None);
+    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, None, tz_name);
     scalar(
         &format!("SELECT COALESCE(SUM(ABS(t.jumlah)),0) FROM transaksi t WHERE t.jenis = 'refund_paket'{clause}"),
         &binds,
@@ -164,8 +184,9 @@ pub async fn pendapatan_kategori(
     tanggal: Option<&str>,
     kasir_id: Option<i64>,
     metode: Option<&str>,
+    tz_name: &str,
 ) -> sqlx::Result<i64> {
-    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, None);
+    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, None, tz_name);
     let mut semua = binds.clone();
     semua.insert(0, tipe.to_string());
     scalar(
@@ -186,8 +207,9 @@ pub async fn breakdown_metode(
     kasir_id: Option<i64>,
     metode: Option<&str>,
     q: Option<&str>,
+    tz_name: &str,
 ) -> sqlx::Result<Vec<(String, i64)>> {
-    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, q);
+    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, q, tz_name);
     let sql = format!(
         "SELECT CASE WHEN COALESCE(t.metode_pembayaran,'') IN ('','Cash') THEN 'Tunai'
                      ELSE t.metode_pembayaran END AS m,
@@ -217,8 +239,9 @@ pub async fn history_paginated(
     q: Option<&str>,
     limit: i64,
     offset: i64,
+    tz_name: &str,
 ) -> sqlx::Result<(Vec<Transaksi>, i64)> {
-    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, q);
+    let (clause, binds) = filter_sql(tanggal, kasir_id, metode, q, tz_name);
     // Sama seperti Python: nota tutup sesi (no_nota NULL) bukan baris laporan billing.
     let total = scalar(
         &format!("SELECT COUNT(*) FROM transaksi t WHERE t.no_nota IS NOT NULL{clause}"),
@@ -237,10 +260,12 @@ pub async fn history_paginated(
     Ok((rows, total))
 }
 
-pub async fn tanggal_unik(pool: &SqlitePool) -> sqlx::Result<Vec<String>> {
+pub async fn tanggal_unik(pool: &SqlitePool, tz_name: &str) -> sqlx::Result<Vec<String>> {
+    let mod_str = crate::utils::time::sqlite_tz_modifier(tz_name);
     sqlx::query_scalar(
-        "SELECT DISTINCT date(dibuat_pada) AS t FROM transaksi WHERE dibuat_pada IS NOT NULL ORDER BY t DESC",
+        "SELECT DISTINCT date(dibuat_pada, ?) AS t FROM transaksi WHERE dibuat_pada IS NOT NULL ORDER BY t DESC",
     )
+    .bind(mod_str)
     .fetch_all(pool)
     .await
 }
@@ -253,9 +278,13 @@ pub async fn delete_by_id(pool: &SqlitePool, id: i64) -> sqlx::Result<bool> {
     Ok(res.rows_affected() > 0)
 }
 
-pub async fn delete_by_date(pool: &SqlitePool, tanggal: &str) -> sqlx::Result<u64> {
-    let res = sqlx::query("DELETE FROM transaksi WHERE date(dibuat_pada) = date(?)")
-        .bind(tanggal)
+pub async fn delete_by_date(pool: &SqlitePool, tanggal: &str, tz_name: &str) -> sqlx::Result<u64> {
+    let Some((start, end)) = crate::utils::time::day_range_utc_str(tanggal, tz_name) else {
+        return Ok(0);
+    };
+    let res = sqlx::query("DELETE FROM transaksi WHERE dibuat_pada >= ? AND dibuat_pada < ?")
+        .bind(start)
+        .bind(end)
         .execute(pool)
         .await?;
     Ok(res.rows_affected())

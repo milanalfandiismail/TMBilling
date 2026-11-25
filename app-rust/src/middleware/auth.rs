@@ -46,9 +46,21 @@ pub fn encode(cfg: &Config, data: &SessionData) -> String {
     format!("{payload}.{sig}")
 }
 
+fn constant_time_eq(a: &[u8], b: &[u8]) -> bool {
+    if a.len() != b.len() {
+        return false;
+    }
+    let mut diff = 0u8;
+    for (x, y) in a.iter().zip(b.iter()) {
+        diff |= x ^ y;
+    }
+    diff == 0
+}
+
 pub fn decode(cfg: &Config, raw: &str) -> Option<SessionData> {
     let (payload, sig) = raw.split_once('.')?;
-    if mac(cfg, payload) != sig {
+    let expected = mac(cfg, payload);
+    if !constant_time_eq(expected.as_bytes(), sig.as_bytes()) {
         return None;
     }
     let bytes = URL_SAFE_NO_PAD.decode(payload).ok()?;

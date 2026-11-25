@@ -6,7 +6,7 @@ use crate::repositories::menu as repo;
 use crate::repositories::user as user_repo;
 use crate::services::settings::settings_service;
 use crate::state::AppState;
-use crate::utils::{http::Upload, idempotency, logger, time, validators};
+use crate::utils::{http::Upload, logger, time, validators};
 use chrono::NaiveDate;
 use serde_json::{json, Value};
 
@@ -600,9 +600,7 @@ pub async fn checkout(st: &AppState, data: &Value, kasir: &User) -> Result<Vec<V
 
     // Klaim idempotensi setelah validasi: request yang ditolak tidak membakar kunci retry.
     let kunci = data.get("client_request_id").and_then(Value::as_str);
-    if !idempotency::claim(kunci.unwrap_or("")) {
-        return Err("Permintaan ini sudah diproses".into());
-    }
+    let guard = crate::utils::idempotency::IdempotencyGuard::acquire(kunci)?;
 
     let pc_kode = data
         .get("pc_kode")
@@ -611,17 +609,18 @@ pub async fn checkout(st: &AppState, data: &Value, kasir: &User) -> Result<Vec<V
         .filter(|s| !s.is_empty());
 
     let _guard = st.write().await;
-    let mut hasil = Vec::new();
+    let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
+    let mut baris_trx = Vec::new();
     for b in &baris {
         if b.menu.stok >= 0
-            && !repo::decrement_stok_if_available(&st.pool, b.menu.id, b.jumlah)
+            && !repo::decrement_stok_if_available_tx(tx.as_mut(), b.menu.id, b.jumlah)
                 .await
                 .map_err(|e| e.to_string())?
         {
             return Err(format!("Stok '{}' tidak mencukupi", b.menu.nama));
         }
-        let trx = repo::insert_transaksi(
-            &st.pool,
+        let trx_id = repo::insert_transaksi_tx(
+            tx.as_mut(),
             &repo::TransaksiBaru {
                 no_nota: &no_nota,
                 menu_id: b.menu.id,
@@ -638,6 +637,17 @@ pub async fn checkout(st: &AppState, data: &Value, kasir: &User) -> Result<Vec<V
         )
         .await
         .map_err(|e| e.to_string())?;
+        baris_trx.push((b, trx_id));
+    }
+    tx.commit().await.map_err(|e| e.to_string())?;
+    guard.commit();
+
+    let mut hasil = Vec::new();
+    for (b, trx_id) in baris_trx {
+        let trx = repo::get_transaksi(&st.pool, trx_id)
+            .await
+            .map_err(|e| e.to_string())?
+            .expect("baris transaksi baru selalu ada");
         logger::audit_json(
             &kasir.username,
             "TRANSAKSI_MENU",

@@ -21,12 +21,12 @@ async fn omzet(st: &AppState) -> (i64, i64) {
             }
         }
     }
-    let (mulai, akhir) = time::day_range_utc(time::today_local(&st.cfg.timezone), &st.cfg.timezone);
-    let _ = &akhir;
-    let billing = trx_repo::total_pemasukan(&st.pool, Some(&mulai), None, None)
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let hari_ini = time::today_local(&tz).format("%Y-%m-%d").to_string();
+    let billing = trx_repo::total_pemasukan(&st.pool, Some(&hari_ini), None, None, &tz)
         .await
         .unwrap_or(0);
-    let kantin = menu_repo::total_pemasukan_by_date(&st.pool, Some(&mulai), None, None)
+    let kantin = menu_repo::total_pemasukan_by_date(&st.pool, Some(&hari_ini), None, None, &tz)
         .await
         .unwrap_or(0);
     if let Ok(mut guard) = OMZET.lock() {

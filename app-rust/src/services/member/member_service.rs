@@ -52,7 +52,7 @@ fn tambah_saldo(m: &mut Member, menit: i64, hari: i64, now: NaiveDateTime) {
         m.kadaluarsa_pada.as_deref().and_then(parse_dt),
     ) {
         (true, _) => baru,
-        (false, Some(exp)) => exp + Duration::days(hari.max(0)),
+        (false, Some(exp)) => exp.max(now) + Duration::days(hari.max(0)),
         (false, None) => baru,
     };
     m.kadaluarsa_pada = Some(db_str(kadaluarsa));
@@ -433,9 +433,7 @@ pub async fn tambah_waktu(
     operator: &str,
     client_request_id: Option<&str>,
 ) -> Result<(), String> {
-    if !idempotency::claim(client_request_id.unwrap_or("")) {
-        return Err("Permintaan ini sudah diproses".into());
-    }
+    let guard = idempotency::IdempotencyGuard::acquire(client_request_id)?;
     let _guard = st.write().await;
     let metode = menu_service::metode_pembayaran(st, metode).await?;
     let Some(mut member) = repo::get_by_id(&st.pool, member_id)
@@ -500,7 +498,8 @@ pub async fn tambah_waktu(
             member.waktu_tersimpan,
         ));
 
-        let no_nota = nota::generate_nota(&st.pool, &st.cfg.timezone).await;
+        let active_tz = crate::services::settings::settings_service::active_timezone(st).await;
+        let no_nota = nota::generate_nota(&st.pool, &active_tz).await;
         sqlx::query(
             "INSERT INTO transaksi (member_id, paket_id, user_id, jenis, jumlah, menit, keterangan, \
              dibuat_pada, no_nota, is_refunded, metode_pembayaran, operator) \
@@ -530,6 +529,7 @@ pub async fn tambah_waktu(
         .await
         .map_err(|e| e.to_string())?;
     tx.commit().await.map_err(|e| e.to_string())?;
+    guard.commit();
 
     logger::rec(
         operator,

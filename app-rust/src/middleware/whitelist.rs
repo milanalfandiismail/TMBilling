@@ -117,14 +117,22 @@ pub async fn guard(State(state): State<Arc<AppState>>, req: Request, next: Next)
         let current = ip_whitelist::token(&state).await;
         if let Some(url_token) = query_token(req.uri().query()) {
             if same_token(&url_token, &current) {
-                let session = SessionData {
-                    uid: 0,
-                    uname: String::new(),
-                    role: String::new(),
-                    nama: None,
-                    exp: chrono::Utc::now().timestamp() + SESSION_TTL_SECONDS,
-                    ipwh: true,
-                    ipwhv: ip_whitelist::token_version(&state).await,
+                let existing = session_of(&state, &headers);
+                let session = match existing {
+                    Some(mut s) => {
+                        s.ipwh = true;
+                        s.ipwhv = ip_whitelist::token_version(&state).await;
+                        s
+                    }
+                    None => SessionData {
+                        uid: 0,
+                        uname: String::new(),
+                        role: String::new(),
+                        nama: None,
+                        exp: chrono::Utc::now().timestamp() + SESSION_TTL_SECONDS,
+                        ipwh: true,
+                        ipwhv: ip_whitelist::token_version(&state).await,
+                    },
                 };
                 return redirect(&path, &[auth::session_cookie(&state.cfg, &session)]);
             }

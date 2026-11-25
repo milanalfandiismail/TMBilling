@@ -404,7 +404,7 @@ async fn tambah_satu(
         let tambah_hari = paket.kadaluarsa_hari.unwrap_or(0) * qty;
         let baru = member.waktu_tersimpan + total_menit;
         let kadaluarsa = match member.kadaluarsa_pada.as_deref().and_then(parse_dt) {
-            Some(exp) if member.waktu_tersimpan > 0 => exp + Duration::days(tambah_hari),
+            Some(exp) if member.waktu_tersimpan > 0 => exp.max(now_db()) + Duration::days(tambah_hari),
             _ => now_db() + Duration::days(tambah_hari),
         };
         sqlx::query("UPDATE member SET waktu_tersimpan = ?, kadaluarsa_pada = ? WHERE id = ?")
@@ -489,9 +489,7 @@ pub async fn tambah_waktu(
     operator: &str,
     client_request_id: Option<&str>,
 ) -> Result<(i64, Value), String> {
-    if !crate::utils::idempotency::claim(client_request_id.unwrap_or("")) {
-        return Err("Permintaan ini sudah diproses".into());
-    }
+    let guard = crate::utils::idempotency::IdempotencyGuard::acquire(client_request_id)?;
     let _guard = st.write().await;
     let qty = int_range(&json!(qty), 1, 100, "Kuantitas paket")?;
     let metode = menu_service::metode_pembayaran(st, metode).await?;
@@ -511,6 +509,7 @@ pub async fn tambah_waktu(
     let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
     let hasil = tambah_satu(st, &mut tx, &sesi, paket_id, qty, &metode, operator, None).await?;
     tx.commit().await.map_err(|e| e.to_string())?;
+    guard.commit();
     Ok((paket.durasi_menit * qty, hasil))
 }
 
@@ -932,22 +931,27 @@ pub async fn refund_paket_guest(
     }
     let sebelum = sesi.durasi_beli_menit;
     let dikurangi = durasi.min(sisa);
-    let refund_jumlah = -transaksi.jumlah;
-    let no_nota = nota::generate_nota(&st.pool, &st.cfg.timezone).await;
+    let refund_jumlah = if durasi > 0 {
+        -((transaksi.jumlah * dikurangi) / durasi)
+    } else {
+        0
+    };
+    let no_nota = nota::generate_nota(&st.pool, &crate::services::settings::settings_service::active_timezone(st).await).await;
     let user_id = nota::user_id(&st.pool, operator).await;
     let nama_paket = transaksi
         .paket_nama
         .clone()
         .unwrap_or_else(|| "?".to_string());
 
-    if !transaksi_repo::claim_refund(&st.pool, transaksi.id)
+    let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
+
+    if !transaksi_repo::claim_refund_tx(&mut tx, transaksi.id)
         .await
         .map_err(|e| e.to_string())?
     {
         return Err("Transaksi tidak valid atau sudah direfund".into());
     }
 
-    let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
     sqlx::query(
         "UPDATE sesi SET durasi_beli_menit = durasi_beli_menit - ?, \
          total_bayar = MAX(0, total_bayar + ?) WHERE id = ?",

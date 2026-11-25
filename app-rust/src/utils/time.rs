@@ -113,3 +113,23 @@ pub fn day_range_utc(date: NaiveDate, tz_name: &str) -> (String, String) {
     let next = midnight + chrono::Duration::days(1);
     (to_utc(midnight), to_utc(next))
 }
+
+/// Mengembalikan modifier offset SQLite (mis. `+08:00`) dari zona waktu aktif
+/// untuk dipakai pada `date(kolom, ?)` agar sinkron dengan `DISTINCT date(...)`.
+pub fn sqlite_tz_modifier(tz_name: &str) -> String {
+    use chrono::Offset;
+    let zone = tz(tz_name);
+    let offset_secs = Utc::now().with_timezone(&zone).offset().fix().local_minus_utc();
+    let sign = if offset_secs >= 0 { '+' } else { '-' };
+    let abs = offset_secs.abs();
+    let hours = abs / 3600;
+    let mins = (abs % 3600) / 60;
+    format!("{sign}{hours:02}:{mins:02}")
+}
+
+/// Menghitung rentang `[start_utc, end_utc)` dari string `YYYY-MM-DD` sesuai `tz_name`.
+/// Mengembalikan `None` jika string tanggal tidak valid.
+pub fn day_range_utc_str(tanggal: &str, tz_name: &str) -> Option<(String, String)> {
+    let date = NaiveDate::parse_from_str(tanggal.trim(), "%Y-%m-%d").ok()?;
+    Some(day_range_utc(date, tz_name))
+}
