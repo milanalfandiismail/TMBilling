@@ -83,17 +83,46 @@ fn env() -> &'static Environment<'static> {
                 let fmt = kwargs
                     .get::<Option<String>>("fmt")?
                     .unwrap_or_else(|| "%d/%m/%Y %H:%M".to_string());
-                let tz_name = std::env::var("TIMEZONE").unwrap_or_else(|_| "Asia/Makassar".to_string());
+                let tz_name = std::env::var("TIMEZONE")
+                    .or_else(|_| std::env::var("APP_TIMEZONE"))
+                    .unwrap_or_else(|_| "Asia/Makassar".to_string());
+                let label = crate::utils::time::tz_label(&tz_name);
+                let resolved_fmt = fmt.replace("%Z", &label);
                 Ok(crate::utils::time::parse_dt(&s)
                     .map(|d| {
                         chrono::DateTime::<chrono::Utc>::from_naive_utc_and_offset(d, chrono::Utc)
                             .with_timezone(&crate::utils::time::tz(&tz_name))
-                            .format(&fmt)
+                            .format(&resolved_fmt)
                             .to_string()
                     })
                     .unwrap_or(s))
             },
         );
+        env.add_function("format_rupiah", |raw: Value| -> String {
+            let n: i64 = if raw.is_undefined() || raw.is_none() {
+                0
+            } else if let Some(v) = raw.as_i64() {
+                v
+            } else if let Ok(v) = raw.to_string().trim().parse::<f64>() {
+                v.round() as i64
+            } else {
+                0
+            };
+            let neg = n < 0;
+            let s = n.unsigned_abs().to_string();
+            let mut out = String::with_capacity(s.len() + s.len() / 3);
+            for (i, c) in s.chars().enumerate() {
+                if i > 0 && (s.len() - i) % 3 == 0 {
+                    out.push('.');
+                }
+                out.push(c);
+            }
+            if neg {
+                format!("-Rp {out}")
+            } else {
+                format!("Rp {out}")
+            }
+        });
         env
     })
 }
@@ -110,6 +139,8 @@ fn routes() -> &'static HashMap<&'static str, &'static str> {
             ("public.games", "/games"),
             ("public.tv", "/tv"),
             ("public.tv_static", "/tv/static"),
+            ("member_portal.login_page", "/member/login"),
+            ("member_portal.dashboard_page", "/member/dashboard"),
             ("static", "/static"),
             ("kasir.login", "/kasir/login"),
             ("kasir.index", "/kasir/"),
@@ -125,13 +156,23 @@ pub fn url_for(args: minijinja::value::Rest<Value>, kwargs: minijinja::value::Kw
     if let Some(f) = kwargs.get::<Option<String>>("filename")? {
         return Ok(format!("{base}/{f}"));
     }
-    Ok(match args.0.get(1) {
+    let path = match args.0.get(1).and_then(|v| v.as_str()) {
+        Some(s) => format!("{base}/{s}"),
         None => base.to_string(),
-        Some(v) => match v.as_str() {
-            Some(s) => format!("{base}/{s}"),
-            None => base.to_string(),
-        },
-    })
+    };
+    let mut query_parts = Vec::new();
+    for key in kwargs.args() {
+        if let Ok(val) = kwargs.get::<Value>(key) {
+            if !val.is_undefined() && !val.is_none() {
+                query_parts.push(format!("{key}={val}"));
+            }
+        }
+    }
+    if query_parts.is_empty() {
+        Ok(path)
+    } else {
+        Ok(format!("{path}?{}", query_parts.join("&")))
+    }
 }
 
 pub fn render_with(name: &str, ctx: Value, csrf: &str) -> Result<String> {
@@ -155,4 +196,65 @@ fn pisah_ribuan(angka: &str) -> String {
         out.push(c);
     }
     if negatif { format!("-{out}") } else { out }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn render_member_login_dan_dashboard_sukses() {
+        let base = json!({
+            "warnet_title": "TMBilling Test",
+            "v_cache": "1",
+            "version": "2.0.0",
+            "member": {
+                "username": "budi",
+                "nama_lengkap": "Budi Santoso",
+                "email": "budi@example.com",
+                "no_hp": "08123456789",
+                "waktu_tersimpan": 125,
+                "kadaluarsa_pada": "2026-12-31 23:59:00",
+                "dibuat_pada": "2026-01-01 10:00:00",
+                "aktif": true,
+                "grup": { "nama": "VIP" }
+            },
+            "total_play_hours": 12.5,
+            "total_spent": 150000,
+            "sesi_history": [{
+                "menit_terpakai": 65,
+                "pc": { "kode": "PC-01" },
+                "mulai_pada": "2026-11-25 10:00:00",
+                "selesai_pada": null,
+                "status": "aktif"
+            }],
+            "sesi_pagination": {
+                "page": 1, "pages": 2, "total": 11,
+                "has_prev": false, "prev_num": 0,
+                "has_next": true, "next_num": 2
+            },
+            "transaksi_history": [{
+                "jenis": "beli_paket_member",
+                "jumlah": 50000,
+                "keterangan": "Paket 5 Jam",
+                "dibuat_pada": "2026-11-25 09:30:00",
+                "is_refunded": false,
+                "menit": 300,
+                "no_nota": "INV-001",
+                "jenis_display": "Beli Paket"
+            }],
+            "tx_pagination": {
+                "page": 1, "pages": 2, "total": 11,
+                "has_prev": false, "prev_num": 0,
+                "has_next": true, "next_num": 2
+            }
+        });
+        let login_html = render_with("public/member/login.html", Value::from_serialize(&base), "csrf-1").unwrap();
+        assert!(login_html.contains("TMBilling Test"));
+        let dash_html = render_with("public/member/dashboard.html", Value::from_serialize(&base), "csrf-2").unwrap();
+        assert!(dash_html.contains("Rp 150.000"));
+        assert!(dash_html.contains("Rp 50.000"));
+        assert!(dash_html.contains("PC-01"));
+    }
 }

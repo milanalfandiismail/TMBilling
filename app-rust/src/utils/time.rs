@@ -70,6 +70,21 @@ pub fn format_display_opt(raw: Option<&str>, tz_name: &str) -> Option<String> {
 }
 
 /// Jam UTC naive → jam dinding zona aplikasi, mis. `17:10`.
+/// Format string waktu DB (UTC naive) ke zona aplikasi sesuai pola fmt.
+/// Mendukung token %Z untuk label zona waktu dinamis (WIB/WITA/WIT).
+pub fn format_db_str(raw: &str, tz_name: &str, fmt: &str) -> String {
+    let label = tz_label(tz_name);
+    let resolved_fmt = fmt.replace("%Z", &label);
+    parse_dt(raw)
+        .map(|dt| {
+            DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc)
+                .with_timezone(&tz(tz_name))
+                .format(&resolved_fmt)
+                .to_string()
+        })
+        .unwrap_or_else(|| raw.to_string())
+}
+
 pub fn format_clock(dt: NaiveDateTime, tz_name: &str) -> String {
     DateTime::<Utc>::from_naive_utc_and_offset(dt, Utc)
         .with_timezone(&tz(tz_name))

@@ -728,7 +728,8 @@ pub fn router(state: Arc<AppState>) -> Router {
         )
         .route("/api/v1/public/auth/login", post(crate::routes::public::client_auth::login))
         .route("/api/v1/public/auth/logout", post(member_portal::logout))
-        .route("/api/v1/public/auth/status", post(member_portal::status));
+        .route("/api/v1/public/auth/status", post(member_portal::status))
+        .route("/api/v1/public/member/history", get(member_portal::history));
 
     let kasir_monitor = Router::new()
         .route("/api/v1/kasir/monitor/all", get(monitor_routes::all))
@@ -917,6 +918,7 @@ pub fn router(state: Arc<AppState>) -> Router {
                 )),
         )
         .merge(guarded)
+        .route("/favicon.ico", get(|| static_file(Path("favicon.ico".to_string()))))
         .route("/static/{*path}", get(static_file))
         .with_state(state)
 }

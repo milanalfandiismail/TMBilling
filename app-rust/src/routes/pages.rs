@@ -25,6 +25,7 @@ pub(crate) async fn dasar(st: &AppState) -> Value {
         "page_title": "TMBilling",
         "version": st.cfg.version,
         "v_cache": crate::assets::cache_version(),
+        "timezone_label": crate::utils::time::tz_label(&st.cfg.timezone),
     })
 }
 
@@ -214,22 +215,23 @@ pub async fn member_dashboard(
     let Some(mid) = crate::routes::public::member_portal::sesi(&st, &headers) else {
         return Redirect::to("/member/login").into_response();
     };
-    let member: Option<(String, String, Option<String>, Option<String>, i64, Option<String>, String)> =
+    let member: Option<(String, String, Option<String>, Option<String>, i64, Option<String>, String, Option<String>, bool)> =
         sqlx::query_as(
             "SELECT m.username, m.nama_lengkap, m.email, m.no_hp, COALESCE(m.waktu_tersimpan,0),
-                    m.kadaluarsa_pada, COALESCE(g.nama,'reguler')
+                    m.kadaluarsa_pada, COALESCE(g.nama,'reguler'), m.dibuat_pada, COALESCE(m.aktif, 1)
              FROM member m LEFT JOIN grup g ON g.id = m.grup_id WHERE m.id = ?",
         )
         .bind(mid)
         .fetch_optional(&st.pool)
         .await
         .unwrap_or(None);
-    let Some((username, nama, email, no_hp, menit, kadaluarsa, grup)) = member else {
+    let Some((username, nama, email, no_hp, menit, kadaluarsa, grup, dibuat_pada, aktif)) = member else {
         return Redirect::to("/member/login").into_response();
     };
     let halaman_ini = q.get("tx_page").and_then(|v| v.parse::<i64>().ok()).unwrap_or(1).max(1);
+    let sesi_page_req = q.get("sesi_page").and_then(|v| v.parse::<i64>().ok()).unwrap_or(1).max(1);
     let total_menit: i64 = sqlx::query_scalar(
-        "SELECT COALESCE(SUM(MAX(0, CAST((julianday(COALESCE(selesai_pada, datetime('now','localtime'))) - julianday(mulai_pada)) * 1440 AS INTEGER) - COALESCE(menit_pause_total,0))),0)
+        "SELECT COALESCE(SUM(MAX(0, CAST((julianday(COALESCE(selesai_pada, datetime('now'))) - julianday(COALESCE(waktu_mulai_sesi, mulai_pada))) * 1440 AS INTEGER) - COALESCE(menit_pause_total,0))),0)
          FROM sesi WHERE member_id = ?",
     )
     .bind(mid)
@@ -243,27 +245,38 @@ pub async fn member_dashboard(
     .fetch_one(&st.pool)
     .await
     .unwrap_or(0);
-    let sesi: Vec<(Option<String>, String, String, i64)> = sqlx::query_as(
-        "SELECT p.kode, s.mulai_pada, s.status,
-                CAST(MAX(0, CAST((julianday(COALESCE(s.selesai_pada, datetime('now','localtime'))) - julianday(s.mulai_pada)) * 1440 AS INTEGER) - COALESCE(s.menit_pause_total,0)) AS INTEGER)
+    let total_sesi: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sesi WHERE member_id = ?")
+        .bind(mid)
+        .fetch_one(&st.pool)
+        .await
+        .unwrap_or(0);
+    let sesi_pages = ((total_sesi + 9) / 10).max(1);
+    let sesi_page = sesi_page_req.min(sesi_pages);
+    let sesi: Vec<(Option<String>, String, Option<String>, String, i64)> = sqlx::query_as(
+        "SELECT p.kode, s.mulai_pada, s.selesai_pada, s.status,
+                CAST(MAX(0, CAST((julianday(COALESCE(s.selesai_pada, datetime('now'))) - julianday(COALESCE(s.waktu_mulai_sesi, s.mulai_pada))) * 1440 AS INTEGER) - COALESCE(s.menit_pause_total,0)) AS INTEGER)
          FROM sesi s LEFT JOIN pc p ON p.id = s.pc_id
-         WHERE s.member_id = ? ORDER BY s.mulai_pada DESC LIMIT 10",
+         WHERE s.member_id = ? ORDER BY s.mulai_pada DESC LIMIT 10 OFFSET ?",
     )
     .bind(mid)
+    .bind((sesi_page - 1) * 10)
     .fetch_all(&st.pool)
     .await
     .unwrap_or_default();
-    let total_tx: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM transaksi WHERE member_id = ?")
+    let tx_filter = crate::routes::public::member_portal::member_tx_filter_clause("all");
+    let count_tx_sql = format!("SELECT COUNT(*) FROM transaksi WHERE member_id = ? AND {tx_filter}");
+    let total_tx: i64 = sqlx::query_scalar(&count_tx_sql)
         .bind(mid)
         .fetch_one(&st.pool)
         .await
         .unwrap_or(0);
     let pages = ((total_tx + 9) / 10).max(1);
     let page = halaman_ini.min(pages);
-    let txs: Vec<(String, i64, Option<String>, String, i64, i64)> = sqlx::query_as(
-        "SELECT jenis, jumlah, keterangan, COALESCE(dibuat_pada,''), COALESCE(is_refunded,0), COALESCE(menit,0)
-         FROM transaksi WHERE member_id = ? ORDER BY dibuat_pada DESC, id DESC LIMIT 10 OFFSET ?",
-    )
+    let txs_sql = format!(
+        "SELECT jenis, jumlah, keterangan, COALESCE(dibuat_pada,''), COALESCE(is_refunded,0), COALESCE(menit,0), no_nota
+         FROM transaksi WHERE member_id = ? AND {tx_filter} ORDER BY dibuat_pada DESC, id DESC LIMIT 10 OFFSET ?"
+    );
+    let txs: Vec<(String, i64, Option<String>, String, i64, i64, Option<String>)> = sqlx::query_as(&txs_sql)
     .bind(mid)
     .bind((page - 1) * 10)
     .fetch_all(&st.pool)
@@ -273,23 +286,29 @@ pub async fn member_dashboard(
     gabung(&mut ctx, json!({
         "member": {
             "username": username, "nama_lengkap": nama, "email": email, "no_hp": no_hp,
-            "waktu_tersimpan": menit, "kadaluarsa_pada": kadaluarsa, "aktif": true,
-            "grup": {"nama": grup}
+            "waktu_tersimpan": menit, "kadaluarsa_pada": kadaluarsa, "dibuat_pada": dibuat_pada,
+            "aktif": aktif, "grup": {"nama": grup}
         },
         "total_play_hours": (total_menit as f64 / 60.0 * 10.0).round() / 10.0,
         "total_spent": total_spent,
-        "sesi_history": sesi.into_iter().map(|(kode, mulai, status, m)| json!({
-            "__menit_terpakai": m, "pc": {"kode": kode.unwrap_or_default()},
-            "mulai_pada": mulai, "status": status
+        "sesi_history": sesi.into_iter().map(|(kode, mulai, selesai, status, m)| json!({
+            "menit_terpakai": m, "pc": {"kode": kode.unwrap_or_else(|| "-".into())},
+            "mulai_pada": mulai, "selesai_pada": selesai, "status": status
         })).collect::<Vec<_>>(),
-        "transaksi_history": txs.into_iter().map(|(jenis, jumlah, ket, dibuat, refund, m)| json!({
+        "sesi_pagination": {
+            "page": sesi_page, "pages": sesi_pages, "total": total_sesi,
+            "has_prev": sesi_page > 1, "prev_num": sesi_page - 1,
+            "has_next": sesi_page < sesi_pages, "next_num": sesi_page + 1
+        },
+        "transaksi_history": txs.into_iter().map(|(jenis, jumlah, ket, dibuat, refund, m, no_nota)| json!({
             "jenis": jenis, "jumlah": jumlah, "keterangan": ket, "dibuat_pada": dibuat,
-            "is_refunded": refund == 1, "menit": m,
-            "___get_jenis_display": jenis_display(&jenis)
+            "is_refunded": refund == 1, "menit": m, "no_nota": no_nota,
+            "jenis_display": crate::routes::public::member_portal::member_tx_jenis_display(&jenis)
         })).collect::<Vec<_>>(),
         "tx_pagination": {
-            "page": page, "pages": pages, "has_prev": page > 1, "has_prev_num": page - 1,
-            "has_next": page < pages, "next_num": page + 1, "prev_num": page - 1
+            "page": page, "pages": pages, "total": total_tx,
+            "has_prev": page > 1, "prev_num": page - 1,
+            "has_next": page < pages, "next_num": page + 1
         }
     }));
     halaman(
@@ -297,20 +316,6 @@ pub async fn member_dashboard(
         ctx,
         &crate::utils::http::cookie(&headers, "csrf_token").unwrap_or_default(),
     )
-}
-
-fn jenis_display(jenis: &str) -> String {
-    match jenis {
-        "beli_paket_guest" => "🎮 Guest Beli Paket",
-        "beli_paket_member" => "👤 Member Beli Paket",
-        "tambah_waktu_sesi" => "⏰ Member Tambah Waktu",
-        "tambah_waktu_guest" => "⏱️ Guest Tambah Waktu",
-        "tutup_sesi" => "🔒 Tutup Sesi",
-        "pindah_pc" => "🔄 Pindah PC",
-        "refund_paket" => "↩️ Refund Paket",
-        lain => lain,
-    }
-    .to_string()
 }
 
 /// `/pc-status` publik: status meja tanpa membocorkan nama member.

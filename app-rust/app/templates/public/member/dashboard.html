@@ -4,399 +4,480 @@
 <head>
     {% set page_title = "Dashboard Member | " ~ warnet_title %}
     {% include 'public/components/_head.html' %}
-    <!-- CSRF token needed for dashboard API calls -->
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        input[type="text"],
+        input[type="email"],
+        input[type="tel"],
+        input[type="password"] {
+            background-color: #050505 !important;
+            border-color: #262626 !important;
+            color: #e5e5e5 !important;
+            border-width: 1px !important;
+            border-style: solid !important;
+            border-radius: 6px !important;
+            transition: border-color 0.15s ease-in-out !important;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="tel"]:focus,
+        input[type="password"]:focus {
+            border-color: #737373 !important;
+            outline: none !important;
+        }
+    </style>
 </head>
 
-<body class="bg-[#050505] text-neutral-200 min-h-screen flex flex-col font-space-grotesk antialiased">
+<body class="bg-[#050505] text-neutral-200 min-h-screen flex flex-col antialiased">
 
-    <!-- Navbar -->
     {% include 'public/components/_navbar_member.html' %}
 
-    <!-- Tab Navigation Bar -->
-    <!-- Toast Container -->
-    <div id="toast-container"
-        style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none;">
-    </div>
+    <div id="toast-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; pointer-events: none;"></div>
 
-    <div class="bg-[#080808] border-b border-[#1f1f1f] px-6 py-1">
-        <div class="max-w-7xl mx-auto flex gap-2 overflow-x-auto scrollbar-thin">
-            <button onclick="switchTab('dashboard')" id="tab-btn-dashboard"
-                class="px-5 py-4 text-sm font-bold uppercase tracking-wider border-b-2 border-neutral-100 text-neutral-100 whitespace-nowrap transition-all">
-                Dasbor
-            </button>
-            <button onclick="switchTab('profile')" id="tab-btn-profile"
-                class="px-5 py-4 text-sm font-bold uppercase tracking-wider border-b-2 border-transparent text-neutral-500 hover:text-neutral-300 whitespace-nowrap transition-all">
-                Profil Saya
-            </button>
-        </div>
-    </div>
+    <main class="flex-1 w-full max-w-7xl 2xl:max-w-[1536px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4">
 
-    <!-- Main Content Area -->
-    <main class="flex-1 w-full max-w-7xl mx-auto px-6 py-6 overflow-y-auto scrollbar-thin">
-
-        <!-- Tab panel: Dashboard -->
-        <div id="tab-panel-dashboard" class="space-y-6">
-
-            <!-- Row 1: Profile & Sisa Waktu Info Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-                <!-- Prepaid Sisa Waktu Card (High visual focus) -->
-                <div
-                    class="bg-neutral-950 border border-emerald-950/40 rounded-2xl p-6 lg:p-8 flex flex-col justify-between shadow-lg shadow-emerald-950/5 relative overflow-hidden">
-                    <div class="absolute -right-10 -top-10 w-28 h-28 rounded-full bg-emerald-500/5 blur-2xl"></div>
-
-                    <div class="flex items-center justify-between z-10">
-                        <h2 class="text-xs lg:text-sm font-bold text-emerald-400 uppercase tracking-wider">Sisa
-                            Waktu Bermain</h2>
-                        <span
-                            class="px-2.5 py-1 rounded text-[10px] lg:text-xs font-bold uppercase tracking-wider bg-emerald-950/50 text-emerald-400 border border-emerald-800/30">PREPAID</span>
-                    </div>
-
-                    <div class="my-8 z-10">
-                        {% set hours = member.waktu_tersimpan // 60 %}
-                        {% set mins = member.waktu_tersimpan % 60 %}
-                        <p class="text-4xl lg:text-[54px] font-black text-neutral-100 tracking-tight leading-none">
-                            {% if hours > 0 %}
-                            {{ hours }} Jam {{ mins }} Menit
-                            {% else %}
-                            {{ mins }} Menit
-                            {% endif %}
-                        </p>
-                        <p class="text-xs lg:text-sm text-neutral-500 mt-3">Total Sisa: {{ member.waktu_tersimpan }}
-                            Menit</p>
-                    </div>
-
-                    <div class="text-xs lg:text-sm text-neutral-400 border-t border-[#1f1f1f] pt-4 z-10">
-                        {% if member.kadaluarsa_pada %}
-                        Kadaluarsa pada: <span class="font-bold font-mono text-neutral-300">{{
-                            format_display(member.kadaluarsa_pada, fmt="%d-%m-%Y") }}</span>
-                        {% else %}
-                        Masa aktif: <span class="font-bold text-neutral-300">Tanpa Batas</span>
-                        {% endif %}
-                    </div>
+        <!-- 1. Header Akun & Navigasi Tab Terpadu (Gaya Kasir) -->
+        <section class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 sm:w-11 sm:h-11 rounded bg-[#141414] border border-[#262626] flex items-center justify-center shrink-0">
+                    <span class="font-mono font-extrabold text-sm sm:text-base text-neutral-100 uppercase">{{ member.username[0:2] if member.username else 'MB' }}</span>
                 </div>
-
-                <!-- Total Spent Card -->
-                <div
-                    class="bg-[#111] border border-[#1f1f1f] rounded-2xl p-6 lg:p-8 flex flex-col justify-between shadow-lg">
-                    <div class="flex items-center justify-between">
-                        <h2 class="text-xs lg:text-sm font-bold text-neutral-400 uppercase tracking-wider">Total
-                            Transaksi Billing</h2>
-                        <span class="text-sm lg:text-base">💰</span>
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h2 class="text-sm sm:text-base font-extrabold text-neutral-100 break-words leading-tight">{{ member.nama_lengkap or member.username }}</h2>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase tracking-wider bg-[#141414] text-neutral-300 border border-[#262626]">
+                            {{ member.grup.nama if member.grup else 'reguler' }}
+                        </span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ 'bg-emerald-950/60 text-emerald-400 border border-emerald-800/40' if member.aktif else 'bg-red-950/60 text-red-400 border border-red-800/40' }}">
+                            <span class="w-1.5 h-1.5 rounded-full {{ 'bg-emerald-400' if member.aktif else 'bg-red-400' }}"></span>
+                            {{ 'Aktif' if member.aktif else 'Nonaktif' }}
+                        </span>
                     </div>
-
-                    <div class="my-8">
-                        <p
-                            class="text-4xl lg:text-[48px] font-black text-neutral-200 font-mono tracking-tight leading-none">
-                            Rp{{ "{:,}".format(total_spent).replace(',', '.') }}</p>
-                        <p class="text-xs lg:text-sm text-neutral-500 mt-3">Total uang yang didepositkan ke akun
-                            Anda.</p>
-                    </div>
-
-                    <div class="text-xs lg:text-sm text-neutral-400 border-t border-[#1f1f1f] pt-4">
-                        Zona Membership: <span class="font-bold text-neutral-200 uppercase font-mono">{{
-                            member.grup.nama }}</span>
-                    </div>
+                    <p class="text-[11px] text-neutral-500 font-mono mt-1 break-words">
+                        @{{ member.username }} &middot; Berlaku s/d {{ format_display(member.kadaluarsa_pada, fmt="%d-%m-%Y %H:%M %Z") if member.kadaluarsa_pada else 'Selamanya' }}
+                    </p>
                 </div>
-
             </div>
 
-            <!-- Row 2: Play History & Transactions List -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <nav aria-label="Navigasi Portal Member" class="flex items-center gap-1 bg-[#050505] border border-[#1c1c1c] rounded p-1 w-full lg:w-auto shrink-0 overflow-x-auto sm:overflow-visible">
+                <button type="button" id="tab-btn-dashboard" onclick="switchTab('dashboard')"
+                    class="flex-1 sm:flex-none px-3 py-1.5 rounded text-xs font-bold bg-neutral-100 text-black transition-colors text-center whitespace-nowrap">
+                    Ringkasan
+                </button>
+                <button type="button" id="tab-btn-livepc" onclick="switchTab('livepc')"
+                    class="flex-1 sm:flex-none px-3 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] transition-colors text-center whitespace-nowrap">
+                    Ketersediaan PC
+                </button>
+                <button type="button" id="tab-btn-profile" onclick="switchTab('profile')"
+                    class="flex-1 sm:flex-none px-3 py-1.5 rounded text-xs font-medium text-neutral-400 hover:text-neutral-200 hover:bg-[#171717] transition-colors text-center whitespace-nowrap">
+                    Profil &amp; Akun
+                </button>
+            </nav>
+        </section>
 
-                <!-- Left: Play Sesi History -->
-                <div class="bg-[#111] border border-[#1f1f1f] rounded-2xl p-6 md:p-8 space-y-6">
-                    <h3 class="text-sm lg:text-base font-bold text-neutral-400 uppercase tracking-wider">Riwayat 10 Sesi
-                        Bermain Terakhir</h3>
-                    <div class="overflow-x-auto scrollbar-thin">
-                        <table class="w-full text-left border-collapse min-w-[400px]">
-                            <thead>
-                                <tr
-                                    class="border-b border-[#2a2a2a] text-xs lg:text-sm font-bold uppercase tracking-wider text-neutral-500">
-                                    <th class="pb-4 pr-4">Tanggal Mulai</th>
-                                    <th class="pb-4 px-4 text-center">Unit PC</th>
-                                    <th class="pb-4 px-4 text-center">Durasi</th>
-                                    <th class="pb-4 pl-4 text-right">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for s in sesi_history %}
-                                <tr class="border-b border-[#1f1f1f] text-sm lg:text-base">
-                                    <td class="py-4 pr-4 text-neutral-400 font-mono">
-                                        {{ format_display(s.mulai_pada, fmt="%d-%m-%Y %H:%M") }}
-                                    </td>
-                                    <td class="py-4 px-4 text-center font-bold text-neutral-200 font-mono">
-                                        {{ s.pc.kode if s.pc else '-' }}
-                                    </td>
-                                    <td class="py-4 px-4 text-center font-mono text-neutral-300 whitespace-nowrap">
-                                        {% set s_val = s.menit_terpakai() %}
-                                        {% set s_hours = s_val // 60 %}
-                                        {% set s_mins = s_val % 60 %}
-                                        {% if s_hours > 0 %}
-                                        {{ s_hours }} Jam {{ s_mins }} Menit
-                                        {% else %}
-                                        {{ s_mins }} Menit
-                                        {% endif %}
-                                    </td>
-                                    <td class="py-4 pl-4 text-right">
-                                        {% if s.status == 'aktif' %}
-                                        <span
-                                            class="px-2.5 py-1 rounded text-[10px] lg:text-xs font-bold bg-emerald-950/50 text-emerald-400 border border-emerald-800/30 uppercase tracking-wider">SEDANG
-                                            MAIN</span>
-                                        {% else %}
-                                        <span
-                                            class="px-2.5 py-1 rounded text-[10px] lg:text-xs font-bold bg-neutral-900 text-neutral-500 border border-[#2a2a2a] uppercase tracking-wider">SELESAI</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="4" class="py-10 text-center text-neutral-600 text-sm">Belum ada riwayat
-                                        sesi bermain.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+        <!-- 2. Strip KPI Ringkas -->
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
+            {% set rem_h = (member.waktu_tersimpan // 60) if member.waktu_tersimpan else 0 %}
+            {% set rem_m = (member.waktu_tersimpan % 60) if member.waktu_tersimpan else 0 %}
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 flex flex-col justify-between gap-1.5">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] sm:text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Sisa Waktu</span>
+                    <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <div class="text-lg sm:text-2xl font-extrabold font-mono text-emerald-400 leading-tight">
+                    {{ rem_h }}j {{ rem_m }}m
+                </div>
+                <p class="text-[10px] sm:text-[11px] text-neutral-500 break-words">
+                    {{ member.waktu_tersimpan or 0 }} menit tersisa
+                </p>
+            </div>
+
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 flex flex-col justify-between gap-1.5">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] sm:text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Total Main</span>
+                    <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                    </svg>
+                </div>
+                <div class="text-lg sm:text-2xl font-extrabold font-mono text-neutral-100 leading-tight">
+                    {{ total_play_hours }} Jam
+                </div>
+                <p class="text-[10px] sm:text-[11px] text-neutral-500 break-words">
+                    {{ sesi_pagination.total }} sesi tercatat
+                </p>
+            </div>
+
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 flex flex-col justify-between gap-1.5">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] sm:text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Total Belanja</span>
+                    <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                    </svg>
+                </div>
+                <div class="text-lg sm:text-2xl font-extrabold font-mono text-neutral-100 leading-tight break-words">
+                    {{ format_rupiah(total_spent) }}
+                </div>
+                <p class="text-[10px] sm:text-[11px] text-neutral-500 break-words">
+                    {{ tx_pagination.total }} transaksi tercatat
+                </p>
+            </div>
+
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 flex flex-col justify-between gap-1.5">
+                <div class="flex items-center justify-between gap-2">
+                    <span class="text-[10px] sm:text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Keanggotaan</span>
+                    <svg class="w-3.5 h-3.5 text-neutral-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                </div>
+                <div class="text-lg sm:text-2xl font-extrabold font-mono text-neutral-100 uppercase leading-tight break-words">
+                    {{ member.grup.nama if member.grup else 'reguler' }}
+                </div>
+                <p class="text-[10px] sm:text-[11px] text-neutral-500 break-words">
+                    Bergabung {{ format_display(member.dibuat_pada, fmt="%d-%m-%Y") if member.dibuat_pada else '-' }}
+                </p>
+            </div>
+        </section>
+
+        <!-- 3. TAB PANEL: RINGKASAN (RIWAYAT SESI & TRANSAKSI) -->
+        <section id="tab-panel-dashboard" class="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+
+            <!-- Panel Kiri: Riwayat Sesi Bermain -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-[#1c1c1c]">
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-bold text-neutral-100 uppercase tracking-wider">Riwayat Sesi Bermain</h3>
+                        <p class="text-[10px] sm:text-xs text-neutral-500">Daftar penggunaan PC dan durasi sesi Anda</p>
+                    </div>
+                    <div class="relative w-full sm:w-48">
+                        <label for="sesi-search-input" class="sr-only">Cari sesi berdasarkan kode PC</label>
+                        <input type="text" id="sesi-search-input" placeholder="Cari PC..."
+                            oninput="onHistorySearch('sesi', this.value)"
+                            class="w-full pl-7 pr-6 py-1.5 text-xs text-neutral-200 placeholder:text-neutral-600">
+                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </span>
+                        <button type="button" id="sesi-search-clear" onclick="clearHistorySearch('sesi')"
+                            class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-200 text-xs font-bold">&times;</button>
                     </div>
                 </div>
 
-                <!-- Right: Billing Transactions History -->
-                <div
-                    class="bg-[#111] border border-[#1f1f1f] rounded-2xl p-6 md:p-8 flex flex-col justify-between space-y-6">
-                    <div>
-                        <h3 class="text-sm lg:text-base font-bold text-neutral-400 uppercase tracking-wider">Riwayat
-                            Transaksi Billing</h3>
-                        <div class="overflow-x-auto scrollbar-thin mt-6">
-                            <table class="w-full text-left border-collapse min-w-[400px]">
-                                <thead>
-                                    <tr
-                                        class="border-b border-[#2a2a2a] text-xs lg:text-sm font-bold uppercase tracking-wider text-neutral-500">
-                                        <th class="pb-4 pr-4">Tanggal</th>
-                                        <th class="pb-4 px-4">Jenis / Keterangan</th>
-                                        <th class="pb-4 px-4 text-center">Durasi</th>
-                                        <th class="pb-4 pl-4 text-right">Jumlah</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for t in transaksi_history %}
-                                    <tr class="border-b border-[#1f1f1f] text-sm lg:text-base">
-                                        <td class="py-4 pr-4 text-neutral-400 font-mono">
-                                            {{ format_display(t.dibuat_pada, fmt="%d-%m-%Y %H:%M") }}
-                                        </td>
-                                        <td class="py-4 px-4">
-                                            <p class="font-bold text-neutral-200">{{ t._get_jenis_display() }}</p>
-                                            <p class="text-xs text-neutral-500 mt-1">{{ t.keterangan or 'Tanpa Catatan' }}
-                                            </p>
-                                        </td>
-                                        <td class="py-4 px-4 text-center font-mono text-neutral-400 whitespace-nowrap">
-                                            {% set t_val = t.menit %}
-                                            {% set t_hours = t_val // 60 %}
-                                            {% set t_mins = t_val % 60 %}
-                                            {% if t_hours > 0 %}
-                                            {{ t_hours }} Jam {{ t_mins }} Menit
-                                            {% else %}
-                                            {{ t_mins }} Menit
-                                            {% endif %}
-                                        </td>
-                                        <td class="py-4 pl-4 text-right font-mono font-bold text-neutral-200">
-                                            {% if t.is_refunded %}
-                                            <span class="text-red-400/80 line-through">Rp{{
-                                                "{:,}".format(t.jumlah).replace(',', '.') }}</span>
-                                            {% else %}
-                                            Rp{{ "{:,}".format(t.jumlah).replace(',', '.') }}
-                                            {% endif %}
-                                        </td>
-                                    </tr>
+                <!-- Fit-to-table container: table-fixed tanpa scroll horizontal di sm-2xl, scrollbar defensif di layar sempit -->
+                <div class="border border-[#1c1c1c] rounded overflow-x-auto sm:overflow-x-hidden">
+                    <table class="w-full table-fixed text-xs">
+                        <thead>
+                            <tr class="text-[10px] sm:text-[11px] text-neutral-400 uppercase border-b border-[#1c1c1c] bg-[#080808] tracking-wider select-none">
+                                <th class="w-[36%] sm:w-[35%] xl:w-[38%] 2xl:w-[36%] px-2.5 sm:px-3 py-2 text-left font-medium leading-tight">Waktu Mulai <span class="text-neutral-500 font-normal">({{ timezone_label or 'WITA' }})</span></th>
+                                <th class="w-[18%] sm:w-[15%] xl:w-[16%] 2xl:w-[15%] px-2 sm:px-3 py-2 text-center font-medium">PC</th>
+                                <th class="w-[20%] sm:w-[22%] xl:w-[20%] 2xl:w-[21%] px-2 sm:px-3 py-2 text-center font-medium">Durasi</th>
+                                <th class="w-[26%] sm:w-[28%] xl:w-[26%] 2xl:w-[28%] px-2.5 sm:px-3 py-2 text-right font-medium">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sesi-history-tbody" class="divide-y divide-[#1c1c1c]">
+                            {% if sesi_history %}
+                            {% for s in sesi_history %}
+                            {% set mins = s.menit_terpakai or 0 %}
+                            {% set dur_h = mins // 60 %}
+                            {% set dur_m = mins % 60 %}
+                            <tr class="hover:bg-[#141414] transition-colors">
+                                <td class="px-2.5 sm:px-3 py-2 text-left text-neutral-400 font-mono text-[11px] sm:text-xs leading-tight" title="{{ format_display(s.mulai_pada, fmt='%d-%m-%Y %H:%M %Z') }}">
+                                    <span class="inline-block whitespace-nowrap">{{ format_display(s.mulai_pada, fmt='%d-%m-%Y') }}</span> <span class="inline-block whitespace-nowrap text-neutral-400">{{ format_display(s.mulai_pada, fmt='%H:%M %Z') }}</span>
+                                </td>
+                                <td class="px-2 sm:px-3 py-2.5 text-center">
+                                    <span class="inline-block px-1.5 py-0.5 rounded bg-[#141414] border border-[#262626] font-mono font-bold text-[11px] text-neutral-200">
+                                        {{ s.pc.kode if s.pc else 'PC' }}
+                                    </span>
+                                </td>
+                                <td class="px-2 sm:px-3 py-2.5 text-center font-mono text-neutral-300 text-[11px] sm:text-xs whitespace-nowrap">
+                                    {% if dur_h > 0 %}{{ dur_h }}j {{ dur_m }}m{% else %}{{ dur_m }}m{% endif %}
+                                </td>
+                                <td class="px-2.5 sm:px-3 py-2.5 text-right whitespace-nowrap">
+                                    {% if s.status == 'aktif' %}
+                                    <span class="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 uppercase tracking-wider">
+                                        <span class="hidden sm:inline">SEDANG MAIN</span><span class="sm:hidden">AKTIF</span>
+                                    </span>
                                     {% else %}
-                                    <tr>
-                                        <td colspan="4" class="py-10 text-center text-neutral-600 text-sm">Belum ada
-                                            riwayat transaksi.</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Pagination Controls -->
-                    {% if tx_pagination and tx_pagination.pages > 1 %}
-                    <div
-                        class="flex items-center justify-between border-t border-[#1f1f1f] pt-5 text-xs lg:text-sm font-mono">
-                        <div class="text-neutral-500">
-                            Halaman <span class="text-neutral-300 font-bold">{{ tx_pagination.page }}</span> dari <span
-                                class="text-neutral-300 font-bold">{{ tx_pagination.pages }}</span>
-                        </div>
-                        <div class="flex items-center gap-3">
-                            {% if tx_pagination.has_prev %}
-                            <a href="{{ url_for('member_portal.dashboard_page', tx_page=tx_pagination.prev_num) }}"
-                                class="px-3.5 py-2 bg-[#0f0f0f] border border-[#2a2a2a] hover:border-neutral-500 hover:text-neutral-100 rounded text-neutral-400 transition-colors">
-                                &larr; Prev
-                            </a>
+                                    <span class="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded text-[10px] font-bold bg-[#141414] text-neutral-400 border border-[#262626] uppercase tracking-wider">SELESAI</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
                             {% else %}
-                            <span
-                                class="px-3.5 py-2 bg-[#0a0a0a] border border-[#1f1f1f] text-neutral-600 rounded cursor-not-allowed">
-                                &larr; Prev
-                            </span>
+                            <tr>
+                                <td colspan="4" class="px-3 py-8 text-center text-neutral-600 text-xs">Belum ada riwayat sesi bermain.</td>
+                            </tr>
                             {% endif %}
+                        </tbody>
+                    </table>
+                </div>
 
-                            {% if tx_pagination.has_next %}
-                            <a href="{{ url_for('member_portal.dashboard_page', tx_page=tx_pagination.next_num) }}"
-                                class="px-3.5 py-2 bg-[#0f0f0f] border border-[#2a2a2a] hover:border-neutral-500 hover:text-neutral-100 rounded text-neutral-400 transition-colors">
-                                Next &rarr;
-                            </a>
-                            {% else %}
-                            <span
-                                class="px-3.5 py-2 bg-[#0a0a0a] border border-[#1f1f1f] text-neutral-600 rounded cursor-not-allowed">
-                                Next &rarr;
-                            </span>
-                            {% endif %}
-                        </div>
+                <div id="sesi-pagination-bar" class="flex items-center justify-between pt-1 text-xs font-mono">
+                    {% if sesi_pagination.pages > 1 %}
+                    <div class="text-neutral-500">Hal <span class="text-neutral-200 font-bold">{{ sesi_pagination.page }}</span>/{{ sesi_pagination.pages }} <span class="hidden sm:inline text-neutral-600">({{ sesi_pagination.total }} sesi)</span></div>
+                    <div class="flex items-center gap-1.5">
+                        {% if sesi_pagination.has_prev %}
+                        <a href="{{ url_for('member_portal.dashboard_page', sesi_page=sesi_pagination.prev_num, tx_page=tx_pagination.page) }}"
+                            onclick="event.preventDefault(); loadHistory('sesi', {{ sesi_pagination.prev_num }})"
+                            class="px-2.5 py-1 bg-[#121212] border border-[#262626] hover:border-neutral-500 hover:text-neutral-100 rounded text-neutral-300 transition-colors">&larr; Prev</a>
+                        {% else %}
+                        <span class="px-2.5 py-1 bg-[#0a0a0a] border border-[#1c1c1c] text-neutral-600 rounded cursor-not-allowed">&larr; Prev</span>
+                        {% endif %}
+                        {% if sesi_pagination.has_next %}
+                        <a href="{{ url_for('member_portal.dashboard_page', sesi_page=sesi_pagination.next_num, tx_page=tx_pagination.page) }}"
+                            onclick="event.preventDefault(); loadHistory('sesi', {{ sesi_pagination.next_num }})"
+                            class="px-2.5 py-1 bg-[#121212] border border-[#262626] hover:border-neutral-500 hover:text-neutral-100 rounded text-neutral-300 transition-colors">Next &rarr;</a>
+                        {% else %}
+                        <span class="px-2.5 py-1 bg-[#0a0a0a] border border-[#1c1c1c] text-neutral-600 rounded cursor-not-allowed">Next &rarr;</span>
+                        {% endif %}
                     </div>
                     {% endif %}
                 </div>
-
             </div>
 
-        </div>
-
-        <!-- Tab panel: Profile -->
-        <div id="tab-panel-profile" class="hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                <!-- Left: Profile Form -->
-                <div class="lg:col-span-2 bg-[#111] border border-[#1f1f1f] rounded-2xl p-6 md:p-8 space-y-6 shadow-xl">
-                    <div class="border-b border-[#1f1f1f] pb-4">
-                        <h3 class="text-xl font-bold text-neutral-100">Pengaturan Profil</h3>
-                        <p class="text-sm text-neutral-500 font-mono mt-1">Perbarui informasi kontak dan keamanan akun
-                            Anda</p>
+            <!-- Panel Kanan: Riwayat Transaksi -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-[#1c1c1c]">
+                    <div>
+                        <h3 class="text-xs sm:text-sm font-bold text-neutral-100 uppercase tracking-wider">Riwayat Transaksi</h3>
+                        <p class="text-[10px] sm:text-xs text-neutral-500">Top-up saldo waktu, tambah waktu, dan refund</p>
                     </div>
-
-                    <form id="profile-form" onsubmit="updateProfile(event)" class="space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="space-y-2">
-                                <label
-                                    class="text-sm font-bold text-neutral-400 uppercase tracking-wider">Username</label>
-                                <input type="text" value="{{ member.username }}" disabled
-                                    class="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded px-4 py-3 text-neutral-500 cursor-not-allowed font-mono text-base">
-                                <p class="text-xs text-neutral-600">Username tidak dapat diubah.</p>
-                            </div>
-
-                            <div class="space-y-2">
-                                <label class="text-sm font-bold text-neutral-400 uppercase tracking-wider">Grup
-                                    PC</label>
-                                <div>
-                                    <span
-                                        class="px-3.5 py-2 rounded text-sm font-bold font-mono uppercase tracking-wider bg-emerald-950/50 text-emerald-400 border border-emerald-800/30 inline-flex items-center">
-                                        {{ member.grup.nama if member.grup else 'reguler' }}
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="space-y-2">
-                                <label class="text-sm font-bold text-neutral-400 uppercase tracking-wider">Nama Lengkap</label>
-                                <input type="text" id="prof_nama" value="{{ member.nama_lengkap or '' }}"
-                                    placeholder="Nama Lengkap"
-                                    class="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-neutral-200 rounded px-4 py-3 text-base focus:border-neutral-500 focus:outline-none transition-colors">
-                                <p class="text-xs text-neutral-500 mt-1">Maksimal 100 karakter</p>
-                            </div>
-
-                            <div class="space-y-2">
-                                <label class="text-sm font-bold text-neutral-400 uppercase tracking-wider">Email</label>
-                                <input type="email" id="prof_email" value="{{ member.email or '' }}"
-                                    placeholder="Alamat Email"
-                                    class="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-neutral-200 rounded px-4 py-3 text-base focus:border-neutral-500 focus:outline-none transition-colors">
-                                <p class="text-xs text-neutral-500 mt-1">Format email valid (contoh: user@example.com)</p>
-                            </div>
-
-                            <div class="space-y-2">
-                                <label class="text-sm font-bold text-neutral-400 uppercase tracking-wider">Nomor HP / WhatsApp</label>
-                                <input type="tel" id="prof_hp" value="{{ member.no_hp or '' }}"
-                                    placeholder="08xxxxxxxxxx"
-                                    class="w-full bg-[#0a0a0a] border border-[#2a2a2a] text-neutral-200 rounded px-4 py-3 text-base font-mono focus:border-neutral-500 focus:outline-none transition-colors">
-                                <p class="text-xs text-neutral-500 mt-1">Format nomor telepon atau WhatsApp (opsional)</p>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-[#1f1f1f] pt-6">
-                            <button type="submit"
-                                class="w-full bg-white hover:bg-neutral-300 text-black font-bold py-3.5 px-6 rounded-lg transition-all duration-200 text-base uppercase tracking-wider">Simpan Perubahan</button>
-                        </div>
-                    </form>
+                    <div class="relative w-full sm:w-48">
+                        <label for="tx-search-input" class="sr-only">Cari transaksi berdasarkan nota atau catatan</label>
+                        <input type="text" id="tx-search-input" placeholder="Cari nota / catatan..."
+                            oninput="onHistorySearch('tx', this.value)"
+                            class="w-full pl-7 pr-6 py-1.5 text-xs text-neutral-200 placeholder:text-neutral-600">
+                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </span>
+                        <button type="button" id="tx-search-clear" onclick="clearHistorySearch('tx')"
+                            class="hidden absolute right-2 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-neutral-200 text-xs font-bold">&times;</button>
+                    </div>
                 </div>
 
-                <!-- Right: Account Info -->
-                <div class="space-y-6">
+                <!-- Filter Chips (Wrap bersih, tanpa scroll horizontal) -->
+                <div id="tx-filter-chips" class="flex flex-wrap items-center gap-1.5">
+                    <button type="button" onclick="setTxFilter('beli_tambah_waktu', this)"
+                        class="tx-chip px-2.5 py-1 rounded text-[11px] font-medium bg-[#141414] text-neutral-400 hover:text-neutral-200 hover:bg-[#1a1a1a] border border-[#262626] transition-colors">Beli Paket - Tambah Waktu</button>
+                    <button type="button" onclick="setTxFilter('refund', this)"
+                        class="tx-chip px-2.5 py-1 rounded text-[11px] font-medium bg-[#141414] text-neutral-400 hover:text-neutral-200 hover:bg-[#1a1a1a] border border-[#262626] transition-colors">Refund</button>
+                </div>
 
+                <!-- Fit-to-table container: table-fixed tanpa scroll horizontal di sm-2xl, scrollbar defensif di layar sempit -->
+                <div class="border border-[#1c1c1c] rounded overflow-x-auto sm:overflow-x-hidden">
+                    <table class="w-full table-fixed text-xs">
+                        <thead>
+                            <tr class="text-[10px] sm:text-[11px] text-neutral-400 uppercase border-b border-[#1c1c1c] bg-[#080808] tracking-wider select-none">
+                                <th class="hidden sm:table-cell sm:w-[28%] xl:w-[29%] 2xl:w-[28%] px-3 py-2 text-left font-medium leading-tight">Tanggal <span class="text-neutral-500 font-normal">({{ timezone_label or 'WITA' }})</span></th>
+                                <th class="w-[52%] sm:w-[38%] xl:w-[37%] 2xl:w-[38%] px-2.5 sm:px-3 py-2 text-left font-medium">Transaksi</th>
+                                <th class="w-[18%] sm:w-[14%] xl:w-[14%] 2xl:w-[14%] px-2 sm:px-3 py-2 text-center font-medium">Durasi</th>
+                                <th class="w-[30%] sm:w-[20%] xl:w-[20%] 2xl:w-[20%] px-2.5 sm:px-3 py-2 text-right font-medium">Nominal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tx-history-tbody" class="divide-y divide-[#1c1c1c]">
+                            {% if transaksi_history %}
+                            {% for t in transaksi_history %}
+                            {% set tx_mins = t.menit or 0 %}
+                            {% set tx_h = tx_mins // 60 %}
+                            {% set tx_m = tx_mins % 60 %}
+                            <tr class="hover:bg-[#141414] transition-colors">
+                                <td class="hidden sm:table-cell px-3 py-2 text-left text-neutral-400 font-mono text-xs leading-tight" title="{{ format_display(t.dibuat_pada, fmt='%d-%m-%Y %H:%M %Z') }}">
+                                    <span class="inline-block whitespace-nowrap">{{ format_display(t.dibuat_pada, fmt='%d-%m-%Y') }}</span> <span class="inline-block whitespace-nowrap text-neutral-400">{{ format_display(t.dibuat_pada, fmt='%H:%M %Z') }}</span>
+                                </td>
+                                <td class="px-2.5 sm:px-3 py-2.5 text-left min-w-0">
+                                    <p class="font-bold text-neutral-200 text-[11px] sm:text-xs leading-tight break-words">
+                                        {{ t.jenis_display or t.jenis }}
+                                    </p>
+                                    <p class="text-[10px] sm:text-[11px] text-neutral-500 leading-tight break-words mt-0.5" title="{{ t.keterangan or 'Tanpa Catatan' }}">
+                                        {{ t.keterangan or 'Tanpa Catatan' }}{% if t.no_nota %} <span class="font-mono text-[10px] text-neutral-600 whitespace-nowrap">#{{ t.no_nota }}</span>{% endif %}
+                                    </p>
+                                    <p class="sm:hidden text-[10px] text-neutral-500 font-mono mt-0.5 leading-tight">
+                                        <span class="whitespace-nowrap">{{ format_display(t.dibuat_pada, fmt='%d-%m-%Y') }}</span> <span class="whitespace-nowrap text-neutral-400">{{ format_display(t.dibuat_pada, fmt='%H:%M %Z') }}</span>
+                                    </p>
+                                </td>
+                                <td class="px-2 sm:px-3 py-2.5 text-center font-mono text-neutral-400 text-[11px] sm:text-xs whitespace-nowrap">
+                                    {% if tx_h > 0 %}{{ tx_h }}j {{ tx_m }}m{% else %}{{ tx_m }}m{% endif %}
+                                </td>
+                                <td class="px-2.5 sm:px-3 py-2.5 text-right font-mono font-bold text-neutral-200 text-[11px] sm:text-xs whitespace-nowrap">
+                                    {% if t.is_refunded %}
+                                    <span class="text-red-400/80 line-through">{{ format_rupiah(t.jumlah) }}</span>
+                                    <span class="block text-[9px] text-red-400 font-bold uppercase tracking-wider">REFUND</span>
+                                    {% else %}
+                                    {{ format_rupiah(t.jumlah) }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% else %}
+                            <tr>
+                                <td colspan="4" class="px-3 py-8 text-center text-neutral-600 text-xs">Belum ada riwayat transaksi.</td>
+                            </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                </div>
 
-                    <div class="bg-[#111] border border-[#1f1f1f] rounded-2xl p-6 space-y-4">
-                        <h4
-                            class="text-sm font-bold text-neutral-400 uppercase tracking-wider border-b border-[#1f1f1f] pb-3">
-                            Informasi Akun</h4>
-                        <ul class="text-sm text-neutral-400 space-y-3">
-                            <li class="flex justify-between">
-                                <span>Bergabung:</span>
-                                <span class="font-mono text-neutral-200">{{ format_display(member.dibuat_pada, fmt="%d-%m-%Y") if
-                                    member.dibuat_pada else '-' }}</span>
-                            </li>
-                            <li class="flex justify-between">
-                                <span>Status:</span>
-                                {% if member.aktif %}
-                                <span class="text-emerald-400 font-bold">AKTIF</span>
-                                {% else %}
-                                <span class="text-red-400 font-bold">NONAKTIF</span>
-                                {% endif %}
-                            </li>
-                        </ul>
+                <div id="tx-pagination-bar" class="flex items-center justify-between pt-1 text-xs font-mono">
+                    {% if tx_pagination.pages > 1 %}
+                    <div class="text-neutral-500">Hal <span class="text-neutral-200 font-bold">{{ tx_pagination.page }}</span>/{{ tx_pagination.pages }} <span class="hidden sm:inline text-neutral-600">({{ tx_pagination.total }} transaksi)</span></div>
+                    <div class="flex items-center gap-1.5">
+                        {% if tx_pagination.has_prev %}
+                        <a href="{{ url_for('member_portal.dashboard_page', tx_page=tx_pagination.prev_num, sesi_page=sesi_pagination.page) }}"
+                            onclick="event.preventDefault(); loadHistory('tx', {{ tx_pagination.prev_num }})"
+                            class="px-2.5 py-1 bg-[#121212] border border-[#262626] hover:border-neutral-500 hover:text-neutral-100 rounded text-neutral-300 transition-colors">&larr; Prev</a>
+                        {% else %}
+                        <span class="px-2.5 py-1 bg-[#0a0a0a] border border-[#1c1c1c] text-neutral-600 rounded cursor-not-allowed">&larr; Prev</span>
+                        {% endif %}
+                        {% if tx_pagination.has_next %}
+                        <a href="{{ url_for('member_portal.dashboard_page', tx_page=tx_pagination.next_num, sesi_page=sesi_pagination.page) }}"
+                            onclick="event.preventDefault(); loadHistory('tx', {{ tx_pagination.next_num }})"
+                            class="px-2.5 py-1 bg-[#121212] border border-[#262626] hover:border-neutral-500 hover:text-neutral-100 rounded text-neutral-300 transition-colors">Next &rarr;</a>
+                        {% else %}
+                        <span class="px-2.5 py-1 bg-[#0a0a0a] border border-[#1c1c1c] text-neutral-600 rounded cursor-not-allowed">Next &rarr;</span>
+                        {% endif %}
                     </div>
+                    {% endif %}
                 </div>
             </div>
-        </div>
+        </section>
+
+        <!-- 4. TAB PANEL: KETERSEDIAAN PC LIVE -->
+        <section id="tab-panel-livepc" class="hidden bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-4 space-y-3">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2.5 border-b border-[#1c1c1c]">
+                <div>
+                    <h3 class="text-xs sm:text-sm font-bold text-neutral-100 uppercase tracking-wider">Ketersediaan PC Live</h3>
+                    <p class="text-[10px] sm:text-xs text-neutral-500">Pantau workstation yang kosong atau sedang digunakan secara real-time</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span id="member-pc-counter" class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#121212] border border-[#262626] rounded text-[11px] font-mono font-bold text-neutral-300">
+                        Memuat status...
+                    </span>
+                    <div id="livepc-filter-chips" class="flex items-center gap-1">
+                        <button type="button" onclick="setLivePcFilter('all', this)"
+                            class="livepc-chip px-2.5 py-1 rounded text-[11px] font-bold bg-neutral-100 text-black border border-neutral-100 transition-colors">Semua</button>
+                        <button type="button" onclick="setLivePcFilter('kosong', this)"
+                            class="livepc-chip px-2.5 py-1 rounded text-[11px] font-medium bg-[#141414] text-neutral-400 hover:text-neutral-200 hover:bg-[#1a1a1a] border border-[#262626] transition-colors">Tersedia</button>
+                        <button type="button" onclick="setLivePcFilter('terpakai', this)"
+                            class="livepc-chip px-2.5 py-1 rounded text-[11px] font-medium bg-[#141414] text-neutral-400 hover:text-neutral-200 hover:bg-[#1a1a1a] border border-[#262626] transition-colors">Terpakai</button>
+                    </div>
+                    <button type="button" onclick="loadMemberLivePC()"
+                        class="px-2.5 py-1 bg-[#121212] border border-[#262626] hover:border-neutral-500 text-neutral-200 rounded text-[11px] font-bold transition-colors flex items-center gap-1.5">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+
+            <div id="member-pc-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-2.5">
+                {% for _ in range(8) %}
+                <div class="border border-[#1c1c1c] bg-[#111] rounded p-3 h-16 animate-pulse"></div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- 5. TAB PANEL: PROFIL & AKUN -->
+        <section id="tab-panel-profile" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+
+            <!-- Form Profil (2 kolom pada desktop) -->
+            <div class="lg:col-span-2 bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-5 space-y-4">
+                <div class="border-b border-[#1c1c1c] pb-2.5">
+                    <h3 class="text-xs sm:text-sm font-bold text-neutral-100 uppercase tracking-wider">Pengaturan Profil</h3>
+                    <p class="text-[10px] sm:text-xs text-neutral-500">Perbarui data kontak atau kata sandi akun member Anda</p>
+                </div>
+
+                <form id="profile-form" onsubmit="updateProfile(event)" class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div class="space-y-1.5">
+                            <label class="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Username</label>
+                            <input type="text" value="{{ member.username }}" disabled
+                                class="w-full px-3 py-2 text-xs sm:text-sm font-mono text-neutral-500 opacity-60 cursor-not-allowed">
+                            <p class="text-[10px] text-neutral-600">Username permanen dan tidak dapat diubah.</p>
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label for="prof_nama" class="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Nama Lengkap</label>
+                            <input type="text" id="prof_nama" value="{{ member.nama_lengkap or '' }}" placeholder="Nama Lengkap"
+                                class="w-full px-3 py-2 text-xs sm:text-sm">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label for="prof_email" class="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Email</label>
+                            <input type="email" id="prof_email" value="{{ member.email or '' }}" placeholder="email@contoh.com"
+                                class="w-full px-3 py-2 text-xs sm:text-sm">
+                        </div>
+
+                        <div class="space-y-1.5">
+                            <label for="prof_hp" class="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Nomor HP / WhatsApp</label>
+                            <input type="tel" id="prof_hp" value="{{ member.no_hp or '' }}" placeholder="08xxxxxxxxxx"
+                                class="w-full px-3 py-2 text-xs sm:text-sm font-mono">
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-[#1c1c1c] space-y-1.5">
+                        <label for="prof_password" class="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Password Baru <span class="text-neutral-600 font-normal normal-case">(Opsional)</span></label>
+                        <input type="password" id="prof_password" placeholder="Kosongkan jika tidak ingin mengubah password (4-16 karakter)"
+                            class="w-full px-3 py-2 text-xs sm:text-sm">
+                    </div>
+
+                    <div class="pt-2 flex justify-end">
+                        <button type="submit"
+                            class="w-full sm:w-auto px-5 py-2.5 bg-neutral-100 hover:bg-white text-black font-bold rounded text-xs uppercase tracking-wider transition-colors">
+                            Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Ringkasan Akun (1 kolom pada desktop) -->
+            <div class="bg-[#0c0c0c] border border-[#1c1c1c] rounded p-3 sm:p-5 space-y-4">
+                <div class="border-b border-[#1c1c1c] pb-2.5">
+                    <h4 class="text-xs sm:text-sm font-bold text-neutral-100 uppercase tracking-wider">Informasi Akun</h4>
+                    <p class="text-[10px] sm:text-xs text-neutral-500">Detail keanggotaan aktif Anda</p>
+                </div>
+
+                <ul class="text-xs space-y-2.5 divide-y divide-[#181818]">
+                    <li class="flex items-center justify-between pt-0.5">
+                        <span class="text-neutral-500">Grup PC</span>
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono uppercase bg-[#141414] text-neutral-200 border border-[#262626]">
+                            {{ member.grup.nama if member.grup else 'reguler' }}
+                        </span>
+                    </li>
+                    <li class="flex items-center justify-between pt-2.5">
+                        <span class="text-neutral-500">Status Akun</span>
+                        <span class="font-mono font-bold {{ 'text-emerald-400' if member.aktif else 'text-red-400' }}">
+                            {{ 'AKTIF' if member.aktif else 'NONAKTIF' }}
+                        </span>
+                    </li>
+                    <li class="flex items-center justify-between pt-2.5">
+                        <span class="text-neutral-500">Tanggal Bergabung</span>
+                        <span class="font-mono text-neutral-200">
+                            {{ format_display(member.dibuat_pada, fmt="%d-%m-%Y") if member.dibuat_pada else '-' }}
+                        </span>
+                    </li>
+                    <li class="flex items-center justify-between pt-2.5">
+                        <span class="text-neutral-500">Masa Berlaku</span>
+                        <span class="font-mono text-neutral-200">
+                            {{ format_display(member.kadaluarsa_pada, fmt="%d-%m-%Y") if member.kadaluarsa_pada else 'Selamanya' }}
+                        </span>
+                    </li>
+                </ul>
+
+                <div class="p-3 bg-[#080808] border border-[#1c1c1c] rounded text-[11px] text-neutral-500 leading-relaxed">
+                    Hubungi operator kasir apabila Anda memerlukan perpanjangan masa berlaku atau perubahan grup PC.
+                </div>
+            </div>
+        </section>
 
     </main>
 
-    <!-- Footer -->
     {% set footer_label = "Portal Member" %}
     {% include 'public/components/_footer.html' %}
 
     <script src="{{ url_for('static', filename='js/member/toast.js') }}?v={{ v_cache }}"></script>
     <script src="{{ url_for('static', filename='js/member/dashboard.js') }}?v={{ v_cache }}"></script>
-    <script>
-        async function updateProfile(e) {
-            e.preventDefault();
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            const originalText = submitBtn.textContent;
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Menyimpan...';
-
-            try {
-                const payload = {
-                    nama_lengkap: document.getElementById('prof_nama')?.value || '',
-                    email: document.getElementById('prof_email')?.value || '',
-                    no_hp: document.getElementById('prof_hp')?.value || '',
-                };
-
-                const res = await fetch('/member/profile/update', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': ([...document.cookie.matchAll(/(?:^|; )csrf_token=([^;]+)/g)].pop() || [])[1] || ''
-                    },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-                if (res.ok && data.success) {
-                    showToast('success', 'Profil berhasil diperbarui');
-                } else {
-                    showToast('error', data.error || 'Gagal memperbarui profil');
-                }
-            } catch (err) {
-                showToast('error', 'Gagal terhubung ke server');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = originalText;
-            }
-        }
-    </script>
 </body>
 
-</html>```
+</html>
