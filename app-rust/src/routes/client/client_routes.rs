@@ -451,7 +451,7 @@ pub async fn update_exe(
         return res;
     }
     let paket = state.cfg.root.join("client-update").join("TMBilling.exe");
-    match std::fs::read(&paket) {
+    match tokio::fs::read(&paket).await {
         Ok(bytes) => {
             let mut res = Response::new(axum::body::Body::from(bytes));
             res.headers_mut().insert(

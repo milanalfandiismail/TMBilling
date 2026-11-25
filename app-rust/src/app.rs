@@ -924,6 +924,9 @@ pub fn router(state: Arc<AppState>) -> Router {
 }
 
 async fn static_file(Path(path): Path<String>) -> Response {
+    if path.contains("..") || path.contains('\\') || path.starts_with('/') {
+        return StatusCode::FORBIDDEN.into_response();
+    }
     if let Some(file) = StaticAssets::get(&path) {
         let mime = crate::assets::content_type(&path);
         let body: Body = Body::from(file.data.into_owned());
@@ -935,9 +938,19 @@ async fn static_file(Path(path): Path<String>) -> Response {
         return res;
     }
 
-    // Fallback: baca dari filesystem disk (misal uploads/games, uploads/menu yang diunggah dinamis)
-    let disk_path = std::path::Path::new("app/static").join(&path);
-    if let Ok(bytes) = std::fs::read(&disk_path) {
+    // Fallback: baca dari filesystem disk hanya di dalam root app/static
+    let base = match tokio::fs::canonicalize("app/static").await {
+        Ok(b) => b,
+        Err(_) => return StatusCode::NOT_FOUND.into_response(),
+    };
+    let candidate = base.join(&path);
+    let Ok(resolved) = tokio::fs::canonicalize(&candidate).await else {
+        return StatusCode::NOT_FOUND.into_response();
+    };
+    if !resolved.starts_with(&base) {
+        return StatusCode::FORBIDDEN.into_response();
+    }
+    if let Ok(bytes) = tokio::fs::read(&resolved).await {
         let mime = crate::assets::content_type(&path);
         let body: Body = Body::from(bytes);
         let mut res = (StatusCode::OK, body).into_response();

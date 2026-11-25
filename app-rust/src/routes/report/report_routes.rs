@@ -279,7 +279,7 @@ pub async fn export_logs(State(st): St, kasir: Kasir, Query(q): Query<LogQuery>)
     if let Err(res) = auth::admin_only(&kasir) {
         return res;
     }
-    let (teks, cap) = log_audit::export(&st, q.filter.as_deref().unwrap_or(""));
+    let (teks, cap) = log_audit::export(&st, q.filter.as_deref().unwrap_or("")).await;
     (
         StatusCode::OK,
         [

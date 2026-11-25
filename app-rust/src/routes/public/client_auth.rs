@@ -87,7 +87,7 @@ pub async fn login(
         }
         login_throttle::ok(&ip, &username);
         let grup = pc.grup_nama.clone().unwrap_or_else(|| "reguler".into());
-        let _ = crate::utils::logger::rec("client", "CLIENT_LOGIN_MEMBER", &format!("user={username} pc={}", pc.kode));
+        crate::utils::logger::rec("client", "CLIENT_LOGIN_MEMBER", &format!("user={username} pc={}", pc.kode));
         return match sesi_service::buka_member(&st, Some(&pc.kode), Some(&member.username), "client")
             .await
         {

@@ -304,7 +304,8 @@ async fn pair_swiss(pool: &SqlitePool, tahap_id: i64, round: i64, bo: i64) -> sq
 }
 
 pub async fn list(st: &AppState) -> Hasil<Value> {
-    let tz = &st.cfg.timezone;
+    let tz_str = crate::services::settings::settings_service::active_timezone(st).await;
+    let tz = &tz_str;
     let mut hasil = Vec::new();
     for t in repo::get_all(&st.pool).await.map_err(galat)? {
         let stages = repo::stages(&st.pool, t.id).await.map_err(galat)?;
@@ -326,7 +327,8 @@ fn galat(e: sqlx::Error) -> (u16, String) {
 }
 
 pub async fn detail(st: &AppState, id: i64) -> Hasil<Value> {
-    let tz = &st.cfg.timezone;
+    let tz_str = crate::services::settings::settings_service::active_timezone(st).await;
+    let tz = &tz_str;
     let t = repo::get_by_id(&st.pool, id)
         .await
         .map_err(galat)?

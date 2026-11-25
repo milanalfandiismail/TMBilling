@@ -68,11 +68,12 @@ async fn sisa_sesi(pool: &SqlitePool, member_id: i64) -> Result<Option<i64>, Str
 async fn bentuk_json(st: &AppState, m: &Member, sisa: Option<i64>) -> Result<Value, String> {
     let grup = grup_info(&st.pool, m.grup_id).await?;
     let waktu = sisa.unwrap_or(m.waktu_tersimpan);
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     Ok(m.to_json(
         Some(&grup.nama),
         Some(&grup.warna),
         waktu,
-        st.cfg.timezone.as_str(),
+        tz.as_str(),
     ))
 }
 
@@ -593,14 +594,24 @@ pub async fn refund(
 
     let saldo_sebelum = member.waktu_tersimpan;
     let waktu_baru = (saldo_sebelum - durasi).max(0);
-    if !trx_repo::claim_refund(&st.pool, transaksi_id)
-        .await
-        .map_err(|e| e.to_string())?
-    {
+    let dipotong = saldo_sebelum - waktu_baru;
+
+    let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
+
+    let claimed = sqlx::query(
+        "UPDATE transaksi SET is_refunded = 1 WHERE id = ? AND COALESCE(is_refunded, 0) = 0",
+    )
+    .bind(transaksi_id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| e.to_string())?
+    .rows_affected()
+        > 0;
+
+    if !claimed {
         return Err("Transaksi tidak valid atau sudah direfund".into());
     }
 
-    let dipotong = saldo_sebelum - waktu_baru;
     if let Some(mut sesi) = sesi_repo::get_aktif_by_member(&st.pool, member_id)
         .await
         .map_err(|e| e.to_string())?
@@ -609,7 +620,7 @@ pub async fn refund(
         sqlx::query("UPDATE sesi SET waktu_tersimpan_awal = ? WHERE id = ?")
             .bind(sesi.waktu_tersimpan_awal.max(0))
             .bind(sesi.id)
-            .execute(&st.pool)
+            .execute(&mut *tx)
             .await
             .map_err(|e| e.to_string())?;
     }
@@ -626,16 +637,16 @@ pub async fn refund(
         member.kadaluarsa_pada = Some(db_str(baru));
     }
     member.waktu_tersimpan = waktu_baru;
-    repo::set_saldo(
-        &st.pool,
-        member_id,
-        waktu_baru,
-        member.kadaluarsa_pada.as_deref(),
-    )
-    .await
-    .map_err(|e| e.to_string())?;
+    sqlx::query("UPDATE member SET waktu_tersimpan = ?, kadaluarsa_pada = ? WHERE id = ?")
+        .bind(waktu_baru)
+        .bind(member.kadaluarsa_pada.as_deref())
+        .bind(member_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| e.to_string())?;
 
-    let no_nota = nota::generate_nota(&st.pool, &st.cfg.timezone).await;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let no_nota = nota::generate_nota(&st.pool, &tz).await;
     let nama_paket = paket
         .as_ref()
         .map(|p| p.nama.clone())
@@ -654,9 +665,11 @@ pub async fn refund(
     .bind(&no_nota)
     .bind(trx.metode_pembayaran.as_deref())
     .bind(operator)
-    .execute(&st.pool)
+    .execute(&mut *tx)
     .await
     .map_err(|e| e.to_string())?;
+
+    tx.commit().await.map_err(|e| e.to_string())?;
 
     logger::rec(
         operator,
@@ -692,6 +705,7 @@ pub async fn riwayat(st: &AppState, member_id: i64) -> Result<Value, String> {
         .map_err(|e| e.to_string())?;
 
     let mut saldo_sisa = member.waktu_tersimpan;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     let mut items = Vec::new();
     for row in rows {
         if saldo_sisa <= 0 {
@@ -710,7 +724,7 @@ pub async fn riwayat(st: &AppState, member_id: i64) -> Result<Value, String> {
                 .dibuat_pada
                 .as_deref()
                 .and_then(parse_dt)
-                .map(|d| crate::utils::time::format_display(d, &st.cfg.timezone)),
+                .map(|d| crate::utils::time::format_display(d, &tz)),
             "jenis": row.jenis,
         }));
         saldo_sisa -= row.menit;

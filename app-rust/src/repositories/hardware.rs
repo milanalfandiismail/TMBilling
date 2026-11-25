@@ -176,9 +176,10 @@ pub async fn replace_processes(
     pc_id: i64,
     rows: &[(String, String)],
 ) -> Result<(), sqlx::Error> {
+    let mut tx = pool.begin().await?;
     sqlx::query("DELETE FROM pc_process WHERE pc_id = ?")
         .bind(pc_id)
-        .execute(pool)
+        .execute(&mut *tx)
         .await?;
     let now = crate::utils::time::db_str(crate::utils::time::now_db());
     for (name, title) in rows {
@@ -187,9 +188,10 @@ pub async fn replace_processes(
             .bind(name)
             .bind(title)
             .bind(&now)
-            .execute(pool)
+            .execute(&mut *tx)
             .await?;
     }
+    tx.commit().await?;
     Ok(())
 }
 

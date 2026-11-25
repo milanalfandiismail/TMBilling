@@ -30,12 +30,16 @@ pub async fn metrics(State(state): St, kasir: Kasir) -> Response {
     let _ = kasir;
     let path = lhm_path(&state);
     // JSON LHM lebih tua dari 5 detik dianggap offline.
-    let data = std::fs::metadata(&path)
+    let data = tokio::fs::metadata(&path)
+        .await
         .ok()
         .and_then(|m| m.modified().ok())
         .and_then(|t| t.elapsed().ok())
         .filter(|umur| umur.as_secs() <= 5)
-        .and_then(|_| std::fs::read_to_string(&path).ok())
+        .and_then(|_| {
+            let p = path.clone();
+            tokio::task::block_in_place(|| std::fs::read_to_string(p).ok())
+        })
         .and_then(|s| serde_json::from_str::<Value>(&s).ok())
         .unwrap_or_else(offline);
     http::json(200, json!({"success": true, "data": data}))
@@ -75,10 +79,11 @@ pub async fn lhm_stop(State(state): St, kasir: Kasir) -> Response {
     if let Err(res) = auth::admin_only(&kasir) {
         return res;
     }
-    let _ = std::process::Command::new("taskkill")
+    let _ = tokio::process::Command::new("taskkill")
         .args(["/F", "/IM", "TMLHMService.exe"])
-        .output();
-    let _ = std::fs::remove_file(lhm_path(&state));
+        .output()
+        .await;
+    let _ = tokio::fs::remove_file(lhm_path(&state)).await;
     http::json(
         200,
         json!({"success": true, "message": "LHM Service dimatikan."}),
@@ -87,9 +92,10 @@ pub async fn lhm_stop(State(state): St, kasir: Kasir) -> Response {
 
 pub async fn lhm_status(State(_state): St, kasir: Kasir) -> Response {
     let _ = kasir;
-    let out = std::process::Command::new("tasklist")
+    let out = tokio::process::Command::new("tasklist")
         .args(["/FI", "IMAGENAME eq TMLHMService.exe"])
-        .output();
+        .output()
+        .await;
     let running = out
         .ok()
         .map(|o| String::from_utf8_lossy(&o.stdout).contains("TMLHMService.exe"))

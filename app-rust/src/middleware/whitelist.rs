@@ -20,7 +20,7 @@ use std::sync::Arc;
 const SCOPED_PREFIXES: [&str; 2] = ["/kasir/", "/api/v1/kasir/"];
 
 fn in_scope(path: &str) -> bool {
-    SCOPED_PREFIXES.iter().any(|p| path.starts_with(p))
+    path == "/kasir" || SCOPED_PREFIXES.iter().any(|p| path.starts_with(p))
 }
 
 fn exempt(path: &str) -> bool {
@@ -100,7 +100,7 @@ fn session_of(state: &AppState, headers: &HeaderMap) -> Option<SessionData> {
     crate::utils::http::cookie(headers, auth::COOKIE).and_then(|raw| auth::decode(&state.cfg, &raw))
 }
 
-pub async fn guard(State(state): State<Arc<AppState>>, req: Request, next: Next) -> Response {
+pub async fn guard(State(state): State<Arc<AppState>>, mut req: Request, next: Next) -> Response {
     let path = req.uri().path().to_string();
     if !in_scope(&path) || exempt(&path) {
         return next.run(req).await;
@@ -145,19 +145,22 @@ pub async fn guard(State(state): State<Arc<AppState>>, req: Request, next: Next)
 
     let session = session_of(&state, &headers);
     if let Some(s) = &session {
-        if s.role == "admin" {
-            if let Ok(Some(user)) = user_repo::get_by_id(&state.pool, s.uid).await {
-                if user.active() && user.role() == "admin" {
-                    return next.run(req).await;
+        if !auth::is_revoked(&state, s) {
+            if s.role == "admin" {
+                if let Ok(Some(user)) = user_repo::get_by_id(&state.pool, s.uid).await {
+                    if user.active() && user.role() == "admin" {
+                        req.extensions_mut().insert(user);
+                        return next.run(req).await;
+                    }
                 }
             }
-        }
-        if ip_whitelist::is_session_token_valid(
-            s.ipwh,
-            s.ipwhv,
-            ip_whitelist::token_version(&state).await,
-        ) {
-            return next.run(req).await;
+            if ip_whitelist::is_session_token_valid(
+                s.ipwh,
+                s.ipwhv,
+                ip_whitelist::token_version(&state).await,
+            ) {
+                return next.run(req).await;
+            }
         }
     }
 

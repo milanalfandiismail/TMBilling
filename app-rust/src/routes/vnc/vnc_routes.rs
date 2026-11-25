@@ -23,8 +23,8 @@ pub async fn status(State(_state): St, kasir: Kasir) -> Response {
         json!({
             "success": true,
             "data": {
-                "vnc_server_active": vnc_service::is_port_open("127.0.0.1", vnc_service::VNC_PORT),
-                "websockify_active": vnc_service::is_port_open("127.0.0.1", vnc_service::LISTEN_PORT),
+                "vnc_server_active": vnc_service::is_port_open_async("127.0.0.1", vnc_service::VNC_PORT).await,
+                "websockify_active": vnc_service::is_port_open_async("127.0.0.1", vnc_service::LISTEN_PORT).await,
                 "listen_port": vnc_service::LISTEN_PORT,
             }
         }),
@@ -35,7 +35,7 @@ pub async fn start(State(state): St, kasir: Kasir) -> Response {
     if let Err(res) = auth::admin_only(&kasir) {
         return res;
     }
-    let aktif = vnc_service::is_port_open("127.0.0.1", vnc_service::VNC_PORT);
+    let aktif = vnc_service::is_port_open_async("127.0.0.1", vnc_service::VNC_PORT).await;
     let password = settings_service::get_or_create_vnc_password(&state).await;
     vnc_service::ensure_listener(state.clone());
     logger::rec(
@@ -108,7 +108,7 @@ pub async fn client_start(State(state): St, kasir: Kasir, Path(pc_id): Path<i64>
     );
     // Monitor klien bisa telat/mati; bila TightVNC sudah hidup, buka proxy sekarang.
     let host = pc.ip_address.clone().unwrap_or_default();
-    if vnc_service::is_port_open(&host, vnc_service::VNC_PORT) {
+    if vnc_service::is_port_open_async(&host, vnc_service::VNC_PORT).await {
         if let Ok(p) = vnc_service::start_proxy(&state, pc.id, &host) {
             logger::rec(
                 &kasir.user.username,

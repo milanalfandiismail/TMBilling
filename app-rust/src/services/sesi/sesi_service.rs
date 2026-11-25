@@ -155,7 +155,8 @@ pub async fn buka_guest(
                 .to_uppercase()
         ));
     }
-    let no_nota = nota::generate_nota(&st.pool, &st.cfg.timezone).await;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let no_nota = nota::generate_nota(&st.pool, &tz).await;
     let user_id = nota::user_id(&st.pool, operator).await;
 
     let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
@@ -386,7 +387,8 @@ async fn tambah_satu(
     }
     let total_menit = paket.durasi_menit * qty;
     let total_harga = paket.harga * qty;
-    let no_nota = nota::generate_nota(&st.pool, &st.cfg.timezone).await;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let no_nota = nota::generate_nota(&st.pool, &tz).await;
     let user_id = nota::user_id(&st.pool, operator).await;
     let detail = json!({
         "tipe_tambahan": "waktu",
@@ -521,9 +523,7 @@ pub async fn tambah_waktu_batch(
     operator: &str,
     client_request_id: Option<&str>,
 ) -> Result<(), String> {
-    if !crate::utils::idempotency::claim(client_request_id.unwrap_or("")) {
-        return Err("Permintaan ini sudah diproses".into());
-    }
+    let guard = crate::utils::idempotency::IdempotencyGuard::acquire(client_request_id)?;
     let _guard = st.write().await;
     let metode = menu_service::metode_pembayaran(st, metode).await?;
     let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
@@ -550,6 +550,7 @@ pub async fn tambah_waktu_batch(
         .await?;
     }
     tx.commit().await.map_err(|e| e.to_string())?;
+    guard.commit();
     for (pesan, detail) in audit {
         logger::audit_json(operator, "TAMBAH_WAKTU", &pesan, None, "", "", detail);
     }
@@ -871,6 +872,7 @@ pub async fn riwayat_paket(st: &AppState, sesi_id: i64) -> Result<Value, String>
         .map_err(|e| e.to_string())?;
     let mut sisa_sekala = sesi.sisa_menit(now_db());
     let mut hasil = Vec::new();
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     for t in daftar {
         if sisa_sekala <= 0 {
             break;
@@ -886,7 +888,7 @@ pub async fn riwayat_paket(st: &AppState, sesi_id: i64) -> Result<Value, String>
             "qty": qty,
             "harga": t.jumlah,
             "dibuat_pada": t.dibuat_pada.as_deref().and_then(parse_dt)
-                .map(|d| format_display(d, &st.cfg.timezone)),
+                .map(|d| format_display(d, &tz)),
             "jenis": t.jenis,
         }));
         sisa_sekala -= durasi;

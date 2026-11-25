@@ -292,7 +292,7 @@ class TVSignage {
                 <div id="${slideId}" class="w-full h-full flex flex-col justify-start absolute inset-0 slide-fade-enter ${visibilityClass}">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-extrabold text-neutral-300 uppercase tracking-wider flex items-center gap-3">
-                            <span class="w-2.5 h-2.5 rounded-full animate-pulse" style="background-color: ${groupColor}"></span>
+                            <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${groupColor}"></span>
                             Status Komputer - ${g.toUpperCase()}
                         </h2>
                         <!-- Legend -->

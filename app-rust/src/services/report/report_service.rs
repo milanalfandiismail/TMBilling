@@ -398,12 +398,12 @@ pub async fn struk(st: &AppState, identifier: &str) -> Hasil<Value> {
             .unwrap_or_else(|| "Transaksi Warnet".into()),
     };
     let (title, address, phone, footer) = meta_warnet(st);
-    let tz = &st.cfg.timezone;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
 
     Ok(json!({
         "no_nota": t.no_nota.clone().unwrap_or_else(|| format!("OLD-{}", t.id)),
         "tanggal": t.dibuat_pada.as_deref().and_then(time::parse_dt)
-            .map(|d| time::format_display(d, tz)).unwrap_or_default(),
+            .map(|d| time::format_display(d, &tz)).unwrap_or_default(),
         "pc_kode": pc_kode.unwrap_or_else(|| "-".into()),
         "tipe": tipe.unwrap_or_else(|| "topup".into()),
         "nama_pelanggan": nama_pelanggan(member_nama.as_deref(), guest.as_deref()),
@@ -475,11 +475,11 @@ pub async fn struk_menu(st: &AppState, t_menu_id: i64) -> Hasil<Value> {
             .filter(|v| !v.is_empty())
             .unwrap_or_else(|| "Terima kasih atas kunjungan Anda!".into()),
     );
-    let tz = &st.cfg.timezone;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
 
     Ok(json!({
         "no_nota": if pertama.no_nota.is_empty() { format!("ID-{}", pertama.id) } else { pertama.no_nota.clone() },
-        "tanggal": pertama.tanggal.map(|d| time::format_display(d, tz)).unwrap_or_default(),
+        "tanggal": pertama.tanggal.map(|d| time::format_display(d, &tz)).unwrap_or_default(),
         "pc_kode": pertama.pc_kode.clone().unwrap_or_else(|| "-".into()),
         "tipe": "kantin",
         "nama_pelanggan": "Pelanggan POS",
@@ -567,7 +567,8 @@ pub async fn clear_transactions_by_date(st: &AppState, tanggal: &str, operator: 
     let tanggal = tanggal.trim().to_string();
     let hari = chrono::NaiveDate::parse_from_str(&tanggal, "%Y-%m-%d")
         .map_err(|_| Salah::baru(400, "Format tanggal salah. Gunakan YYYY-MM-DD"))?;
-    let (_, target_end) = time::day_range_utc(hari, &st.cfg.timezone);
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let (_, target_end) = time::day_range_utc(hari, &tz);
     let _lock = st.write().await;
     for (_, mulai) in sesi_repo::mulai_pada_aktif(&st.pool).await? {
         if let Some(m) = mulai.as_deref().and_then(time::parse_dt) {
@@ -579,7 +580,6 @@ pub async fn clear_transactions_by_date(st: &AppState, tanggal: &str, operator: 
             }
         }
     }
-    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     let trx = trx_repo::delete_by_date(&st.pool, &tanggal, &tz).await?;
     let menu = menu_repo::delete_transaksi_by_date(&st.pool, &tanggal, &tz).await?;
     let sesi = sesi_repo::delete_history_by_date(&st.pool, &tanggal, &tz).await?;

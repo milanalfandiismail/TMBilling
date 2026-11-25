@@ -175,9 +175,12 @@ pub async fn status(
     {
         None => {
             let rapi = format_mac(mac);
-            pc_repo::set_mac(&st.pool, pc.id, &rapi)
-                .await
-                .map_err(|e| e.to_string())?;
+            {
+                let _guard = st.write().await;
+                pc_repo::set_mac(&st.pool, pc.id, &rapi)
+                    .await
+                    .map_err(|e| e.to_string())?;
+            }
             pc.mac_address = Some(rapi);
         }
         Some(db_mac) => {
@@ -227,12 +230,22 @@ pub async fn status(
         .map(|d| (now - d).num_seconds() < ADMIN_GRACE_SECONDS)
         .unwrap_or(false);
     if !admin_role && !is_launcher && pc.is_admin_mode.unwrap_or(false) && !fresh_admin {
-        pc_repo::set_admin_mode(&st.pool, pc.id, false)
-            .await
-            .map_err(|e| e.to_string())?;
+        {
+            let _guard = st.write().await;
+            pc_repo::set_admin_mode(&st.pool, pc.id, false)
+                .await
+                .map_err(|e| e.to_string())?;
+        }
+        if let Some(s) = &sesi {
+            if s.tipe == "admin" {
+                let _ = sesi_service::tutup(st, s.id, "system").await;
+                sesi = None;
+            }
+        }
         pc.is_admin_mode = Some(false);
     }
 
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     let mut res = if pc.is_admin_mode.unwrap_or(false) {
         let system = sesi
             .as_ref()
@@ -251,7 +264,7 @@ pub async fn status(
                 .as_ref()
                 .and_then(|s| s.mulai_pada.as_deref())
                 .and_then(parse_dt)
-                .map(|d| format_clock(d, &st.cfg.timezone)),
+                .map(|d| format_clock(d, &tz)),
             "pc_kode": pc.kode,
             "shutdown_timer": 0,
         })
@@ -306,11 +319,11 @@ pub async fn status(
                     .mulai_pada
                     .as_deref()
                     .and_then(parse_dt)
-                    .map(|d| format_clock(d, &st.cfg.timezone)),
+                    .map(|d| format_clock(d, &tz)),
                 "is_afk": sesi.is_afk,
                 "shutdown_timer": 0,
             });
-            if let Value::Object(map) = sesi_json(&sesi, sisa, &st.cfg.timezone) {
+            if let Value::Object(map) = sesi_json(&sesi, sisa, &tz) {
                 for (k, v) in map {
                     map_insert(&mut body, k, v);
                 }
@@ -434,9 +447,12 @@ async fn admin_login_inner(
     {
         sesi_service::tutup(st, lama.id, "system").await?;
     }
-    pc_repo::set_admin_mode(&st.pool, pc.id, true)
-        .await
-        .map_err(|e| e.to_string())?;
+    {
+        let _guard = st.write().await;
+        pc_repo::set_admin_mode(&st.pool, pc.id, true)
+            .await
+            .map_err(|e| e.to_string())?;
+    }
     let token = sesi_service::token_sesi();
     let display = match user.nama_lengkap.clone() {
         Some(n) if !n.is_empty() => n,
@@ -493,9 +509,12 @@ pub async fn emergency_login(
     {
         None => {
             let rapi = format_mac(mac);
-            pc_repo::set_mac(&st.pool, pc.id, &rapi)
-                .await
-                .map_err(|e| e.to_string())?;
+            {
+                let _guard = st.write().await;
+                pc_repo::set_mac(&st.pool, pc.id, &rapi)
+                    .await
+                    .map_err(|e| e.to_string())?;
+            }
             pc.mac_address = Some(rapi);
         }
         Some(db_mac) => {
@@ -510,9 +529,12 @@ pub async fn emergency_login(
     {
         sesi_service::tutup(st, lama.id, "system").await?;
     }
-    pc_repo::set_admin_mode(&st.pool, pc.id, true)
-        .await
-        .map_err(|e| e.to_string())?;
+    {
+        let _guard = st.write().await;
+        pc_repo::set_admin_mode(&st.pool, pc.id, true)
+            .await
+            .map_err(|e| e.to_string())?;
+    }
     sesi_service::buka_admin(st, pc.id, "SYSTEM").await?;
     logger::rec(
         "system",

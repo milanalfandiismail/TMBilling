@@ -22,7 +22,8 @@ pub async fn server_metrics(State(state): St, kasir: Kasir) -> Response {
         return res;
     }
     let berkas = state.cfg.root.join("app/tmp/lhm_metrics.json");
-    let data: Value = std::fs::read_to_string(berkas)
+    let data: Value = tokio::fs::read_to_string(berkas)
+        .await
         .ok()
         .and_then(|t| serde_json::from_str(t.as_str()).ok())
         .unwrap_or_else(|| json!({"status": "offline"}));

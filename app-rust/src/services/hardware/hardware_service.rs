@@ -161,6 +161,7 @@ pub async fn process_metric(
         nama_db.sort();
         nama_baru.sort();
         if nama_db != nama_baru {
+            let _guard = st.write().await;
             let _ = hw_repo::replace_processes(&st.pool, pc.id, &rows).await;
         }
         let stamp = time::now_db().and_utc().timestamp_millis();
@@ -562,12 +563,13 @@ pub async fn processes(
         .map(|d| d.and_utc().timestamp_millis())
         .unwrap_or(0);
     let stamp = mem_ts.max(db_ts);
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     let label = if stamp > 0 {
         Some(time::format_local(
             chrono::DateTime::from_timestamp_millis(stamp)
                 .map(|d| d.naive_utc())
                 .unwrap_or_else(time::now_db),
-            &st.cfg.timezone,
+            &tz,
             "%d/%m/%Y %H:%M",
         ))
     } else {

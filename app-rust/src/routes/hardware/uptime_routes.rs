@@ -38,14 +38,18 @@ pub async fn daily(State(state): St, kasir: Kasir, Query(q): Query<DailyQuery>) 
                 )
             }
         },
-        None => time::today_local(&state.cfg.timezone),
+        None => {
+            let tz = crate::services::settings::settings_service::active_timezone(&state).await;
+            time::today_local(&tz)
+        }
     };
     let rows = uptime::daily(&state.pool, &tanggal.format("%Y-%m-%d").to_string())
         .await
         .unwrap_or_default();
+    let tz = crate::services::settings::settings_service::active_timezone(&state).await;
     let mut data: Vec<serde_json::Value> = rows
         .iter()
-        .map(|b| uptime::daily_json(b, &state.cfg.timezone))
+        .map(|b| uptime::daily_json(b, &tz))
         .collect();
     data.sort_by(|a, b| {
         let ka = a.get("pc_kode").and_then(|v| v.as_str()).unwrap_or("");

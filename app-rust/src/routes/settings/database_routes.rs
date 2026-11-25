@@ -32,12 +32,23 @@ pub async fn download_db(State(st): State<Arc<AppState>>, k: Kasir) -> Response 
     if let Err(res) = admin_only(&k) {
         return res;
     }
-    let tmp = st.cfg.root.join("instance").join("download_snapshot.db");
-    if let Err(e) = svc::snapshot(&st.pool, &tmp).await {
-        return http::json(500, json!({"error": e.to_string()}));
+    let stamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    let tmp = st
+        .cfg
+        .root
+        .join("instance")
+        .join(format!("download_snapshot_{stamp}.db"));
+    {
+        let _guard = st.write().await;
+        if let Err(e) = svc::snapshot(&st.pool, &tmp).await {
+            return http::json(500, json!({"error": e.to_string()}));
+        }
     }
-    let bytes = std::fs::read(&tmp).unwrap_or_default();
-    let _ = std::fs::remove_file(&tmp);
+    let bytes = tokio::fs::read(&tmp).await.unwrap_or_default();
+    let _ = tokio::fs::remove_file(&tmp).await;
     let mut res = Response::new(Body::from(bytes));
     *res.status_mut() = StatusCode::OK;
     res.headers_mut().insert(
@@ -80,21 +91,37 @@ pub async fn upload_qris(
             json!({"error": "Ekstensi file tidak diizinkan (Gunakan: png, jpg, jpeg, gif, webp)"}),
         );
     }
-    let img = match image::load_from_memory(&bytes) {
-        Ok(i) => i,
-        Err(_) => return http::json(400, json!({"error": "File gambar tidak valid"})),
-    };
-    let img = if img.width() > 800 || img.height() > 800 {
-        img.resize(800, 800, image::imageops::FilterType::Lanczos3)
-    } else {
-        img
-    };
     let folder = st.cfg.upload_dir.join("qris");
-    let _ = std::fs::create_dir_all(&folder);
     let fname = format!("qris_{}.png", chrono::Local::now().timestamp());
-    if let Err(e) = img.save(folder.join(&fname)) {
-        return http::json(500, json!({"error": e.to_string()}));
+    let folder_clone = folder.clone();
+    let fname_clone = fname.clone();
+    let res = tokio::task::spawn_blocking(move || -> Result<(), (u16, &'static str)> {
+        let img = match image::load_from_memory(&bytes) {
+            Ok(i) => i,
+            Err(_) => return Err((400, "File gambar tidak valid")),
+        };
+        if img.width() > 8000 || img.height() > 8000 {
+            return Err((400, "Dimensi gambar terlalu besar (maksimal 8000x8000)"));
+        }
+        let img = if img.width() > 800 || img.height() > 800 {
+            img.resize(800, 800, image::imageops::FilterType::Lanczos3)
+        } else {
+            img
+        };
+        let _ = std::fs::create_dir_all(&folder_clone);
+        if img.save(folder_clone.join(&fname_clone)).is_err() {
+            return Err((500, "Gagal menyimpan file QRIS"));
+        }
+        Ok(())
+    })
+    .await;
+
+    match res {
+        Ok(Ok(())) => {}
+        Ok(Err((code, msg))) => return http::json(code, json!({"error": msg})),
+        Err(e) => return http::json(500, json!({"error": e.to_string()})),
     }
+
     let url = format!("/static/uploads/qris/{fname}");
     if let Err(e) = settings::set(&st, "qris_path", &url).await {
         return http::json(500, json!({"error": e.to_string()}));
@@ -200,22 +227,28 @@ pub async fn purge_and_vacuum(
         return http::json(500, json!({"success": false, "error": e.to_string()}));
     }
     let daftar = [
-        ("pc_process", format!("DELETE FROM pc_process WHERE last_update < '{batas}'")),
-        ("pc_uptime_log", format!("DELETE FROM pc_uptime_log WHERE tanggal < '{batas}'")),
-        ("maintenance_ticket", format!("DELETE FROM maintenance_ticket WHERE status IN ('SELESAI', 'DITOLAK') AND created_at < '{batas}'")),
-        ("transaksi_menu", format!("DELETE FROM transaksi_menu WHERE tanggal < '{batas}'")),
-        ("transaksi", format!("DELETE FROM transaksi WHERE dibuat_pada < '{batas}'")),
-        ("sesi", format!("DELETE FROM sesi WHERE status = 'selesai' AND selesai_pada < '{batas}'")),
-        ("shift_record", format!("DELETE FROM shift_record WHERE status = 'SELESAI' AND waktu_mulai < '{batas}'")),
+        ("pc_process", "DELETE FROM pc_process WHERE last_update < ?"),
+        ("pc_uptime_log", "DELETE FROM pc_uptime_log WHERE tanggal < ?"),
+        ("maintenance_ticket", "DELETE FROM maintenance_ticket WHERE status IN ('SELESAI', 'DITOLAK') AND created_at < ?"),
+        ("transaksi_menu", "DELETE FROM transaksi_menu WHERE tanggal < ?"),
+        ("transaksi", "DELETE FROM transaksi WHERE dibuat_pada < ?"),
+        ("sesi", "DELETE FROM sesi WHERE status = 'selesai' AND selesai_pada < ?"),
+        ("shift_record", "DELETE FROM shift_record WHERE status = 'SELESAI' AND waktu_mulai < ?"),
     ];
+    let mut tx = match st.pool.begin().await {
+        Ok(tx) => tx,
+        Err(e) => return http::json(500, json!({"success": false, "error": e.to_string()})),
+    };
     let mut terhapus = serde_json::Map::new();
     for (nama, sql) in daftar {
-        let n = sqlx::raw_sql(&sql)
-            .execute(&st.pool)
-            .await
-            .map(|r| r.rows_affected())
-            .unwrap_or(0);
+        let n = match sqlx::query(sql).bind(&batas).execute(&mut *tx).await {
+            Ok(r) => r.rows_affected(),
+            Err(e) => return http::json(500, json!({"success": false, "error": e.to_string()})),
+        };
         terhapus.insert(nama.to_string(), json!(n));
+    }
+    if let Err(e) = tx.commit().await {
+        return http::json(500, json!({"success": false, "error": e.to_string()}));
     }
     let _ = sqlx::raw_sql("VACUUM").execute(&st.pool).await;
     let sesudah = std::fs::metadata(&st.cfg.db_path)
@@ -244,7 +277,10 @@ pub async fn purge_and_vacuum(
 pub fn _unused(_: Value) {}
 
 /// Status scheduler: bukti proses hidup, bukan detail job.
-pub async fn scheduler_status(_k: Kasir) -> Response {
+pub async fn scheduler_status(k: Kasir) -> Response {
+    if let Err(res) = admin_only(&k) {
+        return res;
+    }
     http::json(
         200,
         json!({
@@ -255,7 +291,10 @@ pub async fn scheduler_status(_k: Kasir) -> Response {
     )
 }
 
-pub async fn scheduler_restart(_k: Kasir) -> Response {
+pub async fn scheduler_restart(k: Kasir) -> Response {
+    if let Err(res) = admin_only(&k) {
+        return res;
+    }
     http::json(
         200,
         json!({"success": true, "message": "Scheduler berjalan dengan interval 60 detik"}),
@@ -263,10 +302,15 @@ pub async fn scheduler_restart(_k: Kasir) -> Response {
 }
 
 /// Flush delta uptime dari RAM ke `pc_uptime_log` tanpa menunggu tick berikutnya.
-pub async fn uptime_flush(State(st): State<Arc<AppState>>, _k: Kasir) -> Response {
-    let tanggal = crate::utils::time::today_local(&st.cfg.timezone)
+pub async fn uptime_flush(State(st): State<Arc<AppState>>, k: Kasir) -> Response {
+    if let Err(res) = admin_only(&k) {
+        return res;
+    }
+    let tz = settings::active_timezone(&st).await;
+    let tanggal = crate::utils::time::today_local(&tz)
         .format("%Y-%m-%d")
         .to_string();
+    let _guard = st.write().await;
     let delta: Vec<(i64, i64, i64)> = st
         .uptime
         .drain()
@@ -286,9 +330,12 @@ pub async fn uptime_flush(State(st): State<Arc<AppState>>, _k: Kasir) -> Respons
 /// Simpan interval scheduler (detik) ke pengaturan.
 pub async fn scheduler_update(
     State(st): State<Arc<AppState>>,
-    _k: Kasir,
+    k: Kasir,
     body: axum::body::Bytes,
 ) -> Response {
+    if let Err(res) = admin_only(&k) {
+        return res;
+    }
     let data = http::parse_json(&body);
 
     // Bentuk lama (interval tick scheduler) tetap dilayani.

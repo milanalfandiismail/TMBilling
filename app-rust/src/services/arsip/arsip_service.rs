@@ -6,6 +6,7 @@ use crate::repositories::{game, grup, member, menu, paket, pc, user};
 use crate::state::AppState;
 
 pub async fn get(st: &AppState) -> Value {
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     let g = grup::get_all(&st.pool, false).await.unwrap_or_default();
     let p = pc::get_all(&st.pool, false, None, None)
         .await
@@ -58,7 +59,7 @@ pub async fn get(st: &AppState) -> Value {
                 Some("reguler"),
                 Some("#888888"),
                 x.waktu_tersimpan,
-                &st.cfg.timezone,
+                &tz,
             )
         })
         .collect();

@@ -194,14 +194,15 @@ async fn hitung(st: &AppState, shift: &ShiftRecord, akhir: &str) -> Result<Value
         "total_non_tunai": total_non_tunai,
     });
     let total_seharusnya = shift.modal_awal + total_tunai_bersih;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
 
     Ok(json!({
         "shift_id": shift.id,
         "kasir_nama": shift.kasir_label(),
         "waktu_mulai": shift.waktu_mulai.as_deref().and_then(parse_dt)
-            .map(|d| format_display(d, &st.cfg.timezone)),
+            .map(|d| format_display(d, &tz)),
         "waktu_selesai": shift.waktu_selesai.as_deref().and_then(parse_dt)
-            .map(|d| format_display(d, &st.cfg.timezone)),
+            .map(|d| format_display(d, &tz)),
         "modal_awal": shift.modal_awal,
         "total_billing": total_billing,
         "total_refund": total_refund,
@@ -249,11 +250,12 @@ pub async fn start(
         .await
         .map_err(|e| e.to_string())?
     {
+        let tz = crate::services::settings::settings_service::active_timezone(st).await;
         let sejak = aktif
             .waktu_mulai
             .as_deref()
             .and_then(parse_dt)
-            .map(|d| format_display(d, &st.cfg.timezone))
+            .map(|d| format_display(d, &tz))
             .unwrap_or_default();
         return Err(format!(
             "Tidak dapat membuka shift baru: Masih ada shift aktif oleh '{}' sejak {sejak} (ID #{}). Selesaikan shift tersebut terlebih dahulu.",
@@ -274,10 +276,11 @@ pub async fn start(
         "SHIFT_BUKA",
         &format!("Kasir:{kasir_username} | Modal:Rp{modal}"),
     );
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     repo::get_by_id(&st.pool, id)
         .await
         .map_err(|e| e.to_string())?
-        .map(|s| s.to_json(&st.cfg.timezone))
+        .map(|s| s.to_json(&tz))
         .ok_or_else(|| "Shift tidak ditemukan".to_string())
 }
 
@@ -288,9 +291,10 @@ pub async fn active(st: &AppState, kasir: &Kasir) -> Result<Value, String> {
         repo::get_active_by_kasir(&st.pool, kasir.user.id).await
     }
     .map_err(|e| e.to_string())?;
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     Ok(json!({
         "success": true,
-        "shift": shift.map(|s| s.to_json(&st.cfg.timezone)),
+        "shift": shift.map(|s| s.to_json(&tz)),
     }))
 }
 
@@ -359,12 +363,13 @@ pub async fn end(
         ),
     );
 
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     Ok(json!({
         "id": shift.id,
         "kasir_nama": shift.kasir_label(),
         "waktu_mulai": shift.waktu_mulai.as_deref().and_then(parse_dt)
-            .map(|d| format_display(d, &st.cfg.timezone)),
-        "waktu_selesai": parse_dt(&now).map(|d| format_display(d, &st.cfg.timezone)),
+            .map(|d| format_display(d, &tz)),
+        "waktu_selesai": parse_dt(&now).map(|d| format_display(d, &tz)),
         "modal_awal": shift.modal_awal,
         "total_billing": total_billing,
         "total_kantin": total_kantin,
@@ -448,12 +453,13 @@ pub async fn force_close(
         ),
     );
 
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     Ok(json!({
         "id": shift.id,
         "kasir_nama": shift.kasir_label(),
         "waktu_mulai": shift.waktu_mulai.as_deref().and_then(parse_dt)
-            .map(|d| format_display(d, &st.cfg.timezone)),
-        "waktu_selesai": parse_dt(&now).map(|d| format_display(d, &st.cfg.timezone)),
+            .map(|d| format_display(d, &tz)),
+        "waktu_selesai": parse_dt(&now).map(|d| format_display(d, &tz)),
         "modal_awal": shift.modal_awal,
         "total_billing": total_billing,
         "total_kantin": total_kantin,
@@ -475,15 +481,16 @@ pub async fn history(
     tanggal_mulai: Option<&str>,
     tanggal_selesai: Option<&str>,
 ) -> Result<Value, String> {
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     let mulai = match tanggal_mulai.map(str::trim).filter(|s| !s.is_empty()) {
         Some(raw) => {
-            Some(crate::utils::time::day_range_utc(parse_tanggal(raw)?, &st.cfg.timezone).0)
+            Some(crate::utils::time::day_range_utc(parse_tanggal(raw)?, &tz).0)
         }
         None => None,
     };
     let selesai = match tanggal_selesai.map(str::trim).filter(|s| !s.is_empty()) {
         Some(raw) => {
-            Some(crate::utils::time::day_range_utc(parse_tanggal(raw)?, &st.cfg.timezone).0)
+            Some(crate::utils::time::day_range_utc(parse_tanggal(raw)?, &tz).0)
         }
         None => None,
     };
@@ -499,7 +506,7 @@ pub async fn history(
     .await
     .map_err(|e| e.to_string())?;
     Ok(json!({
-        "data": rows.iter().map(|s| s.to_json(&st.cfg.timezone)).collect::<Vec<_>>(),
+        "data": rows.iter().map(|s| s.to_json(&tz)).collect::<Vec<_>>(),
         "total": total,
     }))
 }
@@ -554,17 +561,18 @@ pub async fn receipt_text(st: &AppState, shift_id: i64) -> Result<String, String
         .ok_or("Shift tidak ditemukan")?;
     let warnet = settings_service::get_or(st, "warnet_name", "TM BILLING WARNET").await;
     let kasir = shift.kasir_label();
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     let w_mulai = shift
         .waktu_mulai
         .as_deref()
         .and_then(parse_dt)
-        .map(|d| format_display(d, &st.cfg.timezone))
+        .map(|d| format_display(d, &tz))
         .unwrap_or_default();
     let w_selesai = shift
         .waktu_selesai
         .as_deref()
         .and_then(parse_dt)
-        .map(|d| format_display(d, &st.cfg.timezone))
+        .map(|d| format_display(d, &tz))
         .unwrap_or_else(|| "-".into());
 
     let mut lines = vec![

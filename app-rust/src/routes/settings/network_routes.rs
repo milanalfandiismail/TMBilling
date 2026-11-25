@@ -117,7 +117,7 @@ pub async fn whitelist_status(
             "enabled": wl::is_enabled(&st).await,
             "current_ip": crate::middleware::whitelist::client_ip(&headers, Some(connect.0)),
             "token_masked": wl::token_masked(&st).await,
-            "full_url": format!("{base}/kasir?token={token}"),
+            "full_url": format!("{base}/kasir/?token={token}"),
         }),
     )
 }
@@ -234,11 +234,18 @@ pub async fn toggle_tunnel(
             );
         }
         let mut guard = st.cloudflared.lock().unwrap_or_else(|e| e.into_inner());
-        if guard.is_some() {
-            return http::json(
-                200,
-                json!({"success": true, "message": "Tunnel sudah berjalan", "running": true}),
-            );
+        if let Some(child) = guard.as_mut() {
+            match child.try_wait() {
+                Ok(None) => {
+                    return http::json(
+                        200,
+                        json!({"success": true, "message": "Tunnel sudah berjalan", "running": true}),
+                    );
+                }
+                _ => {
+                    *guard = None;
+                }
+            }
         }
         match std::process::Command::new(&exe)
             .args(["tunnel", "--no-autoupdate", "run", "--token", &token])

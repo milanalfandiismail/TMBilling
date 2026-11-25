@@ -106,6 +106,7 @@ pub async fn logout(
         .unwrap_or("")
         .to_string();
     auth_kasir_service::logout(&kasir.user.username, &ip, "").await;
+    auth::revoke_user(&state, kasir.user.id);
     let _ = &state;
     http::json_with_cookies(
         200,

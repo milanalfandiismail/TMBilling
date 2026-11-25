@@ -14,7 +14,10 @@ use axum::{
 use serde_json::{json, Value};
 use std::sync::Arc;
 
-pub async fn trigger(State(st): State<Arc<AppState>>, _k: Kasir) -> Response {
+pub async fn trigger(State(st): State<Arc<AppState>>, k: Kasir) -> Response {
+    if let Err(res) = admin_only(&k) {
+        return res;
+    }
     match svc::start_manual(st) {
         Ok(status) => http::json(
             202,
@@ -24,15 +27,21 @@ pub async fn trigger(State(st): State<Arc<AppState>>, _k: Kasir) -> Response {
     }
 }
 
-pub async fn status(State(st): State<Arc<AppState>>, _k: Kasir) -> Response {
+pub async fn status(State(st): State<Arc<AppState>>, k: Kasir) -> Response {
+    if let Err(res) = admin_only(&k) {
+        return res;
+    }
     http::json(200, svc::status(&st))
 }
 
 pub async fn test_connection(
     State(_st): State<Arc<AppState>>,
-    _k: Kasir,
+    k: Kasir,
     body: axum::body::Bytes,
 ) -> Response {
+    if let Err(res) = admin_only(&k) {
+        return res;
+    }
     let mut data = http::parse_json(&body);
     let mentah = data
         .get("provider")
@@ -133,7 +142,10 @@ pub async fn test_connection(
     }
 }
 
-pub async fn list(State(st): State<Arc<AppState>>, _k: Kasir) -> Response {
+pub async fn list(State(st): State<Arc<AppState>>, k: Kasir) -> Response {
+    if let Err(res) = admin_only(&k) {
+        return res;
+    }
     http::json(200, json!({"success": true, "backups": svc::list(&st)}))
 }
 
@@ -150,14 +162,17 @@ fn berkas(st: &AppState, filename: &str) -> Result<std::path::PathBuf, (u16, Str
 
 pub async fn download(
     State(st): State<Arc<AppState>>,
-    _k: Kasir,
+    k: Kasir,
     Path(filename): Path<String>,
 ) -> Response {
+    if let Err(res) = admin_only(&k) {
+        return res;
+    }
     let path = match berkas(&st, &filename) {
         Ok(p) => p,
         Err((code, pesan)) => return http::json(code, json!({"success": false, "error": pesan})),
     };
-    match std::fs::read(&path) {
+    match tokio::fs::read(&path).await {
         Ok(bytes) => {
             crate::utils::logger::rec(
                 "admin",
@@ -204,11 +219,10 @@ pub async fn restore(
         .await
         .unwrap_or(0);
     if aktif > 0
-        && data
+        && !data
             .get("confirm_active_sessions")
             .and_then(|v| v.as_bool())
             .unwrap_or(false)
-            != true
     {
         return http::json(
             409,
@@ -241,7 +255,7 @@ pub async fn hapus(
         Ok(p) => p,
         Err((code, pesan)) => return http::json(code, json!({"success": false, "error": pesan})),
     };
-    match std::fs::remove_file(&path) {
+    match tokio::fs::remove_file(&path).await {
         Ok(_) => {
             crate::utils::logger::rec(
                 "admin",

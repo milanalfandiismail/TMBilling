@@ -1631,6 +1631,30 @@
   {
    "name": "ix_transaksi_sesi_id",
    "sql": "CREATE INDEX ix_transaksi_sesi_id ON transaksi (sesi_id)"
+  },
+  {
+   "name": "ix_sesi_mulai_pada",
+   "sql": "CREATE INDEX ix_sesi_mulai_pada ON sesi (mulai_pada)"
+  },
+  {
+   "name": "ix_sesi_selesai_pada",
+   "sql": "CREATE INDEX ix_sesi_selesai_pada ON sesi (selesai_pada)"
+  },
+  {
+   "name": "ix_transaksi_jenis_dibuat",
+   "sql": "CREATE INDEX ix_transaksi_jenis_dibuat ON transaksi (jenis, dibuat_pada)"
+  },
+  {
+   "name": "ix_transaksi_menu_no_nota",
+   "sql": "CREATE INDEX ix_transaksi_menu_no_nota ON transaksi_menu (no_nota)"
+  },
+  {
+   "name": "ix_shift_record_kasir_mulai",
+   "sql": "CREATE INDEX ix_shift_record_kasir_mulai ON shift_record (kasir_id, waktu_mulai)"
+  },
+  {
+   "name": "ix_maintenance_ticket_pc_status",
+   "sql": "CREATE INDEX ix_maintenance_ticket_pc_status ON maintenance_ticket (pc_id, status)"
   }
  ]
 }

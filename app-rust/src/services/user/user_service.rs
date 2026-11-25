@@ -78,7 +78,8 @@ pub async fn create(state: &AppState, data: &Value, operator: &str) -> Result<Va
             720 * 60,
             "Kuota main bulanan (menit)",
         )?;
-        (kuota, kuota, Some(month_now(&state.cfg.timezone)))
+        let tz = crate::services::settings::settings_service::active_timezone(state).await;
+        (kuota, kuota, Some(month_now(&tz)))
     } else {
         (0, 0, None)
     };
@@ -214,7 +215,8 @@ pub async fn update(
             (sisa + selisih).clamp(0, baru)
         };
         if reset.is_none() {
-            reset = Some(month_now(&state.cfg.timezone));
+            let tz = crate::services::settings::settings_service::active_timezone(state).await;
+            reset = Some(month_now(&tz));
         }
     }
 
@@ -245,11 +247,15 @@ pub async fn update(
     .bind(kuota)
     .bind(sisa)
     .bind(&reset)
-    .bind(password_hash)
+    .bind(&password_hash)
     .bind(id)
     .execute(&state.pool)
     .await
     .map_err(|e| e.to_string())?;
+
+    if password_hash.is_some() || !aktif {
+        crate::middleware::auth::revoke_user(state, id);
+    }
 
     audit(
         operator,
@@ -287,6 +293,7 @@ pub async fn archive(state: &AppState, id: i64, operator: &str) -> Result<(u16, 
         .execute(&state.pool)
         .await
         .map_err(|e| e.to_string())?;
+    crate::middleware::auth::revoke_user(state, id);
     audit(
         operator,
         "ARSIP_USER",
@@ -390,9 +397,10 @@ pub async fn reset_kuota(state: &AppState, id: i64, operator: &str) -> Result<Va
         return Err("Hanya akun kasir yang memiliki benefit kuota bermain".into());
     }
     let kuota = user.kuota_main_bulanan.unwrap_or(0);
+    let tz = crate::services::settings::settings_service::active_timezone(state).await;
     sqlx::query("UPDATE user SET sisa_kuota_menit = ?, terakhir_reset_kuota = ? WHERE id = ?")
         .bind(kuota)
-        .bind(month_now(&state.cfg.timezone))
+        .bind(month_now(&tz))
         .bind(id)
         .execute(&state.pool)
         .await

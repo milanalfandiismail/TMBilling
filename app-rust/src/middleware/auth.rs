@@ -71,6 +71,22 @@ pub fn decode(cfg: &Config, raw: &str) -> Option<SessionData> {
     Some(data)
 }
 
+pub fn is_revoked(state: &AppState, data: &SessionData) -> bool {
+    let issued_at = data.exp - SESSION_TTL_SECONDS;
+    state
+        .revoked_before
+        .lock()
+        .ok()
+        .and_then(|m| m.get(&data.uid).copied())
+        .is_some_and(|cutoff| issued_at <= cutoff)
+}
+
+pub fn revoke_user(state: &AppState, uid: i64) {
+    if let Ok(mut m) = state.revoked_before.lock() {
+        m.insert(uid, chrono::Utc::now().timestamp());
+    }
+}
+
 pub fn session_cookie(cfg: &Config, data: &SessionData) -> String {
     format!(
         "{COOKIE}={}; Path=/; HttpOnly; SameSite=Lax; Max-Age={SESSION_TTL_SECONDS}",
@@ -117,12 +133,19 @@ impl FromRequestParts<Arc<AppState>> for Kasir {
             .ok_or_else(|| http::err(401, "Silakan login terlebih dahulu"))?;
         let session = decode(&state.cfg, &raw)
             .ok_or_else(|| http::err(401, "Silakan login terlebih dahulu"))?;
-        let user = user_repo::get_by_id(&state.pool, session.uid)
-            .await
-            .ok()
-            .flatten()
-            .filter(|u| u.active())
-            .ok_or_else(|| http::err(401, "Sesi tidak valid, silakan login kembali"))?;
+        if is_revoked(state, &session) {
+            return Err(http::err(401, "Sesi telah kedaluwarsa, silakan login kembali"));
+        }
+        let user = if let Some(cached) = parts.extensions.get::<User>().cloned() {
+            cached
+        } else {
+            user_repo::get_by_id(&state.pool, session.uid)
+                .await
+                .ok()
+                .flatten()
+                .filter(|u| u.active())
+                .ok_or_else(|| http::err(401, "Sesi tidak valid, silakan login kembali"))?
+        };
         let mut session = session;
         session.role = user.role().to_string();
         Ok(Self { user, session })

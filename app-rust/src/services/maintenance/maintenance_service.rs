@@ -118,11 +118,12 @@ pub async fn create(st: &AppState, data: &Value, reporter: &str) -> Hasil<Value>
         json!({"pc_kode": tiket.pc_kode, "reporter": reporter, "kategori": kategori,
                "prioritas": prioritas, "judul": judul}),
     );
-    // Respons route memakai `ticket.to_dict()`.
-    Ok(tiket.to_json(&st.cfg.timezone))
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    Ok(tiket.to_json(&tz))
 }
 
 pub async fn list(st: &AppState, q: &Value) -> Hasil<Value> {
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     let status = q
         .get("status")
         .and_then(|v| v.as_str())
@@ -139,7 +140,7 @@ pub async fn list(st: &AppState, q: &Value) -> Hasil<Value> {
     let tiket = repo::list(&st.pool, status, pc_id, grup, limit)
         .await
         .map_err(galat)?;
-    Ok(json!({ "tickets": tiket.iter().map(|t| t.to_json(&st.cfg.timezone)).collect::<Vec<_>>() }))
+    Ok(json!({ "tickets": tiket.iter().map(|t| t.to_json(&tz)).collect::<Vec<_>>() }))
 }
 
 pub async fn update_status(st: &AppState, id: i64, data: &Value, operator: &str) -> Hasil<Value> {
@@ -231,10 +232,13 @@ pub async fn update_status(st: &AppState, id: i64, data: &Value, operator: &str)
         "",
         json!({"pc_kode": tiket.pc_kode, "status": status, "resolved_by": operator, "biaya": biaya}),
     );
-    Ok(tiket.to_json(&st.cfg.timezone))
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    Ok(tiket.to_json(&tz))
 }
 
 pub async fn report(st: &AppState, q: &Value) -> Hasil<Value> {
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let tz_copy = tz.clone();
     let tanggal = |kunci: &str| -> Hasil<Option<String>> {
         match q
             .get(kunci)
@@ -245,8 +249,8 @@ pub async fn report(st: &AppState, q: &Value) -> Hasil<Value> {
             Some(v) => {
                 let d = chrono::NaiveDate::parse_from_str(v, "%Y-%m-%d")
                     .map_err(|_| salah("Format tanggal salah. Gunakan YYYY-MM-DD"))?;
-                let (mulai, _) = time::day_range_utc(d, &st.cfg.timezone);
-                let (_, akhir) = time::day_range_utc(d, &st.cfg.timezone);
+                let (mulai, _) = time::day_range_utc(d, &tz_copy);
+                let (_, akhir) = time::day_range_utc(d, &tz_copy);
                 Ok(if kunci == "start_date" {
                     Some(mulai)
                 } else {
@@ -261,7 +265,7 @@ pub async fn report(st: &AppState, q: &Value) -> Hasil<Value> {
         if !v.is_empty() && !matches!(v.to_lowercase().as_str(), "all" | "semua" | "none") {
             let d = chrono::NaiveDate::parse_from_str(v, "%Y-%m-%d")
                 .map_err(|_| salah("Format tanggal salah. Gunakan YYYY-MM-DD"))?;
-            let (mulai, akhir) = time::day_range_utc(d, &st.cfg.timezone);
+            let (mulai, akhir) = time::day_range_utc(d, &tz);
             start = Some(mulai);
             end = Some(akhir);
         }
@@ -302,7 +306,7 @@ pub async fn report(st: &AppState, q: &Value) -> Hasil<Value> {
         .iter()
         .skip(mulai)
         .take(per_page as usize)
-        .map(|t| t.to_json(&st.cfg.timezone))
+        .map(|t| t.to_json(&tz))
         .collect();
 
     let mut breakdown = serde_json::Map::new();

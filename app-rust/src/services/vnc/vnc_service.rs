@@ -89,6 +89,18 @@ pub fn is_port_open(host: &str, port: u16) -> bool {
     .is_ok()
 }
 
+pub async fn is_port_open_async(host: &str, port: u16) -> bool {
+    let Ok(addr) = format!("{host}:{port}").parse::<std::net::SocketAddr>() else {
+        return false;
+    };
+    tokio::time::timeout(
+        std::time::Duration::from_millis(400),
+        tokio::net::TcpStream::connect(addr),
+    )
+    .await
+    .is_ok_and(|r| r.is_ok())
+}
+
 /// Daftarkan proxy untuk PC: token baru + listener 8081 (sekali).
 pub fn start_proxy(
     st: &Arc<crate::state::AppState>,

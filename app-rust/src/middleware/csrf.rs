@@ -53,9 +53,6 @@ pub async fn guard(State(_state): State<Arc<AppState>>, req: Request, next: Next
     if matches!(method, Method::GET | Method::HEAD | Method::OPTIONS) {
         return next.run(req).await;
     }
-    if req.headers().contains_key(header::AUTHORIZATION) {
-        return next.run(req).await;
-    }
     let sent = req
         .headers()
         .get(HEADER)

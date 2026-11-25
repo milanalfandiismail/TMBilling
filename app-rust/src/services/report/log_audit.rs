@@ -116,7 +116,7 @@ pub fn clear(st: &AppState, operator: &str, archive: bool) -> Value {
 }
 
 /// Isi teks seluruh log untuk diekspor, plus cap waktu nama berkas.
-pub fn export(st: &AppState, filter: &str) -> (String, String) {
+pub async fn export(st: &AppState, filter: &str) -> (String, String) {
     let isi = fs::read_to_string(jalur_log(st)).unwrap_or_default();
     let teks = if filter.is_empty() {
         isi
@@ -126,7 +126,8 @@ pub fn export(st: &AppState, filter: &str) -> (String, String) {
             .collect::<Vec<_>>()
             .join("\n")
     };
-    let cap = time::now_local(&st.cfg.timezone)
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let cap = time::now_local(&tz)
         .format("%Y%m%d_%H%M%S")
         .to_string();
     (teks, cap)

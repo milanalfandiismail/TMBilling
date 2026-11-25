@@ -65,9 +65,15 @@ pub async fn deteksi(st: &AppState, menit_threshold: Option<i64>) -> Result<i64,
             .or_else(|| sesi.mulai_pada.as_deref().and_then(parse_dt))
             .unwrap_or(now);
         let sisa_audit = sesi.hitung_sisa_pada(referensi);
+
+        let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
         if sesi.tipe == "member" {
             if let Some(member_id) = sesi.member_id {
-                let _ = member_repo::set_waktu_tersimpan(&st.pool, member_id, sisa_audit).await;
+                let _ = sqlx::query("UPDATE member SET waktu_tersimpan = ? WHERE id = ?")
+                    .bind(sisa_audit)
+                    .bind(member_id)
+                    .execute(&mut *tx)
+                    .await;
             }
         }
         sqlx::query(
@@ -77,9 +83,11 @@ pub async fn deteksi(st: &AppState, menit_threshold: Option<i64>) -> Result<i64,
         .bind(sisa_audit)
         .bind(db_str(referensi))
         .bind(sesi.id)
-        .execute(&st.pool)
+        .execute(&mut *tx)
         .await
         .map_err(|e| e.to_string())?;
+        tx.commit().await.map_err(|e| e.to_string())?;
+
         total += 1;
         logger::audit_json(
             "system",
@@ -115,11 +123,12 @@ pub async fn deteksi(st: &AppState, menit_threshold: Option<i64>) -> Result<i64,
 }
 
 pub async fn audit_list(st: &AppState, date: Option<&str>) -> Result<Value, String> {
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
     let range = match date.map(str::trim).filter(|d| !d.is_empty()) {
         Some(raw) => {
             let hari = chrono::NaiveDate::parse_from_str(raw, "%Y-%m-%d")
                 .map_err(|_| "Format tanggal tidak valid".to_string())?;
-            Some(day_range_utc(hari, &st.cfg.timezone))
+            Some(day_range_utc(hari, &tz))
         }
         None => None,
     };
@@ -128,7 +137,7 @@ pub async fn audit_list(st: &AppState, date: Option<&str>) -> Result<Value, Stri
         .map_err(|e| e.to_string())?;
     let items: Vec<Value> = daftar
         .iter()
-        .map(|s| s.to_json_audit(&st.cfg.timezone))
+        .map(|s| s.to_json_audit(&tz))
         .collect();
     Ok(json!({"data": items, "total": items.len()}))
 }
@@ -137,7 +146,7 @@ pub async fn audit_dates(st: &AppState) -> Vec<String> {
     let mentah = repo::blackout_audit_dates(&st.pool)
         .await
         .unwrap_or_default();
-    let tz_name = st.cfg.timezone.clone();
+    let tz_name = crate::services::settings::settings_service::active_timezone(st).await;
     let mut hasil: Vec<String> = mentah
         .iter()
         .filter_map(|s| parse_dt(s))
@@ -149,22 +158,6 @@ pub async fn audit_dates(st: &AppState) -> Vec<String> {
     hasil
 }
 
-async fn tandai_resolved(
-    st: &AppState,
-    sesi_id: i64,
-    now: chrono::NaiveDateTime,
-) -> Result<(), String> {
-    sqlx::query(
-        "UPDATE sesi SET status = 'selesai', is_blackout_resolved = 1, waktu_resolved = ?, \
-         is_afk = 0, afk_pin = NULL, afk_sejak = NULL WHERE id = ?",
-    )
-    .bind(db_str(now))
-    .bind(sesi_id)
-    .execute(&st.pool)
-    .await
-    .map(|_| ())
-    .map_err(|e| e.to_string())
-}
 
 pub async fn resolve_member(st: &AppState, sesi_id: i64, operator: &str) -> Result<Value, String> {
     let _guard = st.write().await;
@@ -193,11 +186,22 @@ pub async fn resolve_member(st: &AppState, sesi_id: i64, operator: &str) -> Resu
     } else {
         sesi.sisa_menit_saat_mati
     };
-    member_repo::set_waktu_tersimpan(&st.pool, member_id, saldo)
+    let user_id = crate::services::transaksi::user_id(&st.pool, operator).await;
+    let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
+    sqlx::query("UPDATE member SET waktu_tersimpan = ? WHERE id = ?")
+        .bind(saldo)
+        .bind(member_id)
+        .execute(&mut *tx)
         .await
         .map_err(|e| e.to_string())?;
-    tandai_resolved(st, sesi.id, now).await?;
-    let user_id = crate::services::transaksi::user_id(&st.pool, operator).await;
+    sqlx::query(
+        "UPDATE sesi SET is_blackout_resolved = 1, waktu_resolved = ? WHERE id = ?",
+    )
+    .bind(db_str(now))
+    .bind(sesi.id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| e.to_string())?;
     sqlx::query(
         "INSERT INTO transaksi (sesi_id, member_id, user_id, jenis, jumlah, menit, keterangan, \
          dibuat_pada, is_refunded, operator) VALUES (?, ?, ?, 'blackout_refund', 0, ?, ?, ?, 0, ?)",
@@ -209,9 +213,10 @@ pub async fn resolve_member(st: &AppState, sesi_id: i64, operator: &str) -> Resu
     .bind(format!("Refund blackout: {saldo}m ke {}", member.username))
     .bind(db_str(now))
     .bind(operator)
-    .execute(&st.pool)
+    .execute(&mut *tx)
     .await
     .map_err(|e| e.to_string())?;
+    tx.commit().await.map_err(|e| e.to_string())?;
     logger::audit_json(
         operator,
         "BLACKOUT_RESOLVE_MEMBER",
@@ -368,8 +373,16 @@ pub async fn resolve_tutup(st: &AppState, sesi_id: i64, operator: &str) -> Resul
     }
     let now = now_db();
     let target = label(&sesi);
-    tandai_resolved(st, sesi.id, now).await?;
     let user_id = crate::services::transaksi::user_id(&st.pool, operator).await;
+    let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
+    sqlx::query(
+        "UPDATE sesi SET is_blackout_resolved = 1, waktu_resolved = ? WHERE id = ?",
+    )
+    .bind(db_str(now))
+    .bind(sesi.id)
+    .execute(&mut *tx)
+    .await
+    .map_err(|e| e.to_string())?;
     sqlx::query(
         "INSERT INTO transaksi (sesi_id, member_id, user_id, jenis, jumlah, menit, keterangan, \
          dibuat_pada, is_refunded, operator) VALUES (?, ?, ?, 'tutup_sesi', 0, 0, ?, ?, 0, ?)",
@@ -382,9 +395,10 @@ pub async fn resolve_tutup(st: &AppState, sesi_id: i64, operator: &str) -> Resul
     ))
     .bind(db_str(now))
     .bind(operator)
-    .execute(&st.pool)
+    .execute(&mut *tx)
     .await
     .map_err(|e| e.to_string())?;
+    tx.commit().await.map_err(|e| e.to_string())?;
     logger::audit_json(
         operator,
         "BLACKOUT_RESOLVE_TUTUP",
@@ -409,7 +423,8 @@ pub async fn clear_resolved(
     }
     let hari = chrono::NaiveDate::parse_from_str(raw, "%Y-%m-%d")
         .map_err(|_| "Format tanggal tidak valid".to_string())?;
-    let (start, end) = day_range_utc(hari, &st.cfg.timezone);
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    let (start, end) = day_range_utc(hari, &tz);
     let jumlah = repo::delete_resolved_blackout(&st.pool, &start, &end)
         .await
         .map_err(|e| e.to_string())?;
@@ -506,6 +521,7 @@ pub async fn force_all_and_detect(st: &AppState, operator: &str) -> Result<(i64,
 }
 
 /// Tanggal hari ini menurut zona waktu setting (dipakai route `/clear` default).
-pub fn hari_ini(st: &AppState) -> String {
-    today_local(&st.cfg.timezone).format("%Y-%m-%d").to_string()
+pub async fn hari_ini(st: &AppState) -> String {
+    let tz = crate::services::settings::settings_service::active_timezone(st).await;
+    today_local(&tz).format("%Y-%m-%d").to_string()
 }
