@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">TMBilling TV</string>
+    <string name="station_default_title">Rental PlayStation</string>
+    <string name="locked_message">Sesi Belum Aktif. Silakan hubungi kasir atau login member.</string>
+    <string name="in_session_message">Sesi Sedang Berjalan</string>
+    <string name="admin_pin_hint">Masukkan PIN Admin</string>
+    <string name="accessibility_description">Layanan Kiosk TMBilling untuk mengamankan navigasi tombol Android TV.</string>
+</resources>
