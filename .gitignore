@@ -638,3 +638,10 @@ tests/e2e/mcp/results/
 /WarnetAgent/TMBilling_Uninstaller/target/
 /WarnetAgent/TMBilling/harness_out.txt
 /WarnetAgent/Deploy/HardwareHelper.sys
+
+# Ruflo local secrets and runtime data
+.env.local
+.env.*.local
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/

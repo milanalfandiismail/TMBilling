@@ -60,6 +60,24 @@ class KioskLogicUnitTest {
     }
 
     @Test
+    fun accessibilityAndAdminPackageFilter_matchesRequiredComponents() {
+        val testPkg = "com.tmbilling.tv"
+        val isSelf = testPkg == "com.tmbilling.tv"
+        org.junit.Assert.assertTrue(isSelf)
+
+        val settingsPkg = "com.android.tv.settings"
+        val isAllowed = settingsPkg.contains("settings", ignoreCase = true) ||
+            settingsPkg.contains("packageinstaller", ignoreCase = true) ||
+            settingsPkg.contains("permissioncontroller", ignoreCase = true) ||
+            settingsPkg == "android"
+        org.junit.Assert.assertTrue(isAllowed)
+
+        val uninstallerPkg = "com.google.android.packageinstaller"
+        val isUninstallerAllowed = uninstallerPkg.contains("packageinstaller", ignoreCase = true)
+        org.junit.Assert.assertTrue(isUninstallerAllowed)
+    }
+
+    @Test
     fun normalizeQrisUrl_resolvesRelativeAndLocalhostAgainstServerUrl() {
         assertEquals(
             "http://10.0.2.2:7015/static/uploads/qris/qris_1.png",

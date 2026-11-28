@@ -277,20 +277,54 @@ class KioskActivity : ComponentActivity() {
 
     private fun openAccessibilitySettings() {
         KioskAccessibilityService.allowTemporarySystemPackage = true
+        var opened = false
+        // 1. Coba ACTION_ACCESSIBILITY_SETTINGS standar
         try {
-            startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
-        } catch (e: Exception) {
-            try {
-                startActivity(Intent(android.provider.Settings.ACTION_SETTINGS))
-            } catch (e2: Exception) {
-                Toast.makeText(this, "Buka Pengaturan > Aksesibilitas > TMBilling TV", Toast.LENGTH_LONG).show()
+            val intent = Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
+            startActivity(intent)
+            opened = true
+        } catch (_: Exception) {
+        }
+
+        // 2. Fallback khusus Android TV Leanback Settings jika ada
+        if (!opened) {
+            try {
+                val tvSettingsIntent = Intent("android.settings.ACCESSIBILITY_SETTINGS").apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(tvSettingsIntent)
+                opened = true
+            } catch (_: Exception) {
+            }
+        }
+
+        // 3. Fallback ke Pengaturan Sistem TV Umum
+        if (!opened) {
+            try {
+                startActivity(Intent(android.provider.Settings.ACTION_SETTINGS).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                })
+                opened = true
+            } catch (e2: Exception) {
+                Toast.makeText(this, "Gagal membuka pengaturan: ${e2.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        if (opened) {
+            Toast.makeText(
+                this,
+                "Buka menu 'Aksesibilitas' lalu aktifkan layanan 'TMBilling TV'",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
     private fun requestSetDefaultLauncher() {
         KioskAccessibilityService.allowTemporarySystemPackage = true
         try {
+            // Android 10+ (API 29+): Gunakan RoleManager resmi untuk ROLE_HOME
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val roleManager = getSystemService(android.app.role.RoleManager::class.java)
                 if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_HOME)) {
@@ -299,26 +333,83 @@ class KioskActivity : ComponentActivity() {
                         startActivity(intent)
                         return
                     } else {
-                        Toast.makeText(this, "TMBilling sudah menjadi Launcher Utama!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "TMBilling sudah menjadi Launcher Utama TV!", Toast.LENGTH_SHORT).show()
                         return
                     }
                 }
             }
 
-            // Fallback untuk Android TV: buka pengaturan Aplikasi Default / Home
+            // Fallback 1: ACTION_HOME_SETTINGS
             try {
                 startActivity(Intent(android.provider.Settings.ACTION_HOME_SETTINGS))
                 return
             } catch (_: Exception) {
             }
 
-            val homeIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
-            startActivity(Intent.createChooser(homeIntent, "Pilih TMBilling sebagai Home"))
+            // Fallback 2: Munculkan chooser Home Launcher
+            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_HOME)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            startActivity(Intent.createChooser(homeIntent, "Pilih TMBilling TV sebagai Beranda / Home TV"))
         } catch (e: Exception) {
             try {
                 startActivity(Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
             } catch (e2: Exception) {
-                Toast.makeText(this, "Silakan pilih Home Launcher di Pengaturan TV", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Silakan pilih TMBilling di Pengaturan > Aplikasi Default > Beranda TV", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun safeUninstallApp() {
+        KioskAccessibilityService.allowTemporarySystemPackage = true
+        try {
+            // Lepas Device Admin jika aktif agar OS mengizinkan uninstallation tanpa error/silent block
+            if (::devicePolicyManager.isInitialized && devicePolicyManager.isAdminActive(adminComponent)) {
+                devicePolicyManager.removeActiveAdmin(adminComponent)
+            }
+        } catch (e: Exception) {
+            // Lanjutkan percobaan uninstaller
+        }
+
+        var started = false
+        // 1. Coba ACTION_UNINSTALL_PACKAGE resmi
+        try {
+            @Suppress("DEPRECATION")
+            val uninstallIntent = Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
+                data = android.net.Uri.parse("package:$packageName")
+                putExtra(Intent.EXTRA_RETURN_RESULT, true)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            startActivity(uninstallIntent)
+            started = true
+        } catch (_: Exception) {
+        }
+
+        // 2. Fallback ACTION_DELETE
+        if (!started) {
+            try {
+                val deleteIntent = Intent(Intent.ACTION_DELETE).apply {
+                    data = android.net.Uri.parse("package:$packageName")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(deleteIntent)
+                started = true
+            } catch (_: Exception) {
+            }
+        }
+
+        // 3. Fallback terakhir: Buka App Info halaman detail pengaturan (user bisa klik Hapus Instalasi di situ)
+        if (!started) {
+            try {
+                val detailsIntent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = android.net.Uri.parse("package:$packageName")
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(detailsIntent)
+                Toast.makeText(this, "Pilih 'Copot Pemasangan' pada halaman pengaturan aplikasi ini", Toast.LENGTH_LONG).show()
+            } catch (eFinal: Exception) {
+                Toast.makeText(this, "Gagal membuka menu uninstall: ${eFinal.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -896,15 +987,7 @@ class KioskActivity : ComponentActivity() {
                                 TvButton(
                                     text = "🗑️ Copot / Uninstall Aplikasi",
                                     onClick = {
-                                        try {
-                                            KioskAccessibilityService.allowTemporarySystemPackage = true
-                                            val uninstallIntent = Intent(Intent.ACTION_DELETE).apply {
-                                                data = android.net.Uri.parse("package:$packageName")
-                                            }
-                                            startActivity(uninstallIntent)
-                                        } catch (e: Exception) {
-                                            Toast.makeText(this@KioskActivity, "Gagal membuka uninstaller: ${e.message}", Toast.LENGTH_SHORT).show()
-                                        }
+                                        safeUninstallApp()
                                     },
                                     isSecondary = true,
                                     modifier = Modifier.fillMaxWidth()
