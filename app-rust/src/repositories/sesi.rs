@@ -158,9 +158,17 @@ pub async fn count_by_date(pool: &SqlitePool, tanggal: &str, tz_name: &str) -> s
 pub async fn distinct_tanggal(pool: &SqlitePool, tz_name: &str) -> sqlx::Result<Vec<String>> {
     let mod_str = crate::utils::time::sqlite_tz_modifier(tz_name);
     sqlx::query_scalar(
-        "SELECT DISTINCT date(mulai_pada, ?) AS t FROM sesi WHERE mulai_pada IS NOT NULL ORDER BY t DESC",
+        "SELECT DISTINCT t FROM (
+            SELECT date(mulai_pada, ?) AS t FROM sesi WHERE mulai_pada IS NOT NULL
+            UNION
+            SELECT date(dibuat_pada, ?) AS t FROM transaksi WHERE dibuat_pada IS NOT NULL
+            UNION
+            SELECT date(tanggal, ?) AS t FROM transaksi_menu WHERE tanggal IS NOT NULL
+        ) WHERE t IS NOT NULL ORDER BY t DESC",
     )
-    .bind(mod_str)
+    .bind(&mod_str)
+    .bind(&mod_str)
+    .bind(&mod_str)
     .fetch_all(pool)
     .await
 }

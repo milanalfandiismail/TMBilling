@@ -96,6 +96,22 @@ pub async fn billing(
         trx_repo::history_paginated(&st.pool, t, kasir_id, metode, q, per, offset, &tz).await?;
     let breakdown = trx_repo::breakdown_metode(&st.pool, t, kasir_id, metode, q, &tz).await?;
 
+    let mut breakdown_map = serde_json::Map::new();
+    for (m, n) in &breakdown {
+        let gross_m = trx_repo::total_pemasukan(&st.pool, t, kasir_id, Some(m.as_str()), &tz).await.unwrap_or(0);
+        let refund_m = trx_repo::total_refund(&st.pool, t, kasir_id, Some(m.as_str()), &tz).await.unwrap_or(0);
+        breakdown_map.insert(
+            m.clone(),
+            json!({
+                "count": 0,
+                "total": *n,
+                "gross": gross_m,
+                "refund": refund_m,
+                "refund_count": 0,
+            }),
+        );
+    }
+
     let data: Vec<Value> = rows
         .iter()
         .map(|r| {
@@ -141,6 +157,8 @@ pub async fn billing(
         "has_prev": page > 1,
         "per_page": per,
         "total_pendapatan": gross - refund + kantin,
+        "total_pendapatan_billing": gross - refund,
+        "total_pendapatan_billing_gross": gross,
         "total_billing": gross - refund,
         "total_billing_gross": gross,
         "total_refund": refund,
@@ -148,6 +166,7 @@ pub async fn billing(
         "total_guest": guest,
         "total_member": member,
         "breakdown": breakdown.iter().map(|(m, n)| json!({"metode": m, "total": n})).collect::<Vec<_>>(),
+        "breakdown_metode": Value::Object(breakdown_map),
         "data": data,
     }))
 }

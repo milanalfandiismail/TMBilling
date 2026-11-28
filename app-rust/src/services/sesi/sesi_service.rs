@@ -944,11 +944,7 @@ pub async fn refund_paket_guest(
     }
     let sebelum = sesi.durasi_beli_menit;
     let dikurangi = durasi.min(sisa);
-    let refund_jumlah = if durasi > 0 {
-        -((transaksi.jumlah * dikurangi) / durasi)
-    } else {
-        0
-    };
+    let refund_jumlah = -transaksi.jumlah;
     let no_nota = nota::generate_nota(&st.pool, &crate::services::settings::settings_service::active_timezone(st).await).await;
     let user_id = nota::user_id(&st.pool, operator).await;
     let nama_paket = transaksi
