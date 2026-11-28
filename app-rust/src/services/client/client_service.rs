@@ -293,12 +293,13 @@ pub async fn status(
             .execute(&st.pool)
             .await
             .map_err(|e| e.to_string())?;
+
+            if sesi.member_id.is_some() {
+                sesi_service::sync_waktu_member(st, &sesi).await;
+            }
         }
 
-        let sisa = {
-            let _guard = st.write().await;
-            sesi_service::sync_waktu_member(st, &sesi).await
-        };
+        let sisa = sesi.sisa_menit(now);
         let sisa_detik = sesi.sisa_detik(now);
         if sisa <= 0 {
             let _ = sesi_service::tutup(st, sesi.id, "system").await;

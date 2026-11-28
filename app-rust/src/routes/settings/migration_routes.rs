@@ -236,8 +236,9 @@ pub async fn update_github(State(st): State<Arc<AppState>>, k: Kasir) -> Respons
         let _ = std::fs::create_dir_all(parent);
     }
     let out_file_str = path.to_string_lossy().replace('\'', "''");
+    let safe_url = url.replace('\'', "''");
     let cmd = format!(
-        "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '{url}' -OutFile '{out_file_str}'"
+        "$ProgressPreference='SilentlyContinue'; Invoke-WebRequest -UseBasicParsing -Uri '{safe_url}' -OutFile '{out_file_str}'"
     );
     let hasil = ps(&cmd)
         .and_then(|_| std::fs::read(&path).map_err(|e| e.to_string()))

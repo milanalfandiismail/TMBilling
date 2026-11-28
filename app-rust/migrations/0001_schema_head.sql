@@ -41,3 +41,6 @@ CREATE INDEX ix_transaksi_jenis_dibuat ON transaksi (jenis, dibuat_pada);
 CREATE INDEX ix_transaksi_menu_no_nota ON transaksi_menu (no_nota);
 CREATE INDEX ix_shift_record_kasir_mulai ON shift_record (kasir_id, waktu_mulai);
 CREATE INDEX ix_maintenance_ticket_pc_status ON maintenance_ticket (pc_id, status);
+CREATE INDEX ix_transaksi_member_dibuat ON transaksi (member_id, dibuat_pada);
+CREATE INDEX ix_member_grup_id ON member (grup_id);
+CREATE INDEX ix_sesi_sesi_asal_id ON sesi (sesi_asal_id);

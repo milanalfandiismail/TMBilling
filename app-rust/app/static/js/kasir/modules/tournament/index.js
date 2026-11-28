@@ -107,6 +107,16 @@ const Tournament = {
 
             grid.innerHTML = tournaments.map(t => {
                 const isSelesai = t.status === 'selesai';
+                const escapeHtml = (str) => {
+                    if (str === null || str === undefined) return '';
+                    return String(str)
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                };
+
                 const statusColor = isSelesai 
                     ? 'bg-neutral-800 text-neutral-400' 
                     : 'bg-emerald-950/40 text-emerald-400 border border-emerald-800/30';
@@ -115,12 +125,12 @@ const Tournament = {
                     <div class="bg-[#0a0a0a] border border-[#2a2a2a] rounded-xl p-5 hover:border-neutral-500 transition-all flex flex-col justify-between h-[180px]">
                         <div>
                             <div class="flex items-start justify-between gap-3">
-                                <h3 class="text-xs lg:text-base font-bold text-neutral-100 truncate flex-1">${t.nama}</h3>
+                                <h3 class="text-xs lg:text-base font-bold text-neutral-100 truncate flex-1">${escapeHtml(t.nama)}</h3>
                                 <span class="px-2 py-0.5 rounded text-[8px] lg:text-[10px] font-bold tracking-wider uppercase ${statusColor}">
-                                    ${t.status}
+                                    ${escapeHtml(t.status)}
                                 </span>
                             </div>
-                            <p class="text-[10px] lg:text-sm text-neutral-500 mt-2 line-clamp-2">${t.deskripsi || 'Tidak ada deskripsi.'}</p>
+                            <p class="text-[10px] lg:text-sm text-neutral-500 mt-2 line-clamp-2">${escapeHtml(t.deskripsi || 'Tidak ada deskripsi.')}</p>
                         </div>
                         <div class="flex items-center justify-between mt-4 border-t border-[#171717]/80 pt-3">
                             <span class="text-[10px] lg:text-xs text-neutral-500 font-mono">${t.teams_count} Tim Terdaftar</span>

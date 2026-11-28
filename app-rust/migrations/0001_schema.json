@@ -1655,6 +1655,18 @@
   {
    "name": "ix_maintenance_ticket_pc_status",
    "sql": "CREATE INDEX ix_maintenance_ticket_pc_status ON maintenance_ticket (pc_id, status)"
+  },
+  {
+   "name": "ix_transaksi_member_dibuat",
+   "sql": "CREATE INDEX ix_transaksi_member_dibuat ON transaksi (member_id, dibuat_pada)"
+  },
+  {
+   "name": "ix_member_grup_id",
+   "sql": "CREATE INDEX ix_member_grup_id ON member (grup_id)"
+  },
+  {
+   "name": "ix_sesi_sesi_asal_id",
+   "sql": "CREATE INDEX ix_sesi_sesi_asal_id ON sesi (sesi_asal_id)"
   }
  ]
 }

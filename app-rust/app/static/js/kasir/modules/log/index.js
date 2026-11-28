@@ -1,4 +1,14 @@
 const LogFormatter = {
+    escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    },
+
     normalize(detailJson) {
         if (!detailJson) return null;
         if (typeof detailJson === 'string') {
@@ -61,8 +71,8 @@ const LogFormatter = {
                 const val = this.formatValue(item.key, data[item.key]);
                 itemsHtml += `
                     <div class="flex justify-between items-center py-1 border-b border-[#1c1c1c]/50 text-xs">
-                        <span class="text-neutral-500 font-semibold uppercase tracking-wider">${item.label}</span>
-                        <span class="text-neutral-200 font-mono font-bold">${val}</span>
+                        <span class="text-neutral-500 font-semibold uppercase tracking-wider">${this.escapeHtml(item.label)}</span>
+                        <span class="text-neutral-200 font-mono font-bold">${this.escapeHtml(val)}</span>
                     </div>`;
             }
         });
@@ -73,8 +83,8 @@ const LogFormatter = {
                 const val = this.formatValue(k, data[k]);
                 itemsHtml += `
                     <div class="flex justify-between items-center py-1 border-b border-[#1c1c1c]/50 text-xs">
-                        <span class="text-neutral-500 font-semibold uppercase tracking-wider">${label}</span>
-                        <span class="text-neutral-200 font-mono font-bold">${val}</span>
+                        <span class="text-neutral-500 font-semibold uppercase tracking-wider">${this.escapeHtml(label)}</span>
+                        <span class="text-neutral-200 font-mono font-bold">${this.escapeHtml(val)}</span>
                     </div>`;
             }
         });

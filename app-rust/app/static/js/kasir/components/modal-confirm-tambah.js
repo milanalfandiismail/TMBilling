@@ -1,13 +1,23 @@
 const ModalConfirmTambah = {
     open({ title = "Konfirmasi Tambah Waktu", dataLines, onConfirm, onCancel }) {
+        const escapeHtml = (str) => {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        };
+
         const rows = dataLines.map(line => {
             if (line.separator) {
                 return `<div class="border-t border-[#262626] my-2.5"></div>`;
             }
             return `
                 <div class="flex justify-between items-start gap-3 py-1.5 min-w-0">
-                    <span class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider shrink-0 mt-0.5">${line.label}</span>
-                    <span class="text-xs lg:max-xl:text-xs xl:text-base font-mono font-bold text-right break-words max-w-[70%] min-w-0 ${line.highlight ? 'text-emerald-400' : 'text-neutral-200'}">${line.value}</span>
+                    <span class="text-[10px] lg:max-xl:text-xs xl:text-sm text-neutral-400 font-bold uppercase tracking-wider shrink-0 mt-0.5">${escapeHtml(line.label)}</span>
+                    <span class="text-xs lg:max-xl:text-xs xl:text-base font-mono font-bold text-right break-words max-w-[70%] min-w-0 ${line.highlight ? 'text-emerald-400' : 'text-neutral-200'}">${escapeHtml(line.value)}</span>
                 </div>
             `;
         }).join('');

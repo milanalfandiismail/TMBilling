@@ -409,7 +409,7 @@ async fn tambah_satu(
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Member tidak ditemukan")?;
-        let tambah_hari = paket.kadaluarsa_hari.unwrap_or(0) * qty;
+        let tambah_hari = paket.kadaluarsa_hari.unwrap_or(30) * qty;
         let baru = member.waktu_tersimpan + total_menit;
         let kadaluarsa = match member.kadaluarsa_pada.as_deref().and_then(parse_dt) {
             Some(exp) if member.waktu_tersimpan > 0 => exp.max(now_db()) + Duration::days(tambah_hari),

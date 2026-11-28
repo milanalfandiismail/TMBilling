@@ -100,22 +100,47 @@ const Modal = {
         `;
 
         // Keyboard Handler khusus tombol 'E'
+        let isExecuting = false;
         const handleKeyDown = async (e) => {
             // Abaikan jika user sedang mengetik di input text / textarea
             if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
 
             if (e.key.toLowerCase() === 'e') {
                 e.preventDefault();
+                if (isExecuting) return;
                 if (!checkedOk()) {
                     document.getElementById('modal-confirm-check')?.focus();
                     return;
                 }
-                if (onConfirm && typeof onConfirm === 'function') {
-                    const res = await onConfirm();
-                    if (res === false) return;
+                const confirmBtn = document.getElementById('modal-confirm-btn');
+                if (confirmBtn?.disabled) return;
+                isExecuting = true;
+                if (confirmBtn) {
+                    confirmBtn.disabled = true;
+                    confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
                 }
-                cleanup();
-                this.closeModal();
+                try {
+                    if (onConfirm && typeof onConfirm === 'function') {
+                        const res = await onConfirm();
+                        if (res === false) {
+                            isExecuting = false;
+                            if (confirmBtn) {
+                                confirmBtn.disabled = false;
+                                confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                            }
+                            return;
+                        }
+                    }
+                    cleanup();
+                    this.closeModal();
+                } catch (err) {
+                    isExecuting = false;
+                    if (confirmBtn) {
+                        confirmBtn.disabled = false;
+                        confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                    throw err;
+                }
             }
         };
 
@@ -141,16 +166,32 @@ const Modal = {
                     checkBox.onchange = () => { confirmBtn.disabled = !checkBox.checked; };
                 }
                 confirmBtn.onclick = async () => {
+                    if (isExecuting) return;
                     if (!checkedOk()) {
                         document.getElementById('modal-confirm-check')?.focus();
                         return;
                     }
-                    if (onConfirm && typeof onConfirm === 'function') {
-                        const res = await onConfirm();
-                        if (res === false) return;
+                    isExecuting = true;
+                    confirmBtn.disabled = true;
+                    confirmBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                    try {
+                        if (onConfirm && typeof onConfirm === 'function') {
+                            const res = await onConfirm();
+                            if (res === false) {
+                                isExecuting = false;
+                                confirmBtn.disabled = false;
+                                confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                return;
+                            }
+                        }
+                        cleanup();
+                        this.closeModal();
+                    } catch (err) {
+                        isExecuting = false;
+                        confirmBtn.disabled = false;
+                        confirmBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        throw err;
                     }
-                    cleanup();
-                    this.closeModal();
                 };
             }
             if (cancelBtn) {

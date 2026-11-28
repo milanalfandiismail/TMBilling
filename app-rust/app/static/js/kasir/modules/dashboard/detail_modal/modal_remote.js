@@ -65,6 +65,10 @@ window.DashboardModalRemote = {
     waitForVncProxy: async function(pcId, timeoutMs = 30000, intervalMs = 700) {
         const deadline = Date.now() + timeoutMs;
         while (Date.now() < deadline) {
+            // Cek apakah modal masih terbuka dan elemen canvas/vnc masih ada di DOM
+            const screen = document.getElementById('modal-vnc-screen');
+            if (!screen) return null; // Modal sudah ditutup oleh user
+
             const st = await API.request('/api/v1/kasir/monitor/vnc_client/' + pcId + '/status');
             if (st && st.active && st.token) return st;
             await new Promise(r => setTimeout(r, intervalMs));
