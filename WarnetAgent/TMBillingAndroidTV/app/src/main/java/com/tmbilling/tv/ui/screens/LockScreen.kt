@@ -146,7 +146,7 @@ fun LockScreen(
                         border = androidx.compose.foundation.BorderStroke(1.dp, CardBorder)
                     ) {
                         Text(
-                            text = stationName.replace("Rental PS - ", "").replace("Meja ", "").trim().ifEmpty { "PS-01" },
+                            text = stationName.trim().ifEmpty { "PS-01" },
                             color = TextSecondary,
                             fontSize = 13.sp,
                             fontWeight = FontWeight.SemiBold,
@@ -229,7 +229,7 @@ fun LockScreen(
                     )
                 } else {
                     StandbyHeroCard(
-                        stationCode = stationName.replace("Rental PS - ", "").replace("Meja ", "").trim().ifEmpty { "PS-01" },
+                        stationCode = stationName.trim().ifEmpty { "PS-01" },
                         warnetConfig = warnetConfig,
                         onOpenSettings = onOpenSettings
                     )

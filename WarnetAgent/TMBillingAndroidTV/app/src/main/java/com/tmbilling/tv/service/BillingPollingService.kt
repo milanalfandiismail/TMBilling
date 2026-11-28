@@ -82,6 +82,12 @@ class BillingPollingService : Service() {
                     if (clientResponse != null && clientResponse.isSuccessful && clientResponse.body() != null) {
                         val body = clientResponse.body()!!
                         val isSessionActive = body.status == "aktif" || body.status == "terpakai"
+                        val stationCodeFromServer = body.pcKode?.trim()?.ifEmpty { null } ?: app.preferences.stationCode
+                        if (!body.pcKode.isNullOrBlank() && app.preferences.stationCode != body.pcKode) {
+                            app.preferences.stationCode = body.pcKode
+                            app.preferences.stationName = body.pcKode
+                        }
+
                         val sesiInfo = if (isSessionActive) {
                             ActiveSessionInfo(
                                 id = 1,
@@ -100,10 +106,10 @@ class BillingPollingService : Service() {
 
                         val stationStatus = StationStatusResponse(
                             id = app.preferences.stationId,
-                            nomor = body.pcKode ?: app.preferences.stationCode,
-                            nama = "Rental PS ${body.pcKode ?: app.preferences.stationCode}",
+                            nomor = stationCodeFromServer,
+                            nama = stationCodeFromServer,
                             status = if (isSessionActive) "terpakai" else "kosong",
-                            tipe = "PS5",
+                            tipe = "Console",
                             ipAddress = app.preferences.clientIp,
                             sesiAktif = sesiInfo,
                             serverTime = System.currentTimeMillis() / 1000

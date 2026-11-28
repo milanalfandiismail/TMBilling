@@ -642,6 +642,16 @@ tests/e2e/mcp/results/
 # Ruflo local secrets and runtime data
 .env.local
 .env.*.local
-.claude-flow/data/
-.claude-flow/logs/
-.claude-flow/sessions/
+.claude-flow/
+.swarm/
+
+# Android TV & Gradle build artifacts
+.gradle/
+**/build/
+**/app/build/
+local.properties
+*.apk
+*.aab
+*.dex
+.cxx/
+.externalNativeBuild/

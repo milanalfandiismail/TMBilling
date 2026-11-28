@@ -16,7 +16,7 @@ class AppPreferences(context: Context) {
         set(value) = prefs.edit().putString(KEY_SERVER_URL, value.trimEnd('/')).apply()
 
     var secretKey: String
-        get() = prefs.getString(KEY_SECRET_KEY, "TM2026") ?: "TM2026"
+        get() = prefs.getString(KEY_SECRET_KEY, "") ?: ""
         set(value) = prefs.edit().putString(KEY_SECRET_KEY, value).apply()
 
     var stationCode: String
@@ -36,7 +36,7 @@ class AppPreferences(context: Context) {
         set(value) = prefs.edit().putInt(KEY_STATION_ID, value).apply()
 
     var stationName: String
-        get() = prefs.getString(KEY_STATION_NAME, "Rental PS - Meja 1") ?: "Rental PS - Meja 1"
+        get() = prefs.getString(KEY_STATION_NAME, "PS-01") ?: "PS-01"
         set(value) = prefs.edit().putString(KEY_STATION_NAME, value).apply()
 
     var defaultHdmiInput: String

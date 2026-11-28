@@ -83,8 +83,10 @@ object ApiClient {
 
     suspend fun testConnection(
         testUrl: String,
-        testStationId: Int,
-        testSecretKey: String
+        testStationId: Int = 1,
+        testSecretKey: String,
+        testClientIp: String = "10.0.2.2",
+        testMacAddress: String = "02:00:00:00:00:01"
     ): Result<StationStatusResponse> = withContext(Dispatchers.IO) {
         try {
             val fullUrl = if (testUrl.endsWith("/")) testUrl else "$testUrl/"
@@ -113,52 +115,41 @@ object ApiClient {
             }
 
             // 2. Verifikasi Client API Key (X-Client-Key) ke TMBilling backend
-            if (testSecretKey.isNotBlank()) {
-                val jsonMediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
-                val requestBody = "{\"ip_address\":\"10.0.2.2\",\"mac_address\":\"02:00:00:00:00:01\",\"role\":\"client\"}".toRequestBody(jsonMediaType)
-                val authReq = Request.Builder()
-                    .url(fullUrl + "api/v1/public/client/status")
-                    .header("Accept", "application/json")
-                    .header("Content-Type", "application/json")
-                    .header("X-Client-Key", testSecretKey)
-                    .post(requestBody)
-                    .build()
-
-                val authResp = baseClient.newCall(authReq).execute()
-                if (authResp.code == 401) {
-                    return@withContext Result.failure(Exception("HTTP 401: Secret Key '$testSecretKey' ditolak server (Kunci Salah)!"))
-                }
-                if (!authResp.isSuccessful) {
-                    return@withContext Result.failure(Exception("HTTP ${authResp.code}: ${authResp.message}"))
-                }
-
-                val respBodyStr = authResp.body?.string() ?: ""
-                val json = com.google.gson.JsonParser.parseString(respBodyStr).asJsonObject
-                val pcKode = if (json.has("pc_kode") && !json.get("pc_kode").isJsonNull) json.get("pc_kode").asString else "PS-01"
-                val serverStatus = if (json.has("status") && !json.get("status").isJsonNull) json.get("status").asString else "kosong"
-
-                return@withContext Result.success(
-                    StationStatusResponse(
-                        id = testStationId,
-                        nomor = pcKode,
-                        nama = "Rental PS $pcKode",
-                        status = serverStatus,
-                        tipe = "PS5",
-                        ipAddress = "10.0.2.2",
-                        sesiAktif = null,
-                        serverTime = System.currentTimeMillis() / 1000
-                    )
-                )
+            if (testSecretKey.isBlank()) {
+                return@withContext Result.failure(Exception("Client Key (Secret Key) belum diisi! Silakan masukkan Client Key di pengaturan."))
             }
+
+            val jsonMediaType = "application/json; charset=utf-8".toMediaTypeOrNull()
+            val requestBody = "{\"ip_address\":\"$testClientIp\",\"mac_address\":\"$testMacAddress\",\"role\":\"client\"}".toRequestBody(jsonMediaType)
+            val authReq = Request.Builder()
+                .url(fullUrl + "api/v1/public/client/status")
+                .header("Accept", "application/json")
+                .header("Content-Type", "application/json")
+                .header("X-Client-Key", testSecretKey.trim())
+                .post(requestBody)
+                .build()
+
+            val authResp = baseClient.newCall(authReq).execute()
+            if (authResp.code == 401) {
+                return@withContext Result.failure(Exception("HTTP 401: Client Key ditolak server (Kunci Salah)!"))
+            }
+            if (!authResp.isSuccessful) {
+                return@withContext Result.failure(Exception("HTTP ${authResp.code}: ${authResp.message}"))
+            }
+
+            val respBodyStr = authResp.body?.string() ?: ""
+            val json = com.google.gson.JsonParser.parseString(respBodyStr).asJsonObject
+            val pcKode = if (json.has("pc_kode") && !json.get("pc_kode").isJsonNull) json.get("pc_kode").asString else "PS-01"
+            val serverStatus = if (json.has("status") && !json.get("status").isJsonNull) json.get("status").asString else "kosong"
 
             Result.success(
                 StationStatusResponse(
                     id = testStationId,
-                    nomor = "PS-$testStationId",
-                    nama = "Rental PS $testStationId",
-                    status = "online",
-                    tipe = "PS5",
-                    ipAddress = "10.0.2.2",
+                    nomor = pcKode,
+                    nama = pcKode,
+                    status = serverStatus,
+                    tipe = "Console",
+                    ipAddress = testClientIp,
                     sesiAktif = null,
                     serverTime = System.currentTimeMillis() / 1000
                 )

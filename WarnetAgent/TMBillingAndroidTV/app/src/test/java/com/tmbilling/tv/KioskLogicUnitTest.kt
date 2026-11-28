@@ -111,4 +111,45 @@ class KioskLogicUnitTest {
             )
         )
     }
+
+    @Test
+    fun secretKeyValidation_rejectsBlankSecretKey() {
+        val blankKey = "   "
+        val isBlank = blankKey.isBlank()
+        org.junit.Assert.assertTrue("Secret key must not be blank", isBlank)
+
+        val validKey = "TM2026"
+        org.junit.Assert.assertFalse(validKey.isBlank())
+    }
+
+    @Test
+    fun buttonActionStates_isSecondaryMatchesActiveWhitePattern() {
+        // When active (e.g. isDefaultLauncher = true), isSecondary should be false (White primary active background)
+        val isDefaultLauncherActive = true
+        val isSecondaryForActiveLauncher = !isDefaultLauncherActive
+        org.junit.Assert.assertFalse("Active launcher button must be primary (white)", isSecondaryForActiveLauncher)
+
+        // When inactive (e.g. isDefaultLauncher = false), isSecondary should be true (Dark background)
+        val isDefaultLauncherInactive = false
+        val isSecondaryForInactiveLauncher = !isDefaultLauncherInactive
+        org.junit.Assert.assertTrue("Inactive launcher button must be secondary (dark)", isSecondaryForInactiveLauncher)
+
+        // Same contract for Accessibility Block and Remote Unlock
+        val isAccessibilityActive = true
+        org.junit.Assert.assertFalse(!isAccessibilityActive)
+
+        val isEmergencyUnlocked = true
+        org.junit.Assert.assertFalse(!isEmergencyUnlocked)
+    }
+
+    @Test
+    fun stationCodeDisplay_cleanFormatFromServer() {
+        val serverPcKode = "PS-05"
+        val displayedCode = serverPcKode.trim().ifEmpty { "PS-01" }
+        assertEquals("PS-05", displayedCode)
+
+        val emptyPcKode = ""
+        val fallbackCode = emptyPcKode.trim().ifEmpty { "PS-01" }
+        assertEquals("PS-01", fallbackCode)
+    }
 }

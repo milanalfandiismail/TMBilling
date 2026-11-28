@@ -13,21 +13,38 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -51,6 +68,18 @@ class KioskActivity : ComponentActivity() {
     private lateinit var adminComponent: ComponentName
     private val isDefaultLauncherFlow = MutableStateFlow(false)
     private val isAccessibilityEnabledFlow = MutableStateFlow(false)
+
+    private val launcherRoleResult = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { _ ->
+        val isNowDefault = checkIsDefaultLauncher()
+        isDefaultLauncherFlow.value = isNowDefault
+        if (isNowDefault) {
+            Toast.makeText(this, "✅ TMBilling TV berhasil dijadikan Launcher Utama TV!", Toast.LENGTH_LONG).show()
+        } else {
+            Toast.makeText(this, "ℹ️ Pemilihan Launcher Utama dibatalkan atau belum aktif.", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     companion object {
         const val EXTRA_OPEN_SETTINGS = "EXTRA_OPEN_SETTINGS"
@@ -323,6 +352,12 @@ class KioskActivity : ComponentActivity() {
 
     private fun requestSetDefaultLauncher() {
         KioskAccessibilityService.allowTemporarySystemPackage = true
+        val isCurrentlyDefault = checkIsDefaultLauncher()
+        if (isCurrentlyDefault) {
+            Toast.makeText(this, "✅ TMBilling sudah menjadi Launcher Utama TV!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
         try {
             // Android 10+ (API 29+): Gunakan RoleManager resmi untuk ROLE_HOME
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -330,10 +365,10 @@ class KioskActivity : ComponentActivity() {
                 if (roleManager != null && roleManager.isRoleAvailable(android.app.role.RoleManager.ROLE_HOME)) {
                     if (!roleManager.isRoleHeld(android.app.role.RoleManager.ROLE_HOME)) {
                         val intent = roleManager.createRequestRoleIntent(android.app.role.RoleManager.ROLE_HOME)
-                        startActivity(intent)
+                        launcherRoleResult.launch(intent)
                         return
                     } else {
-                        Toast.makeText(this, "TMBilling sudah menjadi Launcher Utama TV!", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "✅ TMBilling sudah menjadi Launcher Utama TV!", Toast.LENGTH_SHORT).show()
                         return
                     }
                 }
@@ -341,7 +376,7 @@ class KioskActivity : ComponentActivity() {
 
             // Fallback 1: ACTION_HOME_SETTINGS
             try {
-                startActivity(Intent(android.provider.Settings.ACTION_HOME_SETTINGS))
+                launcherRoleResult.launch(Intent(android.provider.Settings.ACTION_HOME_SETTINGS))
                 return
             } catch (_: Exception) {
             }
@@ -351,67 +386,111 @@ class KioskActivity : ComponentActivity() {
                 addCategory(Intent.CATEGORY_HOME)
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK
             }
-            startActivity(Intent.createChooser(homeIntent, "Pilih TMBilling TV sebagai Beranda / Home TV"))
+            launcherRoleResult.launch(Intent.createChooser(homeIntent, "Pilih TMBilling TV sebagai Beranda / Home TV"))
         } catch (e: Exception) {
             try {
-                startActivity(Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
+                launcherRoleResult.launch(Intent(android.provider.Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
             } catch (e2: Exception) {
                 Toast.makeText(this, "Silakan pilih TMBilling di Pengaturan > Aplikasi Default > Beranda TV", Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    private fun safeUninstallApp() {
-        KioskAccessibilityService.allowTemporarySystemPackage = true
-        try {
-            // Lepas Device Admin jika aktif agar OS mengizinkan uninstallation tanpa error/silent block
-            if (::devicePolicyManager.isInitialized && devicePolicyManager.isAdminActive(adminComponent)) {
-                devicePolicyManager.removeActiveAdmin(adminComponent)
-            }
-        } catch (e: Exception) {
-            // Lanjutkan percobaan uninstaller
-        }
+    @Composable
+    fun TvOutlinedTextField(
+        value: String,
+        onValueChange: (String) -> Unit,
+        label: String,
+        modifier: Modifier = Modifier,
+        placeholder: String = "",
+        visualTransformation: VisualTransformation = VisualTransformation.None,
+        keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions: KeyboardActions = KeyboardActions.Default,
+        singleLine: Boolean = true
+    ) {
+        var isEditing by remember { mutableStateOf(false) }
+        var isFocused by remember { mutableStateOf(false) }
+        val keyboardController = LocalSoftwareKeyboardController.current
 
-        var started = false
-        // 1. Coba ACTION_UNINSTALL_PACKAGE resmi
-        try {
-            @Suppress("DEPRECATION")
-            val uninstallIntent = Intent(Intent.ACTION_UNINSTALL_PACKAGE).apply {
-                data = android.net.Uri.parse("package:$packageName")
-                putExtra(Intent.EXTRA_RETURN_RESULT, true)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            startActivity(uninstallIntent)
-            started = true
-        } catch (_: Exception) {
-        }
-
-        // 2. Fallback ACTION_DELETE
-        if (!started) {
-            try {
-                val deleteIntent = Intent(Intent.ACTION_DELETE).apply {
-                    data = android.net.Uri.parse("package:$packageName")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        OutlinedTextField(
+            value = value,
+            onValueChange = onValueChange,
+            readOnly = !isEditing,
+            label = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(label, fontSize = 11.sp)
+                    if (isFocused && !isEditing) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "• Tekan [OK] utk ketik",
+                            color = EmeraldAccent,
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
-                startActivity(deleteIntent)
-                started = true
-            } catch (_: Exception) {
-            }
-        }
-
-        // 3. Fallback terakhir: Buka App Info halaman detail pengaturan (user bisa klik Hapus Instalasi di situ)
-        if (!started) {
-            try {
-                val detailsIntent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                    data = android.net.Uri.parse("package:$packageName")
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            },
+            placeholder = {
+                if (placeholder.isNotEmpty()) {
+                    Text(placeholder, color = TextMuted, fontSize = 12.sp)
                 }
-                startActivity(detailsIntent)
-                Toast.makeText(this, "Pilih 'Copot Pemasangan' pada halaman pengaturan aplikasi ini", Toast.LENGTH_LONG).show()
-            } catch (eFinal: Exception) {
-                Toast.makeText(this, "Gagal membuka menu uninstall: ${eFinal.message}", Toast.LENGTH_SHORT).show()
-            }
-        }
+            },
+            singleLine = singleLine,
+            visualTransformation = visualTransformation,
+            keyboardOptions = keyboardOptions,
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    isEditing = false
+                    keyboardController?.hide()
+                    keyboardActions.onDone?.invoke(this)
+                }
+            ),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedContainerColor = CardSurface,
+                unfocusedContainerColor = CardSurface,
+                focusedBorderColor = if (isEditing) EmeraldAccent else Color.White,
+                unfocusedBorderColor = CardBorder,
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedLabelColor = if (isEditing) EmeraldAccent else Color.White,
+                unfocusedLabelColor = TextSecondary,
+                cursorColor = EmeraldAccent
+            ),
+            modifier = modifier
+                .onFocusChanged { state ->
+                    isFocused = state.isFocused
+                    if (!state.isFocused) {
+                        isEditing = false
+                        keyboardController?.hide()
+                    }
+                }
+                .onPreviewKeyEvent { event ->
+                    if (event.nativeKeyEvent.action == KeyEvent.ACTION_UP) {
+                        val code = event.nativeKeyEvent.keyCode
+                        if (code == KeyEvent.KEYCODE_DPAD_CENTER || code == KeyEvent.KEYCODE_ENTER || code == KeyEvent.KEYCODE_NUMPAD_ENTER) {
+                            if (!isEditing) {
+                                isEditing = true
+                                keyboardController?.show()
+                                true
+                            } else {
+                                false
+                            }
+                        } else if (code == KeyEvent.KEYCODE_BACK) {
+                            if (isEditing) {
+                                isEditing = false
+                                keyboardController?.hide()
+                                true
+                            } else {
+                                false
+                            }
+                        } else {
+                            false
+                        }
+                    } else {
+                        false
+                    }
+                }
+        )
     }
 
     @Composable
@@ -426,11 +505,10 @@ class KioskActivity : ComponentActivity() {
         var isUnlocked by remember { mutableStateOf(isInitialSetup) }
 
         var serverUrl by remember { mutableStateOf(prefs.serverUrl) }
-        var stationIdStr by remember { mutableStateOf(prefs.stationId.toString()) }
-        var stationName by remember { mutableStateOf(prefs.stationCode.ifEmpty { prefs.stationName }) }
         var secretKey by remember { mutableStateOf(prefs.secretKey) }
         var hdmiInputStr by remember { mutableStateOf(prefs.defaultHdmiInput) }
         var emergencyPinInput by remember { mutableStateOf(prefs.emergencyPin) }
+        var currentStationDisplay by remember { mutableStateOf(prefs.stationCode.ifEmpty { prefs.stationName }) }
 
         // State Auto Scan Server IP
         var isScanning by remember { mutableStateOf(false) }
@@ -445,26 +523,20 @@ class KioskActivity : ComponentActivity() {
         var testResultText by remember { mutableStateOf<String?>(null) }
         var testSuccess by remember { mutableStateOf(false) }
 
-        val textFieldColors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = TextPrimary,
-            unfocusedTextColor = TextPrimary,
-            focusedContainerColor = CardSurface,
-            unfocusedContainerColor = CardSurface,
-            focusedBorderColor = TMBillingBlueBright,
-            unfocusedBorderColor = CardBorder,
-            focusedLabelColor = TMBillingBlueBright,
-            unfocusedLabelColor = TextSecondary,
-            cursorColor = TMBillingBlueBright
-        )
-
         // usePlatformDefaultWidth = false memungkinkan tampilan 16:9 widescreen sejati di Android TV
         Dialog(
-            onDismissRequest = onDismiss,
-            properties = DialogProperties(usePlatformDefaultWidth = false)
+            onDismissRequest = {
+                if (isUnlocked && !isInitialSetup) onDismiss()
+            },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = (isUnlocked && !isInitialSetup),
+                dismissOnClickOutside = false
+            )
         ) {
             if (!isUnlocked) {
                 // ==============================================================
-                // MODAL VERIFIKASI PIN ADMIN (Tersentralisasi & Jelas)
+                // MODAL VERIFIKASI PIN ADMIN
                 // ==============================================================
                 Surface(
                     modifier = Modifier
@@ -480,12 +552,12 @@ class KioskActivity : ComponentActivity() {
                     ) {
                         Surface(
                             shape = RoundedCornerShape(8.dp),
-                            color = PlayStationBlue.copy(alpha = 0.2f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, TMBillingBlueBright)
+                            color = Color(0xFF1E1E1E),
+                            border = BorderStroke(1.dp, CardBorder)
                         ) {
                             Text(
-                                text = "KEAMANAN KIOSK",
-                                color = TMBillingBlueBright,
+                                text = "🔒 KEAMANAN KIOSK",
+                                color = EmeraldAccent,
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = 1.sp,
@@ -515,13 +587,12 @@ class KioskActivity : ComponentActivity() {
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        OutlinedTextField(
+                        TvOutlinedTextField(
                             value = pinInput,
                             onValueChange = { pinInput = it },
-                            label = { Text("PIN Admin", color = TextSecondary) },
+                            label = "PIN Admin",
+                            placeholder = "Masukkan PIN (Default: 8888)",
                             visualTransformation = PasswordVisualTransformation(),
-                            singleLine = true,
-                            colors = textFieldColors,
                             modifier = Modifier.fillMaxWidth()
                         )
 
@@ -600,7 +671,7 @@ class KioskActivity : ComponentActivity() {
                             Surface(
                                 shape = RoundedCornerShape(6.dp),
                                 color = Color(0xFF1E293B),
-                                border = androidx.compose.foundation.BorderStroke(1.dp, TMBillingBlueBright.copy(alpha = 0.4f))
+                                border = BorderStroke(1.dp, TMBillingBlueBright.copy(alpha = 0.4f))
                             ) {
                                 Text(
                                     text = "🎮 Shortcut Remote: Tombol MENU / INFO",
@@ -638,42 +709,76 @@ class KioskActivity : ComponentActivity() {
                                     letterSpacing = 1.sp
                                 )
 
-                                OutlinedTextField(
+                                TvOutlinedTextField(
                                     value = serverUrl,
                                     onValueChange = { serverUrl = it },
-                                    label = { Text("Alamat Server URL (http://ip:port)", color = TextSecondary) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                    colors = textFieldColors
+                                    label = "Alamat Server URL (http://ip:port)",
+                                    placeholder = "http://10.0.2.2:7015",
+                                    modifier = Modifier.fillMaxWidth()
                                 )
 
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    OutlinedTextField(
-                                        value = stationIdStr,
-                                        onValueChange = { stationIdStr = it },
-                                        label = { Text("ID", color = TextSecondary) },
-                                        modifier = Modifier.weight(0.6f),
-                                        singleLine = true,
-                                        colors = textFieldColors
-                                    )
-                                    OutlinedTextField(
-                                        value = stationName,
-                                        onValueChange = { stationName = it },
-                                        label = { Text("Stasiun (PS-01)", color = TextSecondary) },
-                                        modifier = Modifier.weight(1.2f),
-                                        singleLine = true,
-                                        colors = textFieldColors
-                                    )
-                                    OutlinedTextField(
+                                    // Card Nama Stasiun dari Server (Read-Only)
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = CardSurface,
+                                        border = BorderStroke(1.dp, CardBorder),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Column(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 14.dp, vertical = 7.dp)
+                                        ) {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(
+                                                    text = "STASIUN (SERVER)",
+                                                    color = TextSecondary,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    letterSpacing = 0.5.sp
+                                                )
+                                                Surface(
+                                                    shape = RoundedCornerShape(4.dp),
+                                                    color = Color(0xFF1E1E1E),
+                                                    border = BorderStroke(1.dp, CardBorder)
+                                                ) {
+                                                    Text(
+                                                        text = "Otomatis",
+                                                        color = EmeraldAccent,
+                                                        fontSize = 9.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                                    )
+                                                }
+                                            }
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = currentStationDisplay.ifBlank { "PS-01" },
+                                                color = Color.White,
+                                                fontSize = 14.sp,
+                                                fontWeight = FontWeight.ExtraBold,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+
+                                    // Input Client Key (Secret Key)
+                                    TvOutlinedTextField(
                                         value = secretKey,
                                         onValueChange = { secretKey = it },
-                                        label = { Text("Client Key", color = TextSecondary) },
-                                        modifier = Modifier.weight(1.2f),
-                                        singleLine = true,
-                                        colors = textFieldColors
+                                        label = "Client Key (Secret Key)",
+                                        placeholder = "Masukkan Client Key",
+                                        modifier = Modifier.weight(1.3f)
                                     )
                                 }
 
@@ -686,13 +791,12 @@ class KioskActivity : ComponentActivity() {
                                     letterSpacing = 1.sp
                                 )
 
-                                OutlinedTextField(
+                                TvOutlinedTextField(
                                     value = hdmiInputStr,
                                     onValueChange = { hdmiInputStr = it },
-                                    label = { Text("Target Port HDMI (cth: HDMI 1 atau ID Port)", color = TextSecondary) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                    colors = textFieldColors
+                                    label = "Target Port HDMI (cth: HDMI 1 atau ID Port)",
+                                    placeholder = "HDMI 1",
+                                    modifier = Modifier.fillMaxWidth()
                                 )
 
                                 // Quick HDMI Preset Pills
@@ -705,7 +809,7 @@ class KioskActivity : ComponentActivity() {
                                         Surface(
                                             shape = RoundedCornerShape(8.dp),
                                             color = if (isSelected) EmeraldAccent.copy(alpha = 0.2f) else CardSurface,
-                                            border = androidx.compose.foundation.BorderStroke(
+                                            border = BorderStroke(
                                                 1.dp,
                                                 if (isSelected) EmeraldAccent else CardBorder
                                             ),
@@ -775,13 +879,12 @@ class KioskActivity : ComponentActivity() {
                                     }
                                 }
 
-                                OutlinedTextField(
+                                TvOutlinedTextField(
                                     value = emergencyPinInput,
                                     onValueChange = { emergencyPinInput = it },
-                                    label = { Text("PIN Kiosk & Emergency (Custom)", color = TextSecondary) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    singleLine = true,
-                                    colors = textFieldColors
+                                    label = "PIN Kiosk & Emergency (Custom)",
+                                    placeholder = "8888",
+                                    modifier = Modifier.fillMaxWidth()
                                 )
                             }
 
@@ -843,28 +946,13 @@ class KioskActivity : ComponentActivity() {
                                     }
                                 }
 
-                                // Preset Cepat
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    TvButton(
-                                        text = "🏠 Emulator (10.0.2.2)",
-                                        onClick = { serverUrl = "http://10.0.2.2:7015" },
-                                        isSecondary = true,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    TvButton(
-                                        text = "💻 LAN (10.10.10.25)",
-                                        onClick = { serverUrl = "http://10.10.10.25:7015" },
-                                        isSecondary = true,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-
+                                // Preset Cepat (Hanya Emulator)
                                 TvButton(
-                                    text = "🔑 Set Secret Key 'TM2026'",
-                                    onClick = { secretKey = "TM2026" },
+                                    text = "🏠 Preset Emulator (10.0.2.2:7015)",
+                                    onClick = {
+                                        serverUrl = "http://10.0.2.2:7015"
+                                        Toast.makeText(this@KioskActivity, "Preset Emulator dipilih (10.0.2.2:7015)", Toast.LENGTH_SHORT).show()
+                                    },
                                     isSecondary = true,
                                     modifier = Modifier.fillMaxWidth()
                                 )
@@ -886,12 +974,24 @@ class KioskActivity : ComponentActivity() {
                                             isTestingConnection = true
                                             testResultText = "Menghubungi server $serverUrl..."
                                             coroutineScope.launch {
-                                                val targetId = stationIdStr.toIntOrNull() ?: 1
-                                                val result = ApiClient.testConnection(serverUrl, targetId, secretKey)
+                                                val result = ApiClient.testConnection(
+                                                    testUrl = serverUrl,
+                                                    testStationId = prefs.stationId,
+                                                    testSecretKey = secretKey,
+                                                    testClientIp = prefs.clientIp,
+                                                    testMacAddress = prefs.macAddress
+                                                )
                                                 isTestingConnection = false
                                                 if (result.isSuccess) {
+                                                    val resp = result.getOrNull()
+                                                    val serverPcKode = resp?.nomor
                                                     testSuccess = true
-                                                    testResultText = "✅ Berhasil! Terhubung ke Server (Status Meja: ${result.getOrNull()?.status?.uppercase()})"
+                                                    testResultText = "✅ Berhasil! Terhubung ke Server (Stasiun: ${serverPcKode ?: "PS-01"}, Status: ${resp?.status?.uppercase()})"
+                                                    if (!serverPcKode.isNullOrBlank()) {
+                                                        currentStationDisplay = serverPcKode
+                                                        prefs.stationCode = serverPcKode
+                                                        prefs.stationName = serverPcKode
+                                                    }
                                                 } else {
                                                     testSuccess = false
                                                     testResultText = "❌ Gagal: ${result.exceptionOrNull()?.localizedMessage}"
@@ -907,7 +1007,7 @@ class KioskActivity : ComponentActivity() {
                                     Surface(
                                         shape = RoundedCornerShape(8.dp),
                                         color = if (testSuccess) StatusOnlineBg else StatusOfflineBg,
-                                        border = androidx.compose.foundation.BorderStroke(
+                                        border = BorderStroke(
                                             1.dp,
                                             if (testSuccess) NeonGreen else ErrorRed
                                         ),
@@ -936,17 +1036,19 @@ class KioskActivity : ComponentActivity() {
 
                                 val isDefaultLauncher by isDefaultLauncherFlow.collectAsState()
                                 val isAccessibilityEnabled by isAccessibilityEnabledFlow.collectAsState()
+                                var isEmergencyUnlocked by remember { mutableStateOf(KioskAccessibilityService.emergencyUnlocked) }
+
                                 TvButton(
-                                    text = if (isDefaultLauncher) "✅ Launcher Utama TV Aktif" else "🏠 Jadikan Launcher Utama TV",
+                                    text = if (isDefaultLauncher) "✅ Launcher Utama TV: Aktif" else "🏠 Jadikan Launcher Utama TV",
                                     onClick = {
                                         requestSetDefaultLauncher()
                                     },
-                                    isSecondary = true,
+                                    isSecondary = !isDefaultLauncher,
                                     modifier = Modifier.fillMaxWidth()
                                 )
 
                                 TvButton(
-                                    text = if (isAccessibilityEnabled) "✅ Blokir Tombol Home Aktif" else "🛡 Aktifkan Blokir Tombol Home",
+                                    text = if (isAccessibilityEnabled) "✅ Blokir Tombol Home: Aktif" else "🛡 Aktifkan Blokir Tombol Home",
                                     onClick = {
                                         openAccessibilitySettings()
                                     },
@@ -954,19 +1056,18 @@ class KioskActivity : ComponentActivity() {
                                     modifier = Modifier.fillMaxWidth()
                                 )
 
-                                var isEmergencyUnlocked by remember { mutableStateOf(KioskAccessibilityService.emergencyUnlocked) }
                                 TvButton(
-                                    text = if (isEmergencyUnlocked) "🔒 Kunci Remote Kembali" else "🔓 Buka Kunci Remote Sementara",
+                                    text = if (isEmergencyUnlocked) "🔓 Kunci Remote Dibuka (Klik utk Mengunci)" else "🔒 Buka Kunci Remote Sementara",
                                     onClick = {
                                         KioskAccessibilityService.emergencyUnlocked = !KioskAccessibilityService.emergencyUnlocked
                                         isEmergencyUnlocked = KioskAccessibilityService.emergencyUnlocked
                                         Toast.makeText(
                                             this@KioskActivity,
-                                            if (isEmergencyUnlocked) "Kunci remote dinonaktifkan sementara!" else "Kunci remote aktif kembali!",
+                                            if (isEmergencyUnlocked) "Remote dibuka sementara (Menu/Setting/Home diizinkan)" else "Kunci remote diaktifkan kembali!",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                     },
-                                    isSecondary = true,
+                                    isSecondary = !isEmergencyUnlocked,
                                     modifier = Modifier.fillMaxWidth()
                                 )
 
@@ -979,15 +1080,6 @@ class KioskActivity : ComponentActivity() {
                                         } catch (e: Exception) {
                                             Toast.makeText(this@KioskActivity, "Gagal membuka pengaturan: ${e.message}", Toast.LENGTH_SHORT).show()
                                         }
-                                    },
-                                    isSecondary = true,
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-
-                                TvButton(
-                                    text = "🗑️ Copot / Uninstall Aplikasi",
-                                    onClick = {
-                                        safeUninstallApp()
                                     },
                                     isSecondary = true,
                                     modifier = Modifier.fillMaxWidth()
@@ -1023,9 +1115,6 @@ class KioskActivity : ComponentActivity() {
                                     text = "💾 Simpan & Terapkan",
                                     onClick = {
                                         prefs.serverUrl = serverUrl
-                                        prefs.stationId = stationIdStr.toIntOrNull() ?: 1
-                                        prefs.stationName = stationName.trim().ifEmpty { "PS-01" }
-                                        prefs.stationCode = stationName.trim().ifEmpty { "PS-01" }
                                         prefs.secretKey = secretKey
                                         prefs.defaultHdmiInput = hdmiInputStr
                                         val finalPin = emergencyPinInput.ifBlank { "8888" }

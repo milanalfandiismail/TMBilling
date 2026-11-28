@@ -1,10 +1,29 @@
-*.iml
+# Gradle build directory and caches
 .gradle/
-local.properties
-.idea/
-.DS_Store
 build/
 app/build/
+**/build/
+
+# Android Studio / IntelliJ / Eclipse / VS Code
+*.iml
+.idea/
+.vscode/
+local.properties
+.navigation/
 captures/
 .externalNativeBuild/
 .cxx/
+lint/
+output.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.hprof

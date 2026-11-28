@@ -39,6 +39,7 @@
             android:turnScreenOn="true"
             android:alwaysRetainTaskState="true"
             android:stateNotNeeded="true"
+            android:windowSoftInputMode="stateHidden|adjustPan"
             android:configChanges="keyboard|keyboardHidden|navigation|orientation|screenLayout|screenSize|smallestScreenSize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
