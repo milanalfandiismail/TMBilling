@@ -58,8 +58,8 @@ pub fn pagination_args(page: Option<i64>, per_page: Option<i64>, bawaan: i64) ->
     if page < 1 {
         return Err(Salah::baru(400, "Parameter page harus >= 1"));
     }
-    if !(1..=100).contains(&per) {
-        return Err(Salah::baru(400, "Parameter per_page harus 1..100"));
+    if !(1..=100_000).contains(&per) {
+        return Err(Salah::baru(400, "Parameter per_page harus 1..100000"));
     }
     Ok((page, per))
 }
