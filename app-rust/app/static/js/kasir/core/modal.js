@@ -37,15 +37,16 @@ const Modal = {
         document.body.appendChild(modalDiv);
         document.body.style.overflow = 'hidden';
         this.activeModal = modalDiv;
+        this.activeOnClose = (typeof onClose === 'function') ? onClose : null;
 
         // Default: backdrop click & ESC are disabled (close only via X / Batal button)
         const closeOnBackdrop = options.disableBackdropClose === false;
         if (closeOnBackdrop) {
             modalDiv.addEventListener('click', (e) => {
-                if (e.target === modalDiv) this.closeModal(onClose);
+                if (e.target === modalDiv) this.closeModal();
             });
             this.escHandler = (e) => {
-                if (e.key === 'Escape') this.closeModal(onClose);
+                if (e.key === 'Escape') this.closeModal();
             };
             document.addEventListener('keydown', this.escHandler);
         }
@@ -54,7 +55,9 @@ const Modal = {
     closeModal(onClose) {
         if (this.activeModal) {
             const modalToClose = this.activeModal;
+            const callback = (typeof onClose === 'function') ? onClose : this.activeOnClose;
             this.activeModal = null;
+            this.activeOnClose = null;
             modalToClose.remove();
             if (!this.activeModal) {
                 document.body.style.overflow = '';
@@ -63,7 +66,7 @@ const Modal = {
                 document.removeEventListener('keydown', this.escHandler);
                 this.escHandler = null;
             }
-            if (onClose && typeof onClose === 'function') onClose();
+            if (callback) callback();
         }
     },
 

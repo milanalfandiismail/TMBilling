@@ -49,27 +49,32 @@ impl Client {
         let mut c = [0u8; 1];
         sock.read_exact(&mut c)?;
         let c = c[0];
-        if c & 0x80 == 0 {
-            return Ok(c as usize);
-        }
-        let mut b1 = [0u8; 1];
-        if c & 0xC0 == 0x80 {
+        let len = if c & 0x80 == 0 {
+            c as usize
+        } else if c & 0xC0 == 0x80 {
+            let mut b1 = [0u8; 1];
             sock.read_exact(&mut b1)?;
-            return Ok((((c & 0x3F) as usize) << 8) | b1[0] as usize);
-        }
-        let mut rest = [0u8; 2];
-        if c & 0xE0 == 0xC0 {
+            (((c & 0x3F) as usize) << 8) | b1[0] as usize
+        } else if c & 0xE0 == 0xC0 {
+            let mut rest = [0u8; 2];
             sock.read_exact(&mut rest)?;
-            return Ok((((c & 0x1F) as usize) << 16)
-                | ((rest[0] as usize) << 8)
-                | rest[1] as usize);
+            (((c & 0x1F) as usize) << 16) | ((rest[0] as usize) << 8) | rest[1] as usize
+        } else {
+            let mut rest3 = [0u8; 3];
+            sock.read_exact(&mut rest3)?;
+            (((c & 0x0F) as usize) << 24)
+                | ((rest3[0] as usize) << 16)
+                | ((rest3[1] as usize) << 8)
+                | rest3[2] as usize
+        };
+        // Batasi panjang pesan MikroTik API maksimal 16 MB untuk mencegah alokasi memori berlebih
+        if len > 16 * 1024 * 1024 {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                format!("Panjang kata MikroTik melebihi batas wajar: {len} byte"),
+            ));
         }
-        let mut rest3 = [0u8; 3];
-        sock.read_exact(&mut rest3)?;
-        Ok((((c & 0x0F) as usize) << 24)
-            | ((rest3[0] as usize) << 16)
-            | ((rest3[1] as usize) << 8)
-            | rest3[2] as usize)
+        Ok(len)
     }
 
     fn talk(&mut self, words: &[String]) -> Result<Vec<Vec<String>>, String> {

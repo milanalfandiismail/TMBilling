@@ -99,6 +99,11 @@ pub fn clear_session_cookie() -> String {
     format!("{COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0")
 }
 
+pub fn extract_session(cfg: &Config, headers: &axum::http::HeaderMap) -> Option<SessionData> {
+    let raw = http::cookie(headers, COOKIE)?;
+    decode(cfg, &raw)
+}
+
 pub fn build_session(user: &User) -> SessionData {
     SessionData {
         uid: user.id,

@@ -183,6 +183,17 @@ pub async fn validate_admin(
         );
         return Err(AuthError::new(401, "Username atau password salah"));
     };
+    if !user.active() {
+        audit(
+            username,
+            "ADMIN_CHECK_INACTIVE",
+            &format!("User:{username} tidak aktif"),
+            None,
+            ip,
+            agent,
+        );
+        return Err(AuthError::new(403, "Akun Anda dinonaktifkan oleh administrator"));
+    }
     if !user.check_password(password).await {
         audit(
             username,

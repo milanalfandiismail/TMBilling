@@ -256,7 +256,7 @@
 
     <!-- Structured Data Catalog & Scripts -->
     <script id="specs-catalog-data" type="application/json">
-        {{ specs_catalog_json|safe }}
+        {{ specs_catalog_json|safe|replace("</script", "<\\/script") }}
     </script>
 
     <script>

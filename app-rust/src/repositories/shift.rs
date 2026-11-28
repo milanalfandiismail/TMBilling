@@ -105,7 +105,6 @@ pub async fn history(
         qb.push(" AND s.waktu_mulai >= ").push_bind(m.to_string());
     }
     if let Some(s) = selesai {
-        qb.push(" AND s.waktu_selesai >= ").push_bind(s.to_string());
         qb.push(" AND s.waktu_selesai < ")
             .push_bind(selesai_plus_1(s));
     }
@@ -122,7 +121,6 @@ pub async fn history(
         cb.push(" AND waktu_mulai >= ").push_bind(m.to_string());
     }
     if let Some(s) = selesai {
-        cb.push(" AND waktu_selesai >= ").push_bind(s.to_string());
         cb.push(" AND waktu_selesai < ")
             .push_bind(selesai_plus_1(s));
     }

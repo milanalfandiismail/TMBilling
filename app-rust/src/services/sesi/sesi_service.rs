@@ -329,6 +329,7 @@ async fn member_grup_nama(st: &AppState, grup_id: i64) -> String {
 
 /// Sesi admin untuk maintenance PC (token dibuat server, dipakai handshake client).
 pub async fn buka_admin(st: &AppState, pc_id: i64, admin_nama: &str) -> Result<i64, String> {
+    let _guard = st.write().await;
     let now = db_str(now_db());
     let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
     let id = insert_sesi(
@@ -399,10 +400,15 @@ async fn tambah_satu(
 
     if sesi.tipe == "member" {
         let member_id = sesi.member_id.ok_or("Member tidak ditemukan")?;
-        let member = member_repo::get_by_id(&st.pool, member_id)
-            .await
-            .map_err(|e| e.to_string())?
-            .ok_or("Member tidak ditemukan")?;
+        // Ambil member dari transaksi langsung agar tidak memakai saldo stale pada batch loop
+        let member = sqlx::query_as::<_, crate::models::member::Member>(
+            "SELECT * FROM member WHERE id = ? LIMIT 1"
+        )
+        .bind(member_id)
+        .fetch_optional(&mut **tx)
+        .await
+        .map_err(|e| e.to_string())?
+        .ok_or("Member tidak ditemukan")?;
         let tambah_hari = paket.kadaluarsa_hari.unwrap_or(0) * qty;
         let baru = member.waktu_tersimpan + total_menit;
         let kadaluarsa = match member.kadaluarsa_pada.as_deref().and_then(parse_dt) {
@@ -916,7 +922,10 @@ pub async fn refund_paket_guest(
     let chain = repo::chain_ids(&st.pool, root)
         .await
         .map_err(|e| e.to_string())?;
-    if !chain.contains(&transaksi.sesi_id.unwrap_or(0)) || transaksi.is_refunded {
+    if !chain.contains(&transaksi.sesi_id.unwrap_or(0))
+        || transaksi.is_refunded
+        || !matches!(transaksi.jenis.as_str(), "beli_paket_guest" | "tambah_waktu_guest")
+    {
         return Err("Transaksi tidak valid atau sudah direfund".into());
     }
     let durasi = if transaksi.menit > 0 {

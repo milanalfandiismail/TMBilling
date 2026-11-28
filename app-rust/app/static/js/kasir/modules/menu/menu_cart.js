@@ -367,6 +367,7 @@ window.MenuCart = {
     },
 
     async submitPembayaran() {
+        if (this._isSubmitting) return;
         if (typeof Shift !== 'undefined' && !Shift.canOperate()) return;
         const tunaiInput = document.getElementById('payment-tunai-input');
         const tunai = parseInt(tunaiInput?.value.replace(/\D/g, '')) || 0;
@@ -374,6 +375,7 @@ window.MenuCart = {
         const kembalian = tunai - total;
         if (tunai < total || total <= 0) return;
 
+        this._isSubmitting = true;
         const paymentMethodSelect = document.getElementById('payment-method-select');
         const metodePembayaran = paymentMethodSelect ? paymentMethodSelect.value : 'Tunai';
 
@@ -416,6 +418,8 @@ window.MenuCart = {
             }
         } catch (error) {
             Toast.error("Gagal checkout: error koneksi");
+        } finally {
+            this._isSubmitting = false;
         }
     },
 

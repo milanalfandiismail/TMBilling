@@ -62,6 +62,7 @@ pub fn zip_db(src: &Path, dest: &Path) -> Result<()> {
 }
 
 pub fn unzip_db(archive: &Path, out: &Path) -> Result<()> {
+    const MAX_UNPACKED_SIZE: u64 = 2 * 1024 * 1024 * 1024; // 2 GB safety limit
     let file = fs::File::open(archive)?;
     let mut zip = zip::ZipArchive::new(file)?;
     let name = (0..zip.len())
@@ -70,7 +71,10 @@ pub fn unzip_db(archive: &Path, out: &Path) -> Result<()> {
         .ok_or_else(|| anyhow!("Arsip tidak berisi database TMBilling"))?;
     let mut entry = zip.by_name(&name)?;
     let mut buf = Vec::new();
-    entry.read_to_end(&mut buf)?;
+    let read_bytes = entry.by_ref().take(MAX_UNPACKED_SIZE + 1).read_to_end(&mut buf)?;
+    if read_bytes as u64 > MAX_UNPACKED_SIZE {
+        return Err(anyhow!("Ukuran berkas database melebihi batas aman 2GB"));
+    }
     fs::write(out, buf)?;
     Ok(())
 }
@@ -124,6 +128,7 @@ async fn tables(conn: &mut sqlx::SqliteConnection, schema: &str) -> Result<Vec<S
 /// Restore langsung ke DB aktif: salin seluruh isi tabel dalam satu transaksi.
 /// Dijalankan di thread blocking dengan runtime sendiri agar handler tetap `Send`.
 pub async fn restore_live(st: &AppState, archive: &Path) -> Result<Value> {
+    let _write_guard = st.write().await;
     let pool = st.pool.clone();
     let root = st.cfg.root.clone();
     let backup = st.cfg.backup_dir.clone();
@@ -186,62 +191,68 @@ pub async fn salin_tabel(pool: &SqlitePool, unpacked: &Path) -> Result<()> {
         .execute(&mut *conn)
         .await?;
     sqlx::raw_sql("BEGIN IMMEDIATE").execute(&mut *conn).await?;
-    let daftar = tables(&mut conn, "r").await?;
-    for table in daftar {
-        let main_cols = columns(&mut conn, "main", &table).await?;
-        let restore_cols = columns(&mut conn, "r", &table).await?;
-        let shared: Vec<String> = main_cols
+
+    let proses = async {
+        let daftar = tables(&mut conn, "r").await?;
+        for table in daftar {
+            let main_cols = columns(&mut conn, "main", &table).await?;
+            let restore_cols = columns(&mut conn, "r", &table).await?;
+            let shared: Vec<String> = main_cols
+                .into_iter()
+                .filter(|c| restore_cols.iter().any(|r| r == c))
+                .collect();
+            if shared.is_empty() {
+                continue;
+            }
+            let wajib: Vec<(String, String)> = sqlx::query_as(
+                "SELECT name, type FROM pragma_table_info(?) WHERE \"notnull\"=1 AND dflt_value IS NULL",
+            )
+            .bind(&table)
+            .fetch_all(&mut *conn)
+            .await?
             .into_iter()
-            .filter(|c| restore_cols.iter().any(|r| r == c))
+            .filter(|(n, _): &(String, String)| !shared.iter().any(|c| c == n))
+            .map(|(n, t): (String, String)| {
+                let huruf = t.to_uppercase();
+                let isi = if huruf.contains("INT") || huruf.contains("BOOL") || huruf.contains("REAL") || huruf.contains("FLOA") || huruf.contains("DOUB") {
+                    "0".to_string()
+                } else {
+                    "''".to_string()
+                };
+                (n, isi)
+            })
             .collect();
-        if shared.is_empty() {
-            continue;
-        }
-        // Kolom NOT NULL baru tanpa default (mis. sesi.is_afk) tidak ada di DB sumber;
-        // isi nilai netral agar baris lama tetap bisa masuk.
-        let wajib: Vec<(String, String)> = sqlx::query_as(
-            "SELECT name, type FROM pragma_table_info(?) WHERE \"notnull\"=1 AND dflt_value IS NULL",
-        )
-        .bind(&table)
-        .fetch_all(&mut *conn)
-        .await?
-        .into_iter()
-        .filter(|(n, _): &(String, String)| !shared.iter().any(|c| c == n))
-        .map(|(n, t): (String, String)| {
-            let huruf = t.to_uppercase();
-            let isi = if huruf.contains("INT") || huruf.contains("BOOL") || huruf.contains("REAL") || huruf.contains("FLOA") || huruf.contains("DOUB") {
-                "0".to_string()
-            } else {
-                "''".to_string()
-            };
-            (n, isi)
-        })
-        .collect();
-        let mut kolom: Vec<String> = shared.iter().map(|c| format!("\"{c}\"")).collect();
-        let mut nilai: Vec<String> = shared.iter().map(|c| format!("\"{c}\"")).collect();
-        for (n, isi) in &wajib {
-            kolom.push(format!("\"{n}\""));
-            nilai.push(isi.clone());
-        }
-        let list = kolom.join(",");
-        let pilih = nilai.join(",");
-        sqlx::raw_sql(&format!("DELETE FROM main.\"{table}\""))
+            let mut kolom: Vec<String> = shared.iter().map(|c| format!("\"{c}\"")).collect();
+            let mut nilai: Vec<String> = shared.iter().map(|c| format!("\"{c}\"")).collect();
+            for (n, isi) in &wajib {
+                kolom.push(format!("\"{n}\""));
+                nilai.push(isi.clone());
+            }
+            let list = kolom.join(",");
+            let pilih = nilai.join(",");
+            sqlx::raw_sql(&format!("DELETE FROM main.\"{table}\""))
+                .execute(&mut *conn)
+                .await
+                .map_err(|e| anyhow!("hapus tabel {table}: {e}"))?;
+            sqlx::raw_sql(&format!(
+                "INSERT INTO main.\"{table}\" ({list}) SELECT {pilih} FROM r.\"{table}\""
+            ))
             .execute(&mut *conn)
             .await
-            .map_err(|e| anyhow!("hapus tabel {table}: {e}"))?;
-        sqlx::raw_sql(&format!(
-            "INSERT INTO main.\"{table}\" ({list}) SELECT {pilih} FROM r.\"{table}\""
-        ))
-        .execute(&mut *conn)
-        .await
-        .map_err(|e| anyhow!("salin tabel {table}: {e}"))?;
+            .map_err(|e| anyhow!("salin tabel {table}: {e}"))?;
+        }
+        Result::<(), anyhow::Error>::Ok(())
+    };
+
+    let hasil = proses.await;
+    if hasil.is_ok() {
+        sqlx::raw_sql("COMMIT").execute(&mut *conn).await?;
+    } else {
+        let _ = sqlx::raw_sql("ROLLBACK").execute(&mut *conn).await;
     }
-    sqlx::raw_sql("COMMIT").execute(&mut *conn).await?;
     let _ = sqlx::raw_sql("DETACH DATABASE r").execute(&mut *conn).await;
-    sqlx::raw_sql("PRAGMA foreign_keys = ON")
-        .execute(&mut *conn)
-        .await?;
-    Ok(())
+    let _ = sqlx::raw_sql("PRAGMA foreign_keys = ON").execute(&mut *conn).await;
+    hasil
 }
 
 pub fn status(st: &AppState) -> Value {
@@ -315,16 +326,18 @@ pub fn list(st: &AppState) -> Vec<Value> {
 
 /// Buat backup manual (`manual_backup_<ts>.zip`) dan kembalikan nama berkas.
 pub async fn create(st: &AppState, manual: bool) -> Result<String> {
+    let _write_guard = st.write().await;
     let prefix = if manual { MANUAL_PREFIX } else { "backup_" };
     let name = format!(
         "{prefix}{}.zip",
         chrono::Local::now().format("%Y%m%d_%H%M%S")
     );
     let dest = dir(st).join(&name);
-    let tmp = st.cfg.root.join("instance").join("backup_tmp.db");
+    let tmp = st.cfg.root.join("instance").join(format!("backup_tmp_{}.db", std::process::id()));
     snapshot(&st.pool, &tmp).await?;
-    zip_db(&tmp, &dest)?;
+    let zip_res = zip_db(&tmp, &dest);
     let _ = fs::remove_file(&tmp);
+    zip_res?;
     logger::rec("SYSTEM", "DATABASE_BACKUP", &format!("File: {name}"));
     let (unggah, gagal) = super::cloud::upload(st, &dest).await;
     for nama in &unggah {
@@ -379,13 +392,16 @@ pub fn provider_name(kind: &str) -> Option<&'static str> {
 }
 
 pub fn reachable(target: &str) -> bool {
-    let t = target
-        .trim()
+    let t = target.trim();
+    let is_http = t.starts_with("http://");
+    let clean = t
         .trim_start_matches("https://")
         .trim_start_matches("http://");
-    let host_port = t.split('/').next().unwrap_or(t);
+    let host_port = clean.split('/').next().unwrap_or(clean);
     let addr = if host_port.contains(':') {
         host_port.to_string()
+    } else if is_http {
+        format!("{host_port}:80")
     } else {
         format!("{host_port}:443")
     };
@@ -398,5 +414,379 @@ pub fn reachable(target: &str) -> bool {
             None => false,
         },
         Err(_) => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Config;
+    use std::net::TcpListener;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use std::sync::Arc;
+
+    static NEXT_ID: AtomicU64 = AtomicU64::new(1);
+
+    struct TempDir(PathBuf);
+
+    impl TempDir {
+        fn new(tag: &str) -> Self {
+            let seq = NEXT_ID.fetch_add(1, Ordering::Relaxed);
+            let path = std::env::temp_dir().join(format!(
+                "tm_backup_unit_{tag}_{}_{}",
+                std::process::id(),
+                seq
+            ));
+            fs::create_dir_all(&path).unwrap();
+            Self(path)
+        }
+    }
+
+    impl Drop for TempDir {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    async fn test_state(tag: &str) -> (TempDir, Arc<AppState>) {
+        let dir = TempDir::new(tag);
+        let cfg = Config::load(&dir.0).unwrap();
+        let st = Arc::new(AppState::new(cfg).await.unwrap());
+        (dir, st)
+    }
+
+    fn write_zip_entries(dest: &Path, entries: &[(&str, &[u8])]) {
+        let file = fs::File::create(dest).unwrap();
+        let mut zip = zip::ZipWriter::new(file);
+        let opt = zip::write::SimpleFileOptions::default()
+            .compression_method(zip::CompressionMethod::Deflated);
+        for (name, data) in entries {
+            zip.start_file(*name, opt).unwrap();
+            zip.write_all(data).unwrap();
+        }
+        zip.finish().unwrap();
+    }
+
+    #[tokio::test]
+    async fn snapshot_zip_dan_unzip_roundtrip_menjaga_isi_db() {
+        let (dir, st) = test_state("roundtrip").await;
+        let snap1 = dir.0.join("snap.db");
+        fs::write(&snap1, b"sampah-lama").unwrap();
+
+        snapshot(&st.pool, &snap1).await.unwrap();
+        assert!(snap1.exists());
+
+        let zip_path = dir.0.join("arsip.zip");
+        zip_db(&snap1, &zip_path).unwrap();
+
+        let unpacked = dir.0.join("unpacked.db");
+        unzip_db(&zip_path, &unpacked).unwrap();
+        inspect_schema(&unpacked).await.unwrap();
+    }
+
+    #[test]
+    fn unzip_db_menolak_arsip_tanpa_db_dan_menerima_db_bersarang() {
+        let dir = TempDir::new("unzip_edge");
+
+        let no_db = dir.0.join("tanpa_db.zip");
+        write_zip_entries(&no_db, &[("readme.txt", b"bukan db")]);
+        let err = unzip_db(&no_db, &dir.0.join("out1.db")).unwrap_err();
+        assert!(
+            err.to_string().contains("Arsip tidak berisi database TMBilling"),
+            "error tak terduga: {err}"
+        );
+
+        let corrupt = dir.0.join("rusak.zip");
+        fs::write(&corrupt, b"not-a-zip-archive").unwrap();
+        assert!(unzip_db(&corrupt, &dir.0.join("out2.db")).is_err());
+
+        let nested = dir.0.join("bersarang.zip");
+        write_zip_entries(
+            &nested,
+            &[("notes.txt", b"meta"), ("nested/custom.db", b"isi-db-uji")],
+        );
+        let out = dir.0.join("out3.db");
+        unzip_db(&nested, &out).unwrap();
+        assert_eq!(fs::read(&out).unwrap(), b"isi-db-uji");
+    }
+
+    #[tokio::test]
+    async fn inspect_schema_menolak_db_asing_dan_file_korup() {
+        let dir = TempDir::new("inspect");
+
+        let garbage = dir.0.join("garbage.db");
+        fs::write(&garbage, b"bukan sqlite sama sekali").unwrap();
+        assert!(inspect_schema(&garbage).await.is_err());
+
+        let foreign = dir.0.join("foreign.db");
+        let pool = crate::db::open(&foreign).await.unwrap();
+        sqlx::raw_sql(
+            "CREATE TABLE grup (id INTEGER PRIMARY KEY);
+             CREATE TABLE pc (id INTEGER PRIMARY KEY);
+             CREATE TABLE sesi (id INTEGER PRIMARY KEY);",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        pool.close().await;
+
+        let err = inspect_schema(&foreign).await.unwrap_err();
+        assert!(
+            err.to_string().contains("Arsip bukan database TMBilling yang valid"),
+            "error tak terduga: {err}"
+        );
+    }
+
+    #[tokio::test]
+    async fn salin_tabel_mengisi_kolom_wajib_baru_dan_menjaga_fk_serta_detach() {
+        let dir = TempDir::new("salin");
+        let target_path = dir.0.join("target.db");
+        let source_path = dir.0.join("source.db");
+
+        let target = crate::db::open(&target_path).await.unwrap();
+        sqlx::raw_sql(
+            "CREATE TABLE induk (id INTEGER PRIMARY KEY, nama TEXT NOT NULL);
+             CREATE TABLE anak (
+                 id INTEGER PRIMARY KEY,
+                 induk_id INTEGER NOT NULL REFERENCES induk(id),
+                 label TEXT NOT NULL,
+                 is_aktif INTEGER NOT NULL,
+                 catatan TEXT NOT NULL
+             );
+             CREATE TABLE khusus_target (id INTEGER PRIMARY KEY, info TEXT NOT NULL);
+             INSERT INTO induk (id, nama) VALUES (99, 'lama');
+             INSERT INTO anak (id, induk_id, label, is_aktif, catatan) VALUES (99, 99, 'lama', 1, 'lama');",
+        )
+        .execute(&target)
+        .await
+        .unwrap();
+
+        let source = crate::db::open(&source_path).await.unwrap();
+        sqlx::raw_sql(
+            "CREATE TABLE induk (id INTEGER PRIMARY KEY, nama TEXT NOT NULL);
+             CREATE TABLE anak (
+                 id INTEGER PRIMARY KEY,
+                 induk_id INTEGER NOT NULL,
+                 label TEXT NOT NULL,
+                 kolom_usang TEXT
+             );
+             CREATE TABLE hanya_di_sumber (id INTEGER PRIMARY KEY);
+             INSERT INTO induk (id, nama) VALUES (1, 'baru');
+             INSERT INTO anak (id, induk_id, label, kolom_usang) VALUES (10, 1, 'sesi-1', 'x');",
+        )
+        .execute(&source)
+        .await
+        .unwrap();
+        source.close().await;
+
+        salin_tabel(&target, &source_path).await.unwrap();
+
+        let induk_rows: Vec<(i64, String)> =
+            sqlx::query_as("SELECT id, nama FROM induk ORDER BY id")
+                .fetch_all(&target)
+                .await
+                .unwrap();
+        assert_eq!(induk_rows, vec![(1, "baru".to_string())]);
+
+        let anak_rows: Vec<(i64, i64, String, i64, String)> = sqlx::query_as(
+            "SELECT id, induk_id, label, is_aktif, catatan FROM anak ORDER BY id",
+        )
+        .fetch_all(&target)
+        .await
+        .unwrap();
+        assert_eq!(
+            anak_rows,
+            vec![(10, 1, "sesi-1".to_string(), 0, String::new())]
+        );
+
+        let mut conn = target.acquire().await.unwrap();
+        let fk: (i64,) = sqlx::query_as("PRAGMA foreign_keys")
+            .fetch_one(&mut *conn)
+            .await
+            .unwrap();
+        assert_eq!(fk.0, 1, "foreign_keys wajib aktif kembali sesudah salin_tabel");
+
+        let dbs: Vec<(i64, String, String)> = sqlx::query_as("PRAGMA database_list")
+            .fetch_all(&mut *conn)
+            .await
+            .unwrap();
+        assert!(
+            dbs.iter().all(|(_, name, _)| name != "r"),
+            "database sementara r wajib sudah di-DETACH: {dbs:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn restore_live_menolak_arsip_tidak_valid_tanpa_menghapus_data_aktif() {
+        let (dir, st) = test_state("restore_invalid").await;
+
+        sqlx::query(
+            "INSERT INTO menu_item (nama, harga, stok, is_active) VALUES (?, 5000, 10, 1)",
+        )
+        .bind("MENU-UTUH")
+        .execute(&st.pool)
+        .await
+        .unwrap();
+
+        let foreign_db = dir.0.join("asing.db");
+        let pool = crate::db::open(&foreign_db).await.unwrap();
+        sqlx::raw_sql("CREATE TABLE asing (id INTEGER PRIMARY KEY);")
+            .execute(&pool)
+            .await
+            .unwrap();
+        pool.close().await;
+
+        let bad_zip = dir.0.join("bad_backup.zip");
+        write_zip_entries(&bad_zip, &[("warnet.db", &fs::read(&foreign_db).unwrap())]);
+
+        let err = restore_live(&st, &bad_zip).await.unwrap_err();
+        assert!(
+            err.to_string().contains("Arsip bukan database TMBilling yang valid"),
+            "error tak terduga: {err}"
+        );
+
+        let pre_restore_count = fs::read_dir(&st.cfg.backup_dir)
+            .unwrap()
+            .flatten()
+            .filter(|e| e.file_name().to_string_lossy().starts_with("pre_restore_"))
+            .count();
+        assert_eq!(
+            pre_restore_count, 0,
+            "safety backup tidak boleh dibuat sebelum schema lolos validasi"
+        );
+
+        let ada: Option<(i64,)> = sqlx::query_as("SELECT id FROM menu_item WHERE nama=?")
+            .bind("MENU-UTUH")
+            .fetch_optional(&st.pool)
+            .await
+            .unwrap();
+        assert!(ada.is_some(), "data aktif harus tetap utuh saat restore gagal");
+    }
+
+    #[tokio::test]
+    async fn restore_live_mengembalikan_snapshot_dan_membuat_safety_backup() {
+        let (_dir, st) = test_state("restore_ok").await;
+
+        sqlx::query(
+            "INSERT INTO menu_item (nama, harga, stok, is_active) VALUES (?, 8000, 5, 1)",
+        )
+        .bind("Menu-Asli")
+        .execute(&st.pool)
+        .await
+        .unwrap();
+
+        let created = create(&st, false).await.unwrap();
+        assert!(created.starts_with("backup_"));
+        assert!(!st.cfg.root.join("instance").join("backup_tmp.db").exists());
+        let arsip = dir(&st).join(&created);
+
+        sqlx::query("DELETE FROM menu_item WHERE nama=?")
+            .bind("Menu-Asli")
+            .execute(&st.pool)
+            .await
+            .unwrap();
+        sqlx::query(
+            "INSERT INTO menu_item (nama, harga, stok, is_active) VALUES (?, 15000, 1, 1)",
+        )
+        .bind("Menu-Sesudah-Backup")
+        .execute(&st.pool)
+        .await
+        .unwrap();
+
+        let hasil = restore_live(&st, &arsip).await.unwrap();
+        let safety_name = hasil["safety_backup"].as_str().unwrap();
+        assert!(safety_name.starts_with("pre_restore_"));
+        assert!(dir(&st).join(safety_name).exists());
+
+        let item_asli: Option<(i64,)> = sqlx::query_as("SELECT id FROM menu_item WHERE nama=?")
+            .bind("Menu-Asli")
+            .fetch_optional(&st.pool)
+            .await
+            .unwrap();
+        let item_sesudah: Option<(i64,)> =
+            sqlx::query_as("SELECT id FROM menu_item WHERE nama=?")
+                .bind("Menu-Sesudah-Backup")
+                .fetch_optional(&st.pool)
+                .await
+                .unwrap();
+        assert!(item_asli.is_some(), "data sebelum backup harus pulih");
+        assert!(
+            item_sesudah.is_none(),
+            "perubahan sesudah backup harus tergantikan"
+        );
+    }
+
+    #[tokio::test]
+    async fn start_manual_menolak_duplikat_dengan_409_dan_status_konsisten() {
+        let (_dir, st) = test_state("manual_409").await;
+
+        assert_eq!(status(&st)["status"], "idle");
+
+        {
+            let mut guard = st.backup_status.lock().unwrap();
+            guard.running = true;
+            guard.status = "running".to_string();
+            guard.message = "Backup sedang berjalan...".to_string();
+        }
+
+        let err = start_manual(st.clone()).unwrap_err();
+        assert_eq!(err.0, 409);
+        assert_eq!(status(&st)["status"], "running");
+
+        {
+            let mut guard = st.backup_status.lock().unwrap();
+            guard.running = false;
+            guard.status = "completed".to_string();
+            guard.filename = Some("manual_backup_test.zip".to_string());
+        }
+        assert_eq!(status(&st)["status"], "completed");
+        assert_eq!(status(&st)["filename"], "manual_backup_test.zip");
+    }
+
+    #[tokio::test]
+    async fn list_dan_latest_age_hours_membedakan_manual_dan_otomatis() {
+        let (_dir, st) = test_state("list_age").await;
+        let bdir = dir(&st);
+
+        fs::write(bdir.join("ignore.txt"), b"bukan zip").unwrap();
+        fs::write(bdir.join("manual_backup_20260102_000000.zip"), b"12345").unwrap();
+
+        let daftar_awal = list(&st);
+        assert_eq!(daftar_awal.len(), 1);
+        assert_eq!(daftar_awal[0]["filename"], "manual_backup_20260102_000000.zip");
+        assert_eq!(daftar_awal[0]["is_manual"], true);
+        assert!(
+            latest_age_hours(&st).is_none(),
+            "backup manual tidak boleh dihitung sebagai backup otomatis terjadwal"
+        );
+
+        fs::write(bdir.join("backup_20260101_000000.zip"), b"123456789").unwrap();
+        let daftar = list(&st);
+        assert_eq!(daftar.len(), 2);
+        assert_eq!(daftar[0]["filename"], "manual_backup_20260102_000000.zip");
+        assert_eq!(daftar[1]["filename"], "backup_20260101_000000.zip");
+        assert_eq!(daftar[1]["is_manual"], false);
+        assert_eq!(daftar[1]["size"], 9);
+
+        let usia = latest_age_hours(&st).unwrap();
+        assert!(usia >= 0.0 && usia < 1.0);
+    }
+
+    #[test]
+    fn provider_name_dan_reachable_validasi_target() {
+        assert_eq!(provider_name("webhook"), Some("Discord Webhook"));
+        assert_eq!(provider_name("webdav"), Some("WebDAV"));
+        assert_eq!(provider_name("gdrive"), Some("Google Drive"));
+        assert_eq!(provider_name("nas"), Some("NAS"));
+        assert_eq!(provider_name("s3"), None);
+
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        assert!(reachable(&format!("http://127.0.0.1:{port}/webdav")));
+        drop(listener);
+
+        assert!(!reachable("http://127.0.0.1:1/webdav"));
+        assert!(!reachable("invalid host name:::"));
+        assert!(!reachable("http://example.invalid"));
     }
 }

@@ -568,7 +568,10 @@ pub async fn refund(
         .await
         .map_err(|e| e.to_string())?
         .ok_or("Transaksi tidak valid atau sudah direfund")?;
-    if trx.member_id != Some(member_id) || trx.is_refunded {
+    if trx.member_id != Some(member_id)
+        || trx.is_refunded
+        || !matches!(trx.jenis.as_str(), "beli_paket_member" | "tambah_waktu_sesi")
+    {
         return Err("Transaksi tidak valid atau sudah direfund".into());
     }
     let now = now_db();

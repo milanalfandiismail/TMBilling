@@ -450,6 +450,7 @@ pub async fn force_all_and_detect(st: &AppState, operator: &str) -> Result<(i64,
         .map_err(|e| e.to_string())?;
     let mut tutup = 0;
     let mut deteksi = 0;
+    let mut tx = st.pool.begin().await.map_err(|e| e.to_string())?;
     for sesi in daftar {
         if matches!(sesi.tipe.as_str(), "guest" | "member") {
             let referensi = sesi
@@ -461,7 +462,11 @@ pub async fn force_all_and_detect(st: &AppState, operator: &str) -> Result<(i64,
             let sisa = sesi.hitung_sisa_pada(referensi);
             if sesi.tipe == "member" {
                 if let Some(member_id) = sesi.member_id {
-                    let _ = member_repo::set_waktu_tersimpan(&st.pool, member_id, sisa).await;
+                    let _ = sqlx::query("UPDATE member SET waktu_tersimpan = ? WHERE id = ?")
+                        .bind(sisa)
+                        .bind(member_id)
+                        .execute(&mut *tx)
+                        .await;
                 }
             }
             sqlx::query(
@@ -471,7 +476,7 @@ pub async fn force_all_and_detect(st: &AppState, operator: &str) -> Result<(i64,
             .bind(sisa)
             .bind(db_str(referensi))
             .bind(sesi.id)
-            .execute(&st.pool)
+            .execute(&mut *tx)
             .await
             .map_err(|e| e.to_string())?;
             let user_id = crate::services::transaksi::user_id(&st.pool, operator).await;
@@ -486,7 +491,7 @@ pub async fn force_all_and_detect(st: &AppState, operator: &str) -> Result<(i64,
             .bind(format!("Force close blackout: {}", label(&sesi)))
             .bind(&now_str)
             .bind(operator)
-            .execute(&st.pool)
+            .execute(&mut *tx)
             .await
             .map_err(|e| e.to_string())?;
             deteksi += 1;
@@ -497,7 +502,7 @@ pub async fn force_all_and_detect(st: &AppState, operator: &str) -> Result<(i64,
             )
             .bind(&now_str)
             .bind(sesi.id)
-            .execute(&st.pool)
+            .execute(&mut *tx)
             .await
             .map_err(|e| e.to_string())?;
         }
@@ -505,9 +510,10 @@ pub async fn force_all_and_detect(st: &AppState, operator: &str) -> Result<(i64,
     }
     sqlx::query("UPDATE pc SET is_admin_mode = 0, last_activity = ?")
         .bind(&now_str)
-        .execute(&st.pool)
+        .execute(&mut *tx)
         .await
         .map_err(|e| e.to_string())?;
+    tx.commit().await.map_err(|e| e.to_string())?;
     logger::audit_json(
         operator,
         "FORCE_CLOSE_ALL",

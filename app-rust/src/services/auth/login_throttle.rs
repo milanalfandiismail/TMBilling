@@ -16,11 +16,11 @@ fn store() -> &'static Mutex<HashMap<String, Vec<Instant>>> {
 }
 
 fn pair_key(ip: &str, username: &str) -> String {
-    format!("{ip}\u{1}{username}")
+    format!("{}\u{1}{}", ip.trim().to_lowercase(), username.trim().to_lowercase())
 }
 
 fn ip_key(ip: &str) -> String {
-    format!("__ip__\u{1}{ip}")
+    format!("__ip__\u{1}{}", ip.trim().to_lowercase())
 }
 
 fn prune(map: &mut HashMap<String, Vec<Instant>>, key: &str, now: Instant) -> usize {

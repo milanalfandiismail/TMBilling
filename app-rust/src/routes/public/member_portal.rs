@@ -51,9 +51,8 @@ fn baca(st: &AppState, nilai: &str) -> Option<i64> {
     let isi = String::from_utf8(isi).ok()?;
     let mut mac = HmacSha256::new_from_slice(st.cfg.secret_key.as_bytes()).ok()?;
     mac.update(isi.as_bytes());
-    let harap =
-        base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(mac.finalize().into_bytes());
-    if harap != tag {
+    let tag_bytes = base64::engine::general_purpose::URL_SAFE_NO_PAD.decode(tag).ok()?;
+    if mac.verify_slice(&tag_bytes).is_err() {
         return None;
     }
     isi.strip_prefix("member:")?.parse().ok()
@@ -175,6 +174,22 @@ pub async fn profile_update(
         .get("password")
         .and_then(|v| v.as_str())
         .filter(|p| !p.is_empty());
+    let current_password = data
+        .get("current_password")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    if password.is_some() {
+        if current_password.is_empty() {
+            return http::err(400, "Password saat ini wajib diisi untuk mengubah password");
+        }
+        let member = match crate::repositories::member::get_by_id(&st.pool, id).await {
+            Ok(Some(m)) => m,
+            _ => return http::err(404, "Member tidak ditemukan"),
+        };
+        if !verify_password(&member.password_hash, current_password) {
+            return http::err(401, "Password saat ini salah");
+        }
+    }
     if let Some(e) = &email {
         if let Err(pesan) = validators::email(e) {
             return http::err(400, pesan);

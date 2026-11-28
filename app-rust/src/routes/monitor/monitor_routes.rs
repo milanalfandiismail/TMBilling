@@ -36,7 +36,7 @@ pub async fn receive(
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
     let harapan = settings_service::client_api_key(&state).await;
-    if kirim.is_empty() || harapan.is_empty() || kirim != harapan {
+    if !crate::routes::client::client_routes::kunci_sama(kirim, &harapan) {
         logger::rec(
             "system",
             "API_KEY_GAGAL",
@@ -239,7 +239,7 @@ pub async fn screenshot_upload(
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
     let harapan = settings_service::client_api_key(&state).await;
-    if kirim.is_empty() || harapan.is_empty() || kirim != harapan {
+    if !crate::routes::client::client_routes::kunci_sama(kirim, &harapan) {
         state.mismatch.record(&peer.ip().to_string(), None);
         return gagal(
             401,

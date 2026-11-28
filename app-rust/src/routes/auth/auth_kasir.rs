@@ -76,7 +76,13 @@ pub async fn login(
     match auth_kasir_service::login(&state.pool, &username, &password, &ip, &agent).await {
         Ok(user) => {
             login_throttle::ok(&ip, &username);
-            let session = auth::build_session(&user);
+            let mut session = auth::build_session(&user);
+            if let Some(existing) = auth::extract_session(&state.cfg, &headers) {
+                if existing.ipwh {
+                    session.ipwh = true;
+                    session.ipwhv = existing.ipwhv;
+                }
+            }
             let cookies = vec![
                 auth::session_cookie(&state.cfg, &session),
                 csrf::cookie_header(&csrf::new_token()),
