@@ -120,6 +120,12 @@ pub mod paths {
 
 /// Tulis satu key ke `.env`, mempertahankan baris lain.
 pub fn write_env_value(root: &Path, key: &str, value: &str) -> std::io::Result<()> {
+    if key.contains('\n') || key.contains('\r') || value.contains('\n') || value.contains('\r') {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "Key atau value tidak boleh mengandung karakter newline",
+        ));
+    }
     let path = root.join(".env");
     let content = fs::read_to_string(&path).unwrap_or_default();
     let mut lines: Vec<String> = content.lines().map(str::to_string).collect();

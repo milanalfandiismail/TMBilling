@@ -1,16 +1,18 @@
 //! Login klien PC (kiosk): member memakai billing, kasir/admin membuka mode admin.
 //! Dipakai WarnetAgent lewat POST /api/v1/public/auth/login.
 
+use std::net::SocketAddr;
 use std::sync::Arc;
 
 use axum::body::Bytes;
-use axum::extract::State;
+use axum::extract::{ConnectInfo, State};
 use axum::http::HeaderMap;
 use axum::response::Response;
 use serde_json::json;
 
 use crate::models::user::verify_password;
 use crate::repositories::{member as member_repo, pc as pc_repo, user as user_repo};
+use crate::routes::client::client_routes::peer_ip;
 use crate::services::auth::login_throttle;
 use crate::services::client::client_service;
 use crate::services::sesi::sesi_service;
@@ -19,16 +21,21 @@ use crate::utils::{http, time};
 
 pub async fn login(
     State(st): State<Arc<AppState>>,
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
     headers: HeaderMap,
     body: Bytes,
 ) -> Response {
+    let peer_addr = peer_ip(&headers, peer);
     let data = http::parse_json(&body);
-    let ip = data
+    let mut ip = data
         .get("ip_address")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .trim()
         .to_string();
+    if ip.is_empty() || (peer_addr != "127.0.0.1" && peer_addr != "::1" && peer_addr != "localhost") {
+        ip = peer_addr.clone();
+    }
     let mac = data
         .get("mac_address")
         .and_then(|v| v.as_str())

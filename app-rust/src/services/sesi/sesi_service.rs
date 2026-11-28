@@ -780,6 +780,8 @@ pub async fn cleanup_expired(st: &AppState) -> i64 {
     let now = now_db();
     let mut count = 0;
     let daftar = repo::get_all_aktif(&st.pool).await.unwrap_or_default();
+    // Grace: minimal 1 menit toleransi sebelum auto-close untuk sesi yang baru lewat batas
+    let ambang_kadaluarsa = now - Duration::seconds(60);
     for sesi in daftar {
         if sesi.tipe == "admin" {
             continue;
@@ -789,7 +791,7 @@ pub async fn cleanup_expired(st: &AppState) -> i64 {
                 continue;
             }
         }
-        if sesi.sisa_menit(now) > 0 {
+        if sesi.hitung_sisa_pada(ambang_kadaluarsa) > 0 {
             continue;
         }
         let _ = tutup_locked(st, sesi.id, "system").await;
